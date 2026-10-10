@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0c0d0e;
+  --surface: #141618;
+  --surface-2: #181a1d;
+  --surface-3: #1f2226;
+  --border: #24272d;
+  --border-strong: #383d45;
+  --text: #f3f4f6;
+  --secondary: #9fa4ac;
+  --muted: #6c727d;
+  --accent: #f59e0b;
+  --accent-hover: #ffb020;
+  --accent-fg: #0c0d0e;
+  --orange: #ff5722;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --overlay: rgba(0, 0, 0, 0.8);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-orange: var(--orange);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-overlay: var(--overlay);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-jakarta);
+}
+
+@layer base {
+  body {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-jakarta);
+    letter-spacing: -0.02em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
