@@ -6,7 +6,7 @@
 --     they cannot sign in); the signup trigger auto-creates their profiles rows.
 --   * gallery + covers use DEMO unsplash links — replace via admin R2 upload (06_MEDIA.md).
 -- Times: built as UTC wall-clock then anchored with AT TIME ZONE 'UTC' (session-TZ safe).
---   +6d 00:30 UTC = 06:00 IST, -7d 01:00 UTC = 06:30 IST, +3d 14:00 UTC = 19:30 IST.
+--   +Nd 00:30 UTC = 06:00 IST, +Nd 01:00 UTC = 06:30 IST (N = 6,10,17 upcoming / -7,-14,-21 past).
 
 -- Demo riders (auth.users stubs → trigger creates profiles) --------------------
 -- encrypted_password is a dummy literal: Google-only auth, these accounts can never sign in.
@@ -136,6 +136,58 @@ values
     null,
     'cancelled',
     null
+  ),
+  (
+    'a0000000-0000-4000-8000-000000000006',
+    'bogatha-waterfall-run',
+    'Bogatha Waterfall Run',
+    'Full-day run to Bogatha Waterfall via Jayashankar Bhupalpally. Scenic forest road, lunch halt near the falls, steady pace with two regroup points. Full gear and valid licence required.',
+    (date_trunc('day', now() AT TIME ZONE 'UTC') + interval '10 days' + interval '30 minutes') AT TIME ZONE 'UTC',
+    'Geetha Bhavan junction, Warangal',
+    110,
+    'moderate',
+    'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1200&q=80',
+    'published',
+    null
+  ),
+  (
+    'a0000000-0000-4000-8000-000000000007',
+    'kaleshwaram-river-ride',
+    'Kaleshwaram River Ride',
+    'Ride to the Kaleshwaram project view points and back. Moderate highway pace, photo halt at the barrage, breakfast en route. Suitable for riders comfortable with 80+ km distances.',
+    (date_trunc('day', now() AT TIME ZONE 'UTC') + interval '17 days' + interval '30 minutes') AT TIME ZONE 'UTC',
+    'Warangal Fort parking',
+    85,
+    'moderate',
+    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1200&q=80',
+    'published',
+    null
+  ),
+  (
+    'a0000000-0000-4000-8000-000000000008',
+    'warangal-fort-circuit',
+    'Warangal Fort Heritage Circuit',
+    'Short city heritage circuit covering Warangal Fort, Thousand Pillar Temple and the Ethipothala approach roads. Perfect first community ride — easy pace, no highway runs.',
+    (date_trunc('day', now() AT TIME ZONE 'UTC') - interval '14 days' + interval '1 hour') AT TIME ZONE 'UTC',
+    'Thousand Pillar Temple parking',
+    25,
+    'easy',
+    'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=1200&q=80',
+    'completed',
+    null
+  ),
+  (
+    'a0000000-0000-4000-8000-000000000009',
+    'hyderabad-highway-century',
+    'Hyderabad Highway Century',
+    'Long haul to Hyderabad via the NH44 — the column''s biggest run of the quarter. Early start, two fuel halts, experienced riders only. Completed in 6h30m with the full group.',
+    (date_trunc('day', now() AT TIME ZONE 'UTC') - interval '21 days' + interval '1 hour') AT TIME ZONE 'UTC',
+    'Warangal Fort parking',
+    160,
+    'hard',
+    'https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?auto=format&fit=crop&w=1200&q=80',
+    'completed',
+    null
   )
 on conflict (id) do nothing;
 
@@ -166,6 +218,20 @@ values
     'First-Aid Workshop for Riders',
     'Free two-hour first-aid session covering on-road trauma basics, spinal immobilisation and kit building. Date and venue will be posted here shortly — slots are limited to 30 riders.',
     null
+  ),
+  (
+    'b0000000-0000-4000-8000-000000000004',
+    'new-rider-orientation',
+    'New to MotoBharat? Start Here',
+    'First ride with the community? Pick an easy outing from the Rides page and hit Join — your rider KYC unlocks joining. Come geared up, reach the meeting point 15 minutes early, and follow the ride lead''s brief. Introductions happen at the halt, the column moves together.',
+    null
+  ),
+  (
+    'b0000000-0000-4000-8000-000000000005',
+    'ride-photos-now-live',
+    'Ride Photos Are Now Live',
+    'Gallery photos from our recent runs are up — open any completed ride from the Rides page to browse the full set with lightbox view. Shot something good on the road? Send it to an admin and it will land in the ride gallery.',
+    null
   )
 on conflict (id) do nothing;
 
@@ -179,7 +245,18 @@ values
   ('a0000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000003'),
   ('a0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000001'),
   ('a0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000002'),
-  ('a0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000003')
+  ('a0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000003'),
+  ('a0000000-0000-4000-8000-000000000006', 'c0000000-0000-4000-8000-000000000001'),
+  ('a0000000-0000-4000-8000-000000000006', 'c0000000-0000-4000-8000-000000000002'),
+  ('a0000000-0000-4000-8000-000000000006', 'c0000000-0000-4000-8000-000000000003'),
+  ('a0000000-0000-4000-8000-000000000006', 'c0000000-0000-4000-8000-000000000004'),
+  ('a0000000-0000-4000-8000-000000000007', 'c0000000-0000-4000-8000-000000000001'),
+  ('a0000000-0000-4000-8000-000000000007', 'c0000000-0000-4000-8000-000000000003'),
+  ('a0000000-0000-4000-8000-000000000008', 'c0000000-0000-4000-8000-000000000001'),
+  ('a0000000-0000-4000-8000-000000000008', 'c0000000-0000-4000-8000-000000000002'),
+  ('a0000000-0000-4000-8000-000000000008', 'c0000000-0000-4000-8000-000000000004'),
+  ('a0000000-0000-4000-8000-000000000009', 'c0000000-0000-4000-8000-000000000001'),
+  ('a0000000-0000-4000-8000-000000000009', 'c0000000-0000-4000-8000-000000000003')
 on conflict (event_id, user_id) do nothing;
 
 -- Gallery (DEMO unsplash links — replace via admin R2 upload) ----------------
@@ -226,5 +303,33 @@ values
     'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&crop=entropy&w=1600&q=80',
     'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=400&q=75',
     'image/jpeg', 1600, 1067, 'DEMO — ghat run viewpoint stop'
+  ),
+  (
+    'd0000000-0000-4000-8000-000000000007',
+    'a0000000-0000-4000-8000-000000000008',
+    'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?auto=format&fit=crop&w=1600&q=80',
+    'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?auto=format&fit=crop&w=400&q=75',
+    'image/jpeg', 1600, 1067, 'DEMO — heritage circuit start of the column'
+  ),
+  (
+    'd0000000-0000-4000-8000-000000000008',
+    'a0000000-0000-4000-8000-000000000008',
+    'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=1600&q=80',
+    'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=400&q=75',
+    'image/jpeg', 1600, 1067, 'DEMO — fort walls ride halt'
+  ),
+  (
+    'd0000000-0000-4000-8000-000000000009',
+    'a0000000-0000-4000-8000-000000000009',
+    'https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?auto=format&fit=crop&w=1600&q=80',
+    'https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?auto=format&fit=crop&w=400&q=75',
+    'image/jpeg', 1600, 1067, 'DEMO — highway century fuel halt'
+  ),
+  (
+    'd0000000-0000-4000-8000-000000000010',
+    'a0000000-0000-4000-8000-000000000003',
+    'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=1600&q=80',
+    'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=400&q=75',
+    'image/jpeg', 1600, 1067, 'DEMO — ghat road cornering line'
   )
 on conflict (id) do nothing;
