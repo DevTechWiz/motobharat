@@ -1,6 +1,6 @@
 import { Container, Section } from "@/components/layout/container";
 import { SectionHeader } from "@/components/ui/section-header";
-import { Shield, Users, AlertTriangle, Phone, BookOpen, Wrench } from "lucide-react";
+import { Shield, Users, AlertTriangle, Phone, BookOpen, Wrench, Check } from "lucide-react";
 
 export const metadata = { title: "Safety Code" };
 
@@ -37,6 +37,17 @@ const principles = [
   },
 ];
 
+const checklist = [
+  "ISI-rated helmet, strapped and ready",
+  "Riding gloves and closed-shoe footwear on",
+  "Valid driving licence and RC carried",
+  "Tyres, brakes, lights and horn checked",
+  "Fuel tank full, phone fully charged",
+  "Water bottle packed for the route",
+  "Ride lead briefed on the route and halt points",
+  "Group chat notifications on for the ride day",
+];
+
 export default function SafetyPage() {
   return (
     <>
@@ -71,6 +82,29 @@ export default function SafetyPage() {
               </div>
             ))}
           </div>
+        </Container>
+      </Section>
+
+      <Section bg="surface">
+        <Container>
+          <SectionHeader
+            eyebrow="Before you roll"
+            title="Pre-Ride Checklist"
+            cta={{ href: "/rides", label: "Find a Ride" }}
+          />
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {checklist.map((item) => (
+              <li
+                key={item}
+                className="flex items-center gap-3 rounded-xl border border-border bg-bg px-5 py-4"
+              >
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent/12">
+                  <Check className="size-3.5 text-accent" aria-hidden />
+                </span>
+                <span className="text-sm text-secondary">{item}</span>
+              </li>
+            ))}
+          </ul>
         </Container>
       </Section>
 

@@ -6,6 +6,7 @@ import { Container, Section } from "@/components/layout/container";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/feedback";
 import { formatRideDate, isPast } from "@/lib/format";
 import type { Ride } from "@/lib/types";
 
@@ -98,6 +99,25 @@ export default async function ProfilePage() {
               </Link>
             </div>
           )}
+
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { value: rides.length, label: "Rides Joined" },
+              { value: upcoming.length, label: "Upcoming" },
+              { value: past.length, label: "Completed" },
+              { value: rd?.registered ? "Yes" : "No", label: "KYC Done" },
+            ].map((s) => (
+              <div key={s.label} className="rounded-xl border border-border bg-surface px-4 py-3.5">
+                <span className="block font-mono text-2xl font-bold text-white tabular-nums">
+                  {s.value}
+                </span>
+                <span className="mt-2 block h-px w-6 bg-accent/70" aria-hidden />
+                <span className="mt-2 block font-mono text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </div>
         </Container>
       </Section>
 
@@ -108,7 +128,18 @@ export default async function ProfilePage() {
               Upcoming Rides ({upcoming.length})
             </h2>
             {upcoming.length === 0 ? (
-              <p className="mt-4 text-sm text-muted">No upcoming rides. Head to Rides to join one.</p>
+              <EmptyState
+                className="py-10"
+                title="No upcoming rides"
+                hint="When you join a ride, it shows up here with its date and meeting point."
+                action={
+                  <Link href="/rides">
+                    <Button variant="outline" size="sm">
+                      Browse Rides
+                    </Button>
+                  </Link>
+                }
+              />
             ) : (
               <ul className="mt-4 space-y-2">
                 {upcoming.map((r) => (
@@ -129,7 +160,11 @@ export default async function ProfilePage() {
               Past Rides ({past.length})
             </h2>
             {past.length === 0 ? (
-              <p className="mt-4 text-sm text-muted">No past rides yet.</p>
+              <EmptyState
+                className="py-10"
+                title="No past rides yet"
+                hint="Completed rides stay here with their date and gallery photos."
+              />
             ) : (
               <ul className="mt-4 space-y-2">
                 {past.map((r) => (

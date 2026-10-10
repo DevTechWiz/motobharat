@@ -54,7 +54,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
       {/* Filter strip */}
       <div className="space-y-4 rounded-xl border border-border bg-surface p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {TABS.map((t) => (
               <button
                 key={t.key}

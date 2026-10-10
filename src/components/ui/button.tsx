@@ -17,7 +17,7 @@ type Variant = keyof typeof styles;
 type Size = keyof typeof sizes;
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-lg font-bold uppercase tracking-wider transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-bold uppercase tracking-wider transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100";
 
 export function buttonStyles(variant: Variant = "primary", size: Size = "md", full = false): string {
   return cn(base, styles[variant], sizes[size], full && "w-full");
