@@ -59,21 +59,25 @@ export function RideCard({ ride }: { ride: Ride }) {
   return (
     <Link
       href={href}
-      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-xl hover:shadow-black/40 active:translate-y-0"
+      className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_24px_60px_-20px_rgba(245,158,11,0.4),0_16px_40px_-16px_rgba(0,0,0,0.6)] active:translate-y-0 active:scale-[0.99]"
     >
-      <div className="relative aspect-16/10 bg-surface-2">
+      <div className="relative aspect-16/10 overflow-hidden bg-surface-2">
         {ride.cover_url && !imgFailed ? (
           <Image
             src={ride.cover_url}
             alt={ride.title}
             fill
             sizes="(min-width:1024px) 33vw, (min-width:768px) 50vw, 100vw"
-            className="object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-105 group-hover:opacity-100"
+            className="object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-110 group-hover:opacity-100"
             onError={() => setImgFailed(true)}
           />
         ) : (
           <RideCoverFallback meetingPoint={ride.meeting_point} />
         )}
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          aria-hidden
+        />
 
         <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-lg bg-bg/90 px-2.5 py-1 font-mono text-[10px] tracking-wider uppercase backdrop-blur">
           <span

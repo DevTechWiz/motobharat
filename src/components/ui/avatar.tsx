@@ -21,7 +21,8 @@ export function Avatar({
   size?: keyof typeof sizes;
   className?: string;
 }) {
-  const [hasError, setHasError] = useState(false);
+  const [errorSrc, setErrorSrc] = useState<string | null>(null);
+  const hasError = Boolean(src && errorSrc === src);
   const initial = name.trim().charAt(0).toUpperCase() || "?";
 
   return (
@@ -38,7 +39,7 @@ export function Avatar({
           src={src}
           alt={name}
           referrerPolicy="no-referrer"
-          onError={() => setHasError(true)}
+          onError={() => setErrorSrc(src)}
           className="size-full object-cover"
         />
       ) : (

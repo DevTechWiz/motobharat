@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Search, X } from "lucide-react";
 import { RideCard } from "@/components/rides/ride-card";
 import { EmptyState } from "@/components/ui/feedback";
@@ -10,9 +11,6 @@ import type { Ride } from "@/lib/types";
 
 type Tab = "upcoming" | "completed" | "cancelled";
 const DIFFICULTIES = ["All", "easy", "moderate", "hard"] as const;
-
-const tabClass =
-  "rounded-lg px-4 py-2 text-xs font-bold tracking-wider uppercase transition-colors";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "upcoming", label: "Upcoming" },
@@ -54,20 +52,25 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
       {/* Filter strip */}
       <div className="space-y-4 rounded-xl border border-border bg-surface p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-bg p-1">
             {TABS.map((t) => (
               <button
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
                 className={cn(
-                  tabClass,
-                  tab === t.key
-                    ? "bg-accent text-accent-fg"
-                    : "text-secondary hover:bg-surface-2 hover:text-white",
+                  "relative rounded-lg px-4 py-2 text-xs font-bold tracking-wider uppercase transition-colors duration-200",
+                  tab === t.key ? "text-accent-fg" : "text-secondary hover:text-white"
                 )}
               >
-                {t.label}
+                {tab === t.key && (
+                  <motion.span
+                    layoutId="rides-tab-pill"
+                    className="absolute inset-0 rounded-lg bg-accent shadow-[0_8px_24px_-8px_var(--accent)]"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <span className="relative">{t.label}</span>
               </button>
             ))}
           </div>
@@ -121,7 +124,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
             <button
               type="button"
               onClick={reset}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-4 py-2 text-xs font-bold tracking-wider uppercase transition-colors hover:bg-surface"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border-strong px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200 hover:border-accent/50 hover:bg-surface-2 active:scale-[0.97]"
             >
               <X className="size-3.5" aria-hidden />
               Reset Filters
@@ -129,11 +132,22 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((ride) => (
-            <RideCard key={ride.id} ride={ride} />
-          ))}
-        </div>
+        <motion.div layout className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout">
+            {filtered.map((ride) => (
+              <motion.div
+                key={ride.id}
+                layout
+                initial={{ opacity: 0, scale: 0.96, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <RideCard ride={ride} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {filtered.length > 0 && (

@@ -36,14 +36,14 @@ export function LoginForm({ stats }: { stats: LoginStats }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-[55fr_45fr]">
       {/* Visual panel */}
-      <div className="relative flex min-h-[46vh] flex-col justify-between overflow-hidden p-6 sm:p-10 lg:min-h-0 lg:p-12">
+      <div className="grain relative flex min-h-[46vh] flex-col justify-between overflow-hidden p-6 sm:p-10 lg:min-h-0 lg:p-12">
         <Image
           src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=2400&q=85"
           alt="Mountain highway winding into the hills at golden hour"
           fill
           sizes="(min-width: 1024px) 55vw, 100vw"
           priority
-          className="object-cover object-center opacity-55"
+          className="animate-ken-burns object-cover object-center opacity-55"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/35 to-bg/60" />
         <div
@@ -63,10 +63,10 @@ export function LoginForm({ stats }: { stats: LoginStats }) {
           <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
             Member Portal
           </p>
-          <h1 className="mt-3 text-4xl leading-[1.05] font-black tracking-tight sm:text-5xl">
+          <h1 className="animate-fade-in-up mt-3 text-4xl leading-[1.05] font-black tracking-tight sm:text-5xl">
             Different Roads.
             <br />
-            <span className="text-accent">One Community.</span>
+            <span className="text-accent drop-shadow-[0_0_30px_rgba(245,158,11,0.35)]">One Community.</span>
           </h1>
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
             {ticker.map((s) => (
@@ -111,7 +111,7 @@ export function LoginForm({ stats }: { stats: LoginStats }) {
           <button
             type="button"
             onClick={signInWithGoogle}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-border-strong bg-surface px-6 py-4 text-sm font-bold tracking-wider uppercase transition-colors hover:bg-surface-2"
+            className="flex w-full items-center justify-center gap-3 rounded-lg border border-border-strong bg-surface px-6 py-4 text-sm font-bold tracking-wider uppercase transition-all duration-200 hover:-translate-y-px hover:border-accent/50 hover:bg-surface-2 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.4)] active:scale-[0.98]"
           >
             <svg className="size-5" viewBox="0 0 24 24" aria-hidden>
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />

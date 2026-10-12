@@ -58,3 +58,7 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+// Lets `next dev` resolve Cloudflare bindings locally (no-op in production builds).
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+initOpenNextCloudflareForDev();

@@ -1,5 +1,8 @@
-import sharp from "sharp";
-
+// NOTE: sharp is imported lazily inside processImage, never at module top level.
+// It is a Node-native module and cannot load on Cloudflare Workers — a static
+// import would poison every route bundle that touches this file. Lazy loading
+// keeps all non-upload routes safe; the upload path itself needs a
+// Workers-native replacement before gallery uploads can go live (08_STACK.md).
 const MAX_BYTES = 10 * 1024 * 1024;
 
 export interface ProcessedImage {
@@ -40,6 +43,7 @@ export async function validateImageFile(file: File): Promise<string | null> {
 // sharp strips EXIF/metadata by default (GPS must not survive); .rotate() bakes orientation first.
 export async function processImage(file: File, maxEdge: number, quality: number): Promise<ProcessedImage> {
   const input = Buffer.from(await file.arrayBuffer());
+  const { default: sharp } = await import("sharp");
   const { data, info } = await sharp(input)
     .rotate()
     .resize({ width: maxEdge, height: maxEdge, fit: "inside", withoutEnlargement: true })

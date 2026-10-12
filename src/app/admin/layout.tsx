@@ -1,6 +1,7 @@
-import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/container";
+import { AdminTabs } from "./admin-tabs";
 
 export const metadata = { title: "Admin", robots: { index: false, follow: false } };
 
@@ -8,13 +9,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <Section spacing="compact">
       <Container>
-        <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">Organizer</p>
-        <h1 className="mt-1 text-3xl font-extrabold">Admin</h1>
-        <nav className="mt-4 flex gap-4 border-b border-border pb-3 text-sm font-semibold">
-          <Link href="/admin" className="text-secondary hover:text-white">Overview</Link>
-          <Link href="/admin/rides" className="text-secondary hover:text-white">Rides</Link>
-          <Link href="/admin/announcements" className="text-secondary hover:text-white">Announcements</Link>
-        </nav>
+        <div className="flex items-center gap-2.5">
+          <span className="rounded-lg border border-orange/30 bg-orange/10 p-1.5 text-orange">
+            <ShieldCheck className="size-4" aria-hidden />
+          </span>
+          <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">Organizer</p>
+        </div>
+        <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Admin</h1>
+        <div className="mt-5">
+          <AdminTabs />
+        </div>
         <div className="mt-8">{children}</div>
       </Container>
     </Section>

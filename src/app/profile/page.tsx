@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Calendar, ShieldCheck, ShieldAlert, ArrowUpRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container, Section } from "@/components/layout/container";
-import { Avatar } from "@/components/ui/avatar";
+import { ProfileAvatar } from "./profile-avatar";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/feedback";
@@ -35,17 +35,7 @@ export default async function ProfilePage() {
   const isStep1Done = Boolean(rd?.age && rd?.gender && (rd?.phone || profile?.phone));
   const isRegistered = Boolean(rd?.registered);
 
-  const registrationHref = isRegistered
-    ? "/profile/kyc"
-    : isStep1Done
-    ? "/profile/kyc"
-    : "/profile/setup";
-
-  const registrationLabel = isRegistered
-    ? "Edit Rider KYC"
-    : isStep1Done
-    ? "Complete Rider KYC"
-    : "Complete Registration";
+  const registrationHref = isRegistered || isStep1Done ? "/profile/kyc" : "/profile/setup";
 
   const { data: memberships } = await supabase
     .from("event_members")
@@ -61,19 +51,29 @@ export default async function ProfilePage() {
 
   if (!profile) {
     return (
-      <Container className="py-20 text-center text-secondary">
+      <Container className="py-12 text-center text-secondary">
         Profile not found. Sign out and back in to refresh.
       </Container>
     );
   }
 
+  const completion = isRegistered ? 100 : isStep1Done ? 50 : 25;
+
   return (
     <>
       <Section spacing="compact" border="bottom">
         <Container>
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4 sm:gap-5">
-              <Avatar name={profile.display_name} src={profile.avatar_url} size="xl" />
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-6 sm:p-8">
+            <div
+              className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-accent/10 blur-[90px]"
+              aria-hidden
+            />
+            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4 sm:gap-5">
+                <ProfileAvatar
+                  displayName={profile.display_name}
+                  avatarUrl={profile.avatar_url}
+                />
               <div className="min-w-0 flex-1">
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">{profile.display_name}</h1>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -91,25 +91,61 @@ export default async function ProfilePage() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-stretch sm:items-end gap-2 sm:gap-1.5 w-full sm:w-auto">
-              <ButtonLink
-                href={registrationHref}
-                variant={isRegistered ? "outline" : "primary"}
-                size="sm"
-                fullWidth
-                className="sm:w-auto"
+            <div className="flex flex-col items-stretch gap-2 w-full sm:w-auto sm:items-end">
+              <p className="font-mono text-[10px] font-semibold tracking-[0.18em] text-muted uppercase sm:text-right">
+                Edit profile
+              </p>
+              <div
+                className="flex overflow-hidden rounded-lg border border-border-strong"
+                role="group"
+                aria-label="Edit profile sections"
               >
-                {registrationLabel}
-              </ButtonLink>
-              {isStep1Done && (
                 <Link
                   href="/profile/setup?edit=true"
-                  className="text-center sm:text-right text-[11px] text-muted hover:text-secondary underline underline-offset-2 transition-colors"
+                  className="flex flex-1 items-center justify-center gap-2 bg-surface-2 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent sm:flex-none"
                 >
-                  Edit basic details
+                  <span className="font-mono text-[10px] text-accent">1</span>
+                  Basic info
                 </Link>
-              )}
+                <span className="w-px bg-border-strong" aria-hidden />
+                <Link
+                  href="/profile/kyc"
+                  className="flex flex-1 items-center justify-center gap-2 bg-surface-2 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent sm:flex-none"
+                >
+                  <span className="font-mono text-[10px] text-accent">2</span>
+                  Safety &amp; KYC
+                </Link>
+              </div>
             </div>
+          {!isRegistered && (
+            <div className="relative mt-5 border-t border-border pt-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-mono text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
+                  Registration {completion}% complete
+                </p>
+                <Link
+                  href={registrationHref}
+                  className="font-mono text-[10px] font-bold tracking-[0.14em] text-accent uppercase hover:underline"
+                >
+                  {isStep1Done ? "Finish KYC →" : "Continue →"}
+                </Link>
+              </div>
+              <div
+                className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3"
+                role="progressbar"
+                aria-valuenow={completion}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Registration progress"
+              >
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-accent to-orange transition-all"
+                  style={{ width: `${completion}%` }}
+                />
+              </div>
+            </div>
+          )}
+          </div>
           </div>
 
           {!isRegistered && (

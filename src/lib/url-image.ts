@@ -1,5 +1,4 @@
 import { lookup } from "node:dns/promises";
-import sharp, { type Metadata } from "sharp";
 import { sniffImageBuffer, type ImageMime } from "@/lib/media";
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -124,8 +123,10 @@ export async function validateExternalImageUrl(raw: string): Promise<UrlImageRes
     return { ok: false, error: "That link doesn't point to a JPEG, WebP or PNG image." };
   }
 
-  let meta: Metadata;
+  let meta: { width?: number; height?: number };
   try {
+    // Lazy: sharp is Node-native and must never be a static import on Workers.
+    const { default: sharp } = await import("sharp");
     meta = await sharp(buffer).metadata();
   } catch {
     return { ok: false, error: "The image could not be read." };

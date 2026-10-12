@@ -3,6 +3,7 @@ import { Manrope, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Topbar } from "@/components/layout/topbar";
 import { Footer } from "@/components/layout/footer";
+import { ScrollProgress } from "@/components/layout/scroll-progress";
 import { ToastProvider } from "@/components/ui/toast";
 import { AuthProvider } from "@/lib/auth-context";
 
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${jakarta.variable} ${manrope.variable} dark h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
+        <ScrollProgress />
         <AuthProvider>
           <ToastProvider>
             <Topbar />

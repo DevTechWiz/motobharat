@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { Menu, X, ShieldCheck, User as UserIcon, LogOut, Settings } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Menu, X, ShieldAlert, ShieldCheck, User as UserIcon, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { scrollToTop } from "@/lib/scroll";
 import { Wordmark } from "@/components/ui/wordmark";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth-context";
@@ -19,18 +20,41 @@ const links = [
 export function Topbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user, profile, registered, signOut } = useAuth();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   if (pathname === "/login") return null;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-bg/95 backdrop-blur-md">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-3">
+    <header
+      className={cn(
+        "sticky top-0 z-50 border-b backdrop-blur-md transition-all duration-300",
+        scrolled
+          ? "border-border bg-bg/85 shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
+          : "border-border/60 bg-bg/95"
+      )}
+    >      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          onClick={(e) => {
+            if (pathname === "/") {
+              e.preventDefault();
+              scrollToTop();
+            }
+          }}
+          className="flex shrink-0 items-center gap-1"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
-          <img src="/brand/logo-128.png" alt="" className="size-11" />
+          <img src="/brand/logo-128.png" alt="" className="size-12" />
           <Wordmark size="sm" />
         </Link>
 
@@ -40,13 +64,18 @@ export function Topbar() {
               key={l.href}
               href={l.href}
               className={cn(
-                "shrink-0 border-b-2 py-1 text-sm font-medium transition-all",
-                isActive(l.href)
-                  ? "border-accent font-bold text-white"
-                  : "border-transparent text-secondary hover:border-white/20 hover:text-white",
+                "group relative shrink-0 py-1 text-sm font-medium transition-colors duration-200",
+                isActive(l.href) ? "font-bold text-white" : "text-secondary hover:text-white"
               )}
             >
               {l.label}
+              <span
+                className={cn(
+                  "absolute -bottom-0.5 left-0 h-0.5 bg-accent transition-all duration-300",
+                  isActive(l.href) ? "w-full" : "w-0 group-hover:w-full group-hover:bg-white/20"
+                )}
+                aria-hidden
+              />
             </Link>
           ))}
         </nav>
@@ -57,7 +86,7 @@ export function Topbar() {
           ) : (
             <Link
               href="/login"
-              className="inline-flex items-center rounded-lg bg-accent px-4 py-2.5 text-[11px] font-bold tracking-wider text-accent-fg uppercase transition-colors hover:bg-accent-hover"
+              className="inline-flex items-center rounded-lg bg-accent px-4 py-2.5 text-[11px] font-bold tracking-wider text-accent-fg uppercase shadow-[0_8px_24px_-8px_var(--accent)] transition-all duration-200 hover:-translate-y-px hover:bg-accent-hover hover:shadow-[0_12px_32px_-8px_var(--accent)] active:scale-[0.97]"
             >
               Join Us
             </Link>
@@ -106,17 +135,6 @@ export function Topbar() {
                       size="md"
                       className="size-11 text-xs"
                     />
-                    {registered ? (
-                      <span
-                        className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-success ring-2 ring-surface-2"
-                        title="Verified Rider"
-                      />
-                    ) : (
-                      <span
-                        className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-accent ring-2 ring-surface-2"
-                        title="KYC Pending"
-                      />
-                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
@@ -133,12 +151,12 @@ export function Topbar() {
                     <div className="mt-1 flex items-center">
                       {registered ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-success border border-success/30">
-                          <span className="size-1.5 rounded-full bg-success animate-pulse" />
+                          <ShieldCheck className="size-3" aria-hidden />
                           Verified Rider
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-accent border border-accent/30">
-                          <span className="size-1.5 rounded-full bg-accent" />
+                          <ShieldAlert className="size-3" aria-hidden />
                           KYC Pending
                         </span>
                       )}

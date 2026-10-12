@@ -23,10 +23,10 @@ export function Container({
 
 const spacings = {
   none: "py-0",
-  compact: "py-12 lg:py-16",
-  default: "py-16 lg:py-24",
-  spacious: "py-24 lg:py-32",
-  hero: "py-20 lg:py-28",
+  compact: "py-8 lg:py-12",
+  default: "py-12 lg:py-16",
+  spacious: "py-16 lg:py-20",
+  hero: "py-14 lg:py-20",
 } as const;
 
 const borders = {

@@ -107,7 +107,7 @@ export default async function RideDetailPage({
   return (
     <>
       {/* Hero */}
-      <section className="relative border-b border-border">
+      <section className="grain relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-surface-2">
           {ride.cover_url && (
             <Image
@@ -115,13 +115,17 @@ export default async function RideDetailPage({
               alt={ride.title}
               fill
               sizes="100vw"
-              className="object-cover opacity-40"
+              className="animate-ken-burns object-cover opacity-40"
               priority
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/70 to-bg/20" />
+          <div
+            className="absolute -top-32 left-1/4 h-72 w-[36rem] rounded-full bg-accent/10 blur-[120px]"
+            aria-hidden
+          />
         </div>
-        <Container className="relative py-12 sm:py-16">
+        <Container className="relative py-8 sm:py-12">
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-2 text-xs text-secondary" aria-label="Breadcrumb">
             <Link href="/" className="transition-colors hover:text-white">
@@ -145,7 +149,7 @@ export default async function RideDetailPage({
               <Badge tone="easy">Open for joining</Badge>
             )}
           </div>
-          <h1 className="mt-4 max-w-3xl text-3xl font-extrabold sm:text-5xl">{ride.title}</h1>
+          <h1 className="animate-fade-in-up mt-4 max-w-3xl text-3xl font-extrabold tracking-tight sm:text-5xl">{ride.title}</h1>
         </Container>
       </section>
 
@@ -169,8 +173,8 @@ export default async function RideDetailPage({
       </div>
 
       {/* Body: details + sticky join card */}
-      <Container className="grid gap-10 py-12 lg:grid-cols-[2fr_1fr]">
-        <div className="space-y-10">
+      <Container className="grid gap-8 py-8 lg:grid-cols-[2fr_1fr]">
+        <div className="space-y-8">
           {ride.description && (
             <div className="space-y-3">
               <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
@@ -274,7 +278,11 @@ export default async function RideDetailPage({
 
         {/* Sticky join card */}
         <aside>
-          <div className="sticky top-28 space-y-5 rounded-xl border border-border bg-surface p-6">
+          <div className="relative sticky top-28 space-y-5 overflow-hidden rounded-xl border border-border bg-surface p-6 transition-colors duration-300 hover:border-accent/30">
+            <div
+              className="pointer-events-none absolute -top-20 -right-20 h-48 w-48 rounded-full bg-accent/10 blur-[80px]"
+              aria-hidden
+            />
             <div className="space-y-1">
               <p className="font-mono text-[10px] tracking-wider text-accent uppercase">
                 Column Allocation

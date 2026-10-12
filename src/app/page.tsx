@@ -7,30 +7,13 @@ import { SectionHeader } from "@/components/ui/section-header";
 import { Container, Section } from "@/components/layout/container";
 import { EmptyState } from "@/components/ui/feedback";
 import { RideCard } from "@/components/rides/ride-card";
+import { Reveal, Stagger, StaggerItem, CountUp } from "@/components/ui/reveal";
+import { Marquee } from "@/components/ui/marquee";
 import { PhotoGrid, type GalleryPhoto } from "@/components/rides/photo-grid";
 import { formatRideDate, formatRideTime, isPast } from "@/lib/format";
 import type { GalleryItem, Ride } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-function InstagramIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <rect x="2" y="2" width="20" height="20" rx="5" />
-      <circle cx="12" cy="12" r="4" />
-      <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" />
-    </svg>
-  );
-}
 
 const PRINCIPLES = [
   {
@@ -80,10 +63,10 @@ export default async function HomePage() {
   const totalKm = all.reduce((sum, r) => sum + (r.distance_km ?? 0), 0);
 
   const stats = [
-    { value: (riderCount ?? 0).toLocaleString("en-IN"), label: "Riders" },
-    { value: upcoming.length.toLocaleString("en-IN"), label: "Upcoming Rides" },
-    { value: (photoCount ?? 0).toLocaleString("en-IN"), label: "Photos" },
-    { value: Math.round(totalKm).toLocaleString("en-IN"), label: "Kilometers" },
+    { value: riderCount ?? 0, label: "Riders" },
+    { value: upcoming.length, label: "Upcoming Rides" },
+    { value: photoCount ?? 0, label: "Photos" },
+    { value: Math.round(totalKm), label: "Kilometers" },
   ];
 
   const memories: GalleryPhoto[] = ((galleryRows ?? []) as GalleryItem[]).map((m) => ({
@@ -95,7 +78,7 @@ export default async function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative flex min-h-[85vh] items-center overflow-hidden border-b border-border">
+      <section className="grain relative flex min-h-[86vh] items-center overflow-hidden border-b border-border">
         <div className="absolute inset-0 z-0">
           <Image
             src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=2400&q=85"
@@ -103,19 +86,23 @@ export default async function HomePage() {
             fill
             sizes="100vw"
             priority
-            className="object-cover object-center opacity-40"
+            className="animate-ken-burns object-cover object-center opacity-40"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/80 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-bg/60" />
           <div
-            className="absolute -top-40 -left-32 h-[34rem] w-[46rem] rounded-full bg-accent/12 blur-[130px]"
+            className="animate-bloom absolute -top-40 -left-32 h-[34rem] w-[46rem] rounded-full bg-accent/12 blur-[130px]"
+            aria-hidden
+          />
+          <div
+            className="absolute -right-40 -bottom-40 h-[28rem] w-[36rem] rounded-full bg-orange/8 blur-[130px]"
             aria-hidden
           />
         </div>
 
         <div className="relative z-10 w-full">
           <Container>
-            <div className="max-w-3xl space-y-8 py-20 lg:py-28">
+            <div className="max-w-3xl space-y-6 py-14 lg:py-20">
               <div className="flex items-center gap-2.5 font-mono text-[11px] font-semibold tracking-[0.18em] text-secondary uppercase">
                 <span className="inline-block size-1.5 bg-accent" aria-hidden />
                 <span className="text-accent">MOTOBHARAT_WARANGAL</span>
@@ -126,12 +113,21 @@ export default async function HomePage() {
               </div>
 
               <h1 className="text-4xl leading-[1.04] font-black tracking-tighter text-balance sm:text-6xl lg:text-7xl">
-                Different Roads.
-                <br />
-                <span className="text-accent">One Community.</span>
+                <span className="animate-fade-in-up block" style={{ animationDelay: "0.1s" }}>
+                  Different Roads.
+                </span>
+                <span
+                  className="animate-fade-in-up block text-accent drop-shadow-[0_0_30px_rgba(245,158,11,0.35)]"
+                  style={{ animationDelay: "0.25s" }}
+                >
+                  One Community.
+                </span>
               </h1>
 
-              <p className="max-w-2xl text-base leading-relaxed text-secondary sm:text-xl">
+              <p
+                className="animate-fade-in-up max-w-2xl text-base leading-relaxed text-secondary sm:text-xl"
+                style={{ animationDelay: "0.4s" }}
+              >
                 Warangal&apos;s community of riders — built on road discipline, safety and
                 camaraderie. Show up on time, gear up, ride hard, return safe.
               </p>
@@ -167,10 +163,10 @@ export default async function HomePage() {
                 {stats.map((s) => (
                   <div
                     key={s.label}
-                    className="rounded-xl border border-border bg-surface/55 px-4 py-3.5 backdrop-blur-md"
+                    className="rounded-xl border border-border bg-surface/55 px-4 py-3.5 backdrop-blur-md transition-colors duration-200 hover:border-accent/40 hover:bg-surface-2/70"
                   >
                     <span className="block font-mono text-2xl font-bold text-white tabular-nums">
-                      {s.value}
+                      <CountUp to={s.value} />
                     </span>
                     <span className="mt-2 block h-px w-6 bg-accent/70" aria-hidden />
                     <span className="mt-2 block font-mono text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
@@ -183,6 +179,19 @@ export default async function HomePage() {
           </Container>
         </div>
       </section>
+
+      {/* Ethos marquee ribbon */}
+      <div className="border-b border-border bg-surface/40 py-4">
+        <Marquee
+          items={[
+            "Ride with discipline",
+            "Full gear mandatory",
+            "Warangal · Telangana",
+            "Different roads · One community",
+            "Return safe",
+          ]}
+        />
+      </div>
 
       {/* Upcoming rides — live */}
       <Section>
@@ -210,8 +219,9 @@ export default async function HomePage() {
       {/* About the club — photo essay */}
       <Section bg="surface" border="both">
         <Container>
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
-            <div className="relative">
+          <Reveal>
+          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+            <div className="group relative">
               <div
                 className="absolute -inset-3 rounded-[28px] border border-border-strong/50"
                 aria-hidden
@@ -226,7 +236,7 @@ export default async function HomePage() {
                   alt="Misty hairpin curves and ghat roads on a community expedition"
                   fill
                   sizes="(min-width:1024px) 50vw, 100vw"
-                  className="object-cover"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
                 <span className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-black/55 px-3 py-1.5 font-mono text-[10px] font-bold tracking-[0.18em] text-white/85 uppercase backdrop-blur-md">
                   Warangal · Telangana
@@ -263,6 +273,7 @@ export default async function HomePage() {
               </Link>
             </div>
           </div>
+          </Reveal>
         </Container>
       </Section>
 
@@ -274,19 +285,18 @@ export default async function HomePage() {
             title="Rules of the Column"
             cta={{ href: "/safety", label: "View Safety Code" }}
           />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" gap={0.1}>
             {PRINCIPLES.map((p) => (
-              <div
-                key={p.num}
-                className="group rounded-xl border border-border bg-surface p-6 transition-colors duration-150 hover:border-accent/40 hover:bg-surface-2"
-              >
-                <span className="font-mono text-xs font-semibold text-accent">{p.num}</span>
-                <span className="mt-3 mb-4 block h-px w-8 bg-border-strong transition-colors duration-150 group-hover:bg-accent/60" aria-hidden />
-                <h3 className="text-base font-bold">{p.title}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-secondary">{p.desc}</p>
-              </div>
+              <StaggerItem key={p.num}>
+                <div className="group h-full rounded-xl border border-border bg-surface p-6 transition-all duration-200 hover:-translate-y-1 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.35)]">
+                  <span className="font-mono text-xs font-semibold text-accent">{p.num}</span>
+                  <span className="mt-3 mb-4 block h-px w-8 bg-border-strong transition-colors duration-150 group-hover:bg-accent/60" aria-hidden />
+                  <h3 className="text-base font-bold">{p.title}</h3>
+                  <p className="mt-2 text-xs leading-relaxed text-secondary">{p.desc}</p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </Container>
       </Section>
 
@@ -307,42 +317,64 @@ export default async function HomePage() {
       {/* Join invitation */}
       <Section spacing="spacious">
         <Container>
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-surface px-6 py-16 text-center sm:px-16 lg:py-24">
-            <div
-              className="absolute -top-48 left-1/2 h-96 w-[42rem] -translate-x-1/2 rounded-full bg-accent/12 blur-[120px]"
-              aria-hidden
-            />
+          <Reveal>
+          <div className="grain relative overflow-hidden rounded-3xl border border-border bg-surface">
+            <div className="grid lg:grid-cols-2">
+              <div className="group relative min-h-72 overflow-hidden lg:min-h-full">
+                <Image
+                  src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=1600&q=80"
+                  alt="Rider on an open highway at dusk"
+                  fill
+                  sizes="(min-width:1024px) 50vw, 100vw"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-surface/40" aria-hidden />
+                <span className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-black/55 px-3 py-1.5 font-mono text-[10px] font-bold tracking-[0.18em] text-white/85 uppercase backdrop-blur-md">
+                  Different Roads · One Community
+                </span>
+              </div>
 
-            <div className="relative space-y-6">
-              <div className="flex items-center justify-center gap-2.5 font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
-                <span className="inline-block size-1.5 bg-accent" aria-hidden />
-                Membership
-                <span className="inline-block size-1.5 bg-accent" aria-hidden />
+              <div className="relative space-y-6 p-8 sm:p-12">
+                <div
+                  className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-accent/10 blur-[100px]"
+                  aria-hidden
+                />
+                <div className="relative space-y-6">
+                  <div className="flex items-center gap-2.5 font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
+                    <span className="inline-block size-1.5 bg-accent" aria-hidden />
+                    Membership
+                  </div>
+                  <h2 className="text-4xl leading-[1.06] font-black tracking-tighter text-balance sm:text-5xl">
+                    Ride with <span className="text-shimmer">purpose.</span>
+                  </h2>
+                  <ol className="space-y-4">
+                    {[
+                      { num: "01", title: "Sign in with Google", desc: "One tap — no passwords, no forms to start." },
+                      { num: "02", title: "Complete rider KYC once", desc: "Bike, licence and the safety waiver." },
+                      { num: "03", title: "Join a ride", desc: "Pick a departure, show up geared up." },
+                    ].map((s) => (
+                      <li key={s.num} className="flex items-start gap-4">
+                        <span className="font-mono text-xs font-bold text-accent">{s.num}</span>
+                        <span className="mt-0 h-px w-6 shrink-0 translate-y-2 bg-border-strong" aria-hidden />
+                        <span>
+                          <span className="block text-sm font-bold">{s.title}</span>
+                          <span className="mt-0.5 block text-xs text-secondary">{s.desc}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                  <div className="pt-2">
+                    <ButtonLink href="/login">Join with Google</ButtonLink>
+                  </div>
+                  <p className="font-mono text-[10px] tracking-[0.18em] text-muted uppercase">
+                    Free to join · 18+ · Warangal, Telangana
+                  </p>
+                </div>
               </div>
-              <h2 className="mx-auto max-w-2xl text-4xl leading-[1.06] font-black tracking-tighter text-balance sm:text-5xl lg:text-6xl">
-                Ride with purpose.
-              </h2>
-              <p className="mx-auto max-w-xl text-base leading-relaxed text-secondary sm:text-lg">
-                If you respect the machine, the road and the people riding next to you — you are
-                welcome in our column. Google sign-in, one-time rider KYC, no paperwork.
-              </p>
-              <div className="flex flex-col items-stretch justify-center gap-4 pt-2 sm:flex-row sm:items-center">
-                <ButtonLink href="/login">Join with Google</ButtonLink>
-                <a
-                  href="https://instagram.com/motobharat_warangal"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-border-strong px-6 py-3.5 text-xs font-bold tracking-wider uppercase transition-all duration-150 hover:bg-surface-2 active:scale-[0.97]"
-                >
-                  <InstagramIcon className="size-4 text-accent" aria-hidden />
-                  <span>@motobharat_warangal</span>
-                </a>
-              </div>
-              <p className="pt-2 font-mono text-[10px] tracking-[0.18em] text-muted uppercase">
-                Free to join · 18+ · Warangal, Telangana
-              </p>
             </div>
           </div>
+          </Reveal>
         </Container>
       </Section>
     </>

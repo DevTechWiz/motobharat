@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container, Section } from "@/components/layout/container";
+import { PageMasthead } from "@/components/layout/page-masthead";
 import { EmptyState } from "@/components/ui/feedback";
 import type { Announcement } from "@/lib/types";
 
@@ -20,20 +21,16 @@ export default async function AnnouncementsPage() {
 
   return (
     <>
-      <Section spacing="compact" border="bottom">
-        <Container>
-          <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">Updates</p>
-          <h1 className="mt-1 text-3xl font-extrabold sm:text-5xl">Announcements</h1>
-          <p className="mt-3 max-w-2xl text-secondary">
-            Community notices, ride updates, and safety bulletins.
-          </p>
-          {items.length > 0 && (
-            <p className="mt-5 font-mono text-[11px] tracking-wider text-muted uppercase tabular-nums">
-              {items.length} {items.length === 1 ? "notice" : "notices"} posted
-            </p>
-          )}
-        </Container>
-      </Section>
+      <PageMasthead
+        eyebrow="Updates"
+        title="Announcements"
+        meta={
+          items.length > 0
+            ? `${items.length} ${items.length === 1 ? "notice" : "notices"} posted`
+            : undefined
+        }
+        lede="Community notices, ride updates, and safety bulletins."
+      />
 
       <Section>
         <Container className="max-w-3xl">
@@ -47,7 +44,7 @@ export default async function AnnouncementsPage() {
               {items.map((a) => (
                 <article
                   key={a.id}
-                  className="group rounded-xl border border-border bg-surface p-6 transition-colors hover:border-accent/40 hover:bg-surface-2"
+                  className="group rounded-xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_20px_50px_-24px_rgba(245,158,11,0.45)]"
                 >
                   <div className="flex items-start gap-5">
                     <div className="self-start flex flex-col items-center justify-center rounded-xl border border-border bg-surface-2/90 px-3.5 py-2.5 min-w-[4.25rem] text-center shrink-0 select-none">

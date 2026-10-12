@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { RATE_LIMITS, rateLimit } from "@/lib/rateLimit";
 import { validateIndianPhone } from "@/lib/phone";
+import { processImage, sniffImageBuffer } from "@/lib/media";
+import { deleteR2Object, putR2Object, r2Configured, r2KeyFromUrl, r2PublicUrl } from "@/lib/r2";
+import { validateExternalImageUrl } from "@/lib/url-image";
 
 export type ProfileFormState = { error?: string };
 
@@ -39,6 +42,7 @@ export async function saveBasicProfile(
   const phone = String(formData.get("phone") ?? "").trim();
   const whatsappNumberRaw = String(formData.get("whatsapp_number") ?? "").trim();
   const occupation = String(formData.get("occupation") ?? "").trim() || null;
+  const isEdit = String(formData.get("edit") ?? "") === "true";
 
   if (!displayName) return { error: "Name is required." };
   if (displayName.length > 50) return { error: "Name must be 50 characters or fewer." };
@@ -100,7 +104,8 @@ export async function saveBasicProfile(
   if (rErr) return { error: rErr.message };
 
   revalidatePath("/profile", "layout");
-  redirect("/profile/kyc");
+  // Editing basic details returns to the profile; first-time setup continues to KYC.
+  redirect(isEdit ? "/profile" : "/profile/kyc");
 }
 
 // KYC: rider safety, bike, licensing, emergency & declaration fields; flips registered to true.
@@ -242,5 +247,110 @@ export async function saveRiderDetails(
   console.log("[saveRiderDetails] SUCCESS! Revalidating and redirecting to /profile...");
   revalidatePath("/profile", "layout");
   redirect("/profile");
+}
+
+export type AvatarFormState = {
+  error?: string;
+  ok?: boolean;
+  avatar_url?: string | null;
+};
+
+export async function updateAvatar(
+  _prev: AvatarFormState,
+  formData: FormData,
+): Promise<AvatarFormState> {
+  const { supabase, user } = await requireUser();
+  if (!rateLimit("profile", user.id, RATE_LIMITS.profile)) {
+    return { error: "Too many attempts — try again later." };
+  }
+
+  const isRemove = formData.get("remove") === "true";
+  if (isRemove) {
+    const { data: current } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", user.id)
+      .single();
+
+    const oldKey = current?.avatar_url ? r2KeyFromUrl(current.avatar_url) : null;
+    if (oldKey) {
+      try {
+        await deleteR2Object(oldKey);
+      } catch (e) {
+        console.warn("[updateAvatar] failed to delete old avatar", e);
+      }
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_url: null })
+      .eq("id", user.id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/profile");
+    revalidatePath("/", "layout");
+    return { ok: true, avatar_url: null };
+  }
+
+  const file = formData.get("avatar_file") as File | null;
+  const url = String(formData.get("avatar_url") ?? "").trim();
+
+  let finalUrl: string | null = null;
+
+  if (file && file.size > 0) {
+    if (file.size > 10 * 1024 * 1024) {
+      return { error: "Image must be under 10 MB." };
+    }
+    const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    const kind = sniffImageBuffer(head);
+    if (!kind) {
+      return { error: "Only JPEG, WebP, and PNG images are allowed." };
+    }
+
+    const processed = await processImage(file, 400, 80);
+
+    if (r2Configured()) {
+      const key = `avatars/${user.id}/${crypto.randomUUID()}.webp`;
+      await putR2Object(key, processed.data, "image/webp");
+      finalUrl = r2PublicUrl(key);
+    } else {
+      finalUrl = `data:image/webp;base64,${processed.data.toString("base64")}`;
+    }
+  } else if (url) {
+    const result = await validateExternalImageUrl(url);
+    if (!result.ok) {
+      return { error: result.error };
+    }
+    finalUrl = result.info.url;
+  } else {
+    return { error: "Please choose an image file or provide an image link." };
+  }
+
+  const { data: current } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .single();
+
+  const oldKey = current?.avatar_url ? r2KeyFromUrl(current.avatar_url) : null;
+  if (oldKey) {
+    try {
+      await deleteR2Object(oldKey);
+    } catch (e) {
+      console.warn("[updateAvatar] failed to delete old avatar", e);
+    }
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: finalUrl })
+    .eq("id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/profile");
+  revalidatePath("/", "layout");
+  return { ok: true, avatar_url: finalUrl };
 }
 

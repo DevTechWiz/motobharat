@@ -4,9 +4,10 @@ import { useActionState, useEffect, useState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bike, Shield, HeartPulse, FileText, CheckCircle2, type LucideIcon } from "lucide-react";
+import { Bike, Shield, HeartPulse, FileText, CheckCircle2, ArrowLeft, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { RegSteps } from "../reg-steps";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Field } from "@/components/ui/field";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -514,8 +515,12 @@ function KycForm() {
       )}
 
       <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-2">
-        <Link href="/" className="text-xs text-muted hover:text-secondary">
-          Cancel / Return Home
+        <Link
+          href={done ? "/profile" : "/profile/setup"}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition-colors hover:text-accent"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden />
+          {done ? "Back to profile" : "Back to basic info"}
         </Link>
         <SubmitButton done={done} />
       </div>
@@ -530,8 +535,9 @@ function KycForm() {
 export default function ProfileKycPage() {
   return (
     <div className="min-h-[80vh] px-4 py-12">
-      <div className="mx-auto w-full max-w-3xl space-y-8">
-        <div className="space-y-3">
+      <div className="mx-auto w-full max-w-3xl space-y-6">
+        <RegSteps current={2} />
+        <div className="space-y-2">
           <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
             Rider Registration · Step 2
           </p>

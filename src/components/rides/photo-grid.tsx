@@ -73,10 +73,14 @@ export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
             key={p.url}
             type="button"
             onClick={() => setIndex(i)}
-            className="group relative aspect-4/3 overflow-hidden rounded-lg border border-border bg-surface-2"
+            className="group relative aspect-4/3 overflow-hidden rounded-lg border border-border bg-surface-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.4)]"
             aria-label={`View photo: ${p.alt}`}
           >
             <PhotoThumb photo={p} />
+            <span
+              className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              aria-hidden
+            />
           </button>
         ))}
       </div>

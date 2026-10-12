@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, ShieldCheck, User as UserIcon, Settings } from "lucide-react";
+import { LogOut, ShieldAlert, ShieldCheck, User as UserIcon, Settings } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/cn";
@@ -34,56 +34,20 @@ export function UserMenu() {
     <div ref={ref} className="relative">
       <button
         type="button"
-        className={cn(
-          "flex items-center gap-2.5 rounded-full border border-border bg-surface pl-1.5 pr-3 py-1.5 transition-all",
-          "hover:border-border-strong hover:bg-surface-2 focus:outline-none focus:ring-1 focus:ring-accent/40",
-          open && "border-border-strong bg-surface-2 ring-1 ring-border-strong"
-        )}
+        aria-label={`Account: ${profile.display_name}`}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "flex rounded-full p-0.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+          open ? "ring-2 ring-accent" : "ring-1 ring-border hover:ring-accent/60"
+        )}
       >
-        <div className="relative">
-          <Avatar
-            name={profile.display_name}
-            src={profile.avatar_url}
-            size="sm"
-            className="size-7 text-[10px]"
-          />
-          {registered ? (
-            <span
-              className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-success ring-2 ring-surface"
-              title="Verified Rider"
-            />
-          ) : (
-            <span
-              className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-accent ring-2 ring-surface"
-              title="KYC Pending"
-            />
-          )}
-        </div>
-
-        <div className="flex flex-col text-left leading-tight">
-          <span className="max-w-28 truncate text-xs font-semibold text-text">
-            {profile.display_name}
-          </span>
-          <span className="font-mono text-[10px] text-muted">
-            {profile.role === "admin" ? (
-              <span className="font-bold uppercase tracking-wider text-[9px] text-orange">Admin</span>
-            ) : registered ? (
-              <span className="font-medium text-success">Verified</span>
-            ) : (
-              <span>Rider</span>
-            )}
-          </span>
-        </div>
-
-        <ChevronDown
-          className={cn(
-            "size-3.5 text-muted transition-transform duration-200",
-            open && "rotate-180 text-text"
-          )}
-          aria-hidden
+        <Avatar
+          name={profile.display_name}
+          src={profile.avatar_url}
+          size="md"
+          className="text-xs"
         />
       </button>
 
@@ -115,12 +79,12 @@ export function UserMenu() {
               <div className="mt-1.5 flex items-center">
                 {registered ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-success border border-success/30">
-                    <span className="size-1.5 rounded-full bg-success animate-pulse" />
+                    <ShieldCheck className="size-3" aria-hidden />
                     Verified Rider
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-accent border border-accent/30">
-                    <span className="size-1.5 rounded-full bg-accent" />
+                    <ShieldAlert className="size-3" aria-hidden />
                     KYC Pending
                   </span>
                 )}

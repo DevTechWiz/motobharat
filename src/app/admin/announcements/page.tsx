@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/feedback";
 import { formatDate } from "@/lib/format";
 import { DeleteAnnouncementButton } from "./delete-announcement-button";
 import type { Announcement } from "@/lib/types";
@@ -17,24 +20,36 @@ export default async function AdminAnnouncementsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">All Announcements ({list.length})</h2>
-        <Link
-          href="/admin/announcements/new"
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-bold text-bg hover:bg-accent-hover"
-        >
-          + New Announcement
-        </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-bold">
+          All Announcements{" "}
+          <span className="font-mono text-sm font-semibold text-muted tabular-nums">
+            ({list.length})
+          </span>
+        </h2>
+        <ButtonLink href="/admin/announcements/new" size="sm">
+          <Plus className="size-4" aria-hidden />
+          New Announcement
+        </ButtonLink>
       </div>
 
       {list.length === 0 ? (
-        <p className="text-sm text-muted">No announcements yet.</p>
+        <EmptyState
+          title="No announcements yet"
+          hint="Post rain updates, meetups, or workshops — riders see them instantly."
+          action={
+            <ButtonLink href="/admin/announcements/new" variant="outline" size="sm">
+              <Plus className="size-4" aria-hidden />
+              New Announcement
+            </ButtonLink>
+          }
+        />
       ) : (
         <ul className="space-y-2">
           {list.map((a) => (
             <li
               key={a.id}
-              className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-all duration-200 hover:border-accent/40 hover:bg-surface-2"
             >
               <div>
                 <p className="font-semibold">{a.title}</p>

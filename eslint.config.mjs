@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated — never lint the CF worker bundle, wrangler state,
+    // dependency patches, or generated env types.
+    ".open-next/**",
+    ".wrangler/**",
+    "patches/**",
+    "cloudflare-env.d.ts",
   ]),
 ]);
 

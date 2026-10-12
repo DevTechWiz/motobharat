@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { ArrowUpRight, Bike, Megaphone, Users, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { ButtonLink } from "@/components/ui/button";
+import { CountUp } from "@/components/ui/reveal";
 
 export const dynamic = "force-dynamic";
 
@@ -12,39 +15,56 @@ export default async function AdminOverviewPage() {
   ]);
 
   const cards = [
-    { label: "Rides", value: rides ?? 0, href: "/admin/rides" },
-    { label: "Announcements", value: announcements ?? 0, href: "/admin/announcements" },
-    { label: "Registered Riders", value: members ?? 0, href: "/admin" },
+    { label: "Rides", value: rides ?? 0, href: "/admin/rides", icon: Bike },
+    { label: "Announcements", value: announcements ?? 0, href: "/admin/announcements", icon: Megaphone },
+    { label: "Registered Riders", value: members ?? 0, href: null, icon: Users },
   ];
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {cards.map((c) => (
-          <Link
-            key={c.label}
-            href={c.href}
-            className="rounded-xl border border-border bg-surface p-6 transition-colors hover:bg-surface-2"
-          >
-            <p className="font-mono text-3xl font-bold text-accent tabular-nums">{c.value}</p>
-            <p className="mt-1 text-sm text-secondary">{c.label}</p>
-          </Link>
-        ))}
+        {cards.map((c) => {
+          const body = (
+            <>
+              <span className="flex items-center justify-between">
+                <c.icon className="size-5 text-accent" aria-hidden />
+                {c.href && (
+                  <ArrowUpRight
+                    className="size-4 text-muted transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent"
+                    aria-hidden
+                  />
+                )}
+              </span>
+              <p className="mt-4 font-mono text-3xl font-bold text-white tabular-nums">
+                <CountUp to={c.value} />
+              </p>
+              <span className="mt-2 block h-px w-6 bg-accent/70" aria-hidden />
+              <p className="mt-2 text-sm text-secondary">{c.label}</p>
+            </>
+          );
+          const cls =
+            "group rounded-xl border border-border bg-surface p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_20px_50px_-24px_rgba(245,158,11,0.45)]";
+          return c.href ? (
+            <Link key={c.label} href={c.href} className={cls}>
+              {body}
+            </Link>
+          ) : (
+            <div key={c.label} className={cls}>
+              {body}
+            </div>
+          );
+        })}
       </div>
 
-      <div className="flex gap-4">
-        <Link
-          href="/admin/rides/new"
-          className="rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-bg transition-colors hover:bg-accent-hover"
-        >
-          + New Ride
-        </Link>
-        <Link
-          href="/admin/announcements/new"
-          className="rounded-lg border border-border-strong bg-surface px-5 py-2.5 text-sm font-bold transition-colors hover:bg-surface-2"
-        >
-          + New Announcement
-        </Link>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <ButtonLink href="/admin/rides/new">
+          <Plus className="size-4" aria-hidden />
+          New Ride
+        </ButtonLink>
+        <ButtonLink href="/admin/announcements/new" variant="secondary">
+          <Plus className="size-4" aria-hidden />
+          New Announcement
+        </ButtonLink>
       </div>
     </div>
   );

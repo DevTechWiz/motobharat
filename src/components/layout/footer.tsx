@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MapPin, ShieldCheck } from "lucide-react";
 import { Wordmark } from "@/components/ui/wordmark";
+import { scrollToTop } from "@/lib/scroll";
 
 const YEAR = new Date().getFullYear();
 
@@ -52,11 +53,48 @@ export function Footer() {
   if (pathname === "/login") return null;
 
   return (
-    <footer className="border-t border-border bg-bg">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr_1.2fr]">
+    <footer className="relative overflow-hidden border-t border-border bg-bg">
+      <svg
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-auto w-full select-none"
+        viewBox="0 0 1000 150"
+        preserveAspectRatio="xMidYMax meet"
+        aria-hidden
+      >
+        <defs>
+          <linearGradient id="footer-watermark-fade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="55%" stopColor="#ffffff" stopOpacity="0.02" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.07" />
+          </linearGradient>
+        </defs>
+        <text
+          x="500"
+          y="132"
+          textAnchor="middle"
+          textLength="980"
+          lengthAdjust="spacingAndGlyphs"
+          fill="url(#footer-watermark-fade)"
+          className="font-display"
+          fontSize="150"
+          fontWeight="900"
+          letterSpacing="-2"
+        >
+          MOTOBHARAT
+        </text>
+      </svg>
+      <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr_1.2fr]">
           <div className="max-w-sm space-y-4">
-            <Link href="/" className="inline-flex items-center gap-3">
+            <Link
+              href="/"
+              onClick={(e) => {
+                if (pathname === "/") {
+                  e.preventDefault();
+                  scrollToTop();
+                }
+              }}
+              className="inline-flex items-center gap-1"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
               <img src="/brand/logo-512.png" alt="" className="size-14" />
               <Wordmark size="lg" />
@@ -89,6 +127,12 @@ export function Footer() {
                   <li key={l.href}>
                     <Link
                       href={l.href}
+                      onClick={(e) => {
+                        if (l.href === pathname) {
+                          e.preventDefault();
+                          scrollToTop();
+                        }
+                      }}
                       className="text-sm text-secondary transition-colors hover:text-accent"
                     >
                       {l.label}
@@ -116,7 +160,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-border">
+      <div className="relative border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p className="font-mono text-[10px] tracking-wider text-muted uppercase">
             © {YEAR} MotoBharat (Warangal Chapter) · All rights reserved

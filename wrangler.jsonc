@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "motobharat",
+  "compatibility_date": "2025-10-01",
+  "compatibility_flags": [
+    // Node.js APIs (Buffer, process.env, node: prefixes) — sharp itself is
+    // native-only and stays lazy-loaded; see src/lib/media.ts.
+    "nodejs_compat",
+    // Allow fetch() to public URLs (Supabase, R2, external image URLs).
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "motobharat"
+    }
+  ],
+  // Cloudflare Images binding for next/image optimization.
+  // See https://opennext.js.org/cloudflare/howtos/image
+  "images": {
+    "binding": "IMAGES"
+  }
+}

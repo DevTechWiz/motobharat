@@ -1,4 +1,5 @@
 import { Container, Section } from "@/components/layout/container";
+import { PageMasthead } from "@/components/layout/page-masthead";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Shield, Users, AlertTriangle, Phone, BookOpen, Wrench, Check } from "lucide-react";
 
@@ -51,16 +52,11 @@ const checklist = [
 export default function SafetyPage() {
   return (
     <>
-      <Section spacing="compact" border="bottom">
-        <Container>
-          <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">Code</p>
-          <h1 className="mt-1 text-3xl font-extrabold sm:text-5xl">Safety Code</h1>
-          <p className="mt-3 max-w-2xl text-secondary">
-            Every rider agrees to this code before joining a community ride. Breaking it means
-            sitting out the next ride — or permanently.
-          </p>
-        </Container>
-      </Section>
+      <PageMasthead
+        eyebrow="Code"
+        title="Safety Code"
+        lede="Every rider agrees to this code before joining a ride. Break it and you sit out."
+      />
 
       <Section>
         <Container>
@@ -72,9 +68,9 @@ export default function SafetyPage() {
             {principles.map((p) => (
               <div
                 key={p.title}
-                className="rounded-xl border border-border bg-surface p-6"
+                className="group rounded-xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_20px_50px_-20px_rgba(245,158,11,0.4)]"
               >
-                <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-accent/10">
+                <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-accent/10 transition-colors duration-300 group-hover:bg-accent/20">
                   <p.icon className="size-5 text-accent" aria-hidden />
                 </div>
                 <h3 className="text-lg font-bold">{p.title}</h3>
@@ -96,7 +92,7 @@ export default function SafetyPage() {
             {checklist.map((item) => (
               <li
                 key={item}
-                className="flex items-center gap-3 rounded-xl border border-border bg-bg px-5 py-4"
+                className="flex items-center gap-3 rounded-xl border border-border bg-bg px-5 py-4 transition-all duration-200 hover:border-accent/30 hover:bg-surface"
               >
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent/12">
                   <Check className="size-3.5 text-accent" aria-hidden />

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { RegSteps } from "../reg-steps";
 import { SetupForm } from "./setup-form";
 import type { RiderDetails } from "@/lib/types";
 
@@ -41,19 +42,27 @@ export default async function ProfileSetupPage({
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center px-4 py-16">
-      <div className="mx-auto w-full max-w-md space-y-8 animate-fade-in-up">
-        <div className="space-y-3">
+    <div className="flex min-h-[80vh] items-center px-4 py-12">
+      <div className="mx-auto w-full max-w-xl space-y-6 animate-fade-in-up">
+        <RegSteps current={1} />
+        <div className="space-y-2">
           <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
-            Rider Registration · Step 1
+            {isEdit ? "Rider Profile" : "Rider Registration · Step 1 of 2"}
           </p>
-          <h1 className="text-3xl font-extrabold tracking-tight">Tell us about yourself</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            {isEdit ? "Edit basic details" : "Tell us about yourself"}
+          </h1>
           <p className="text-sm text-secondary">
-            Basic details for the rider column. This takes under a minute — then one more quick
-            step for safety info.
+            {isEdit
+              ? "Update your personal info — saving returns you to your profile."
+              : "Basic details for the rider column. Under a minute — then one quick safety step."}
           </p>
         </div>
-        <SetupForm initialData={rd as Partial<RiderDetails> | null} profile={profile} />
+        <SetupForm
+          initialData={rd as Partial<RiderDetails> | null}
+          profile={profile}
+          isEdit={isEdit}
+        />
       </div>
     </div>
   );

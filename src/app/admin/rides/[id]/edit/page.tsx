@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { RideForm } from "../../ride-form";
 import { updateRide } from "../../../actions";
@@ -70,20 +72,51 @@ export default async function EditRidePage({
   }));
 
   return (
-    <div className="space-y-12">
-      <section>
-        <h2 className="mb-6 text-lg font-bold">Edit Ride</h2>
+    <div className="space-y-10">
+      <Link
+        href="/admin/rides"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition-colors hover:text-accent"
+      >
+        <ArrowLeft className="size-3.5" aria-hidden />
+        Back to rides
+      </Link>
+      <AdminSection num="01" title="Ride details" hint="Title, schedule, meeting point and status">
         <RideForm ride={ride} action={updateRide.bind(null, ride.id)} />
-      </section>
-      <div className="border-t border-border pt-10">
+      </AdminSection>
+      <AdminSection num="02" title="Cover photo" hint="The face of this ride across the site">
         <CoverUpload rideId={ride.id} coverUrl={ride.cover_url} />
-      </div>
-      <div className="border-t border-border pt-10">
+      </AdminSection>
+      <AdminSection num="03" title="Gallery" hint="Memories from the road">
         <GalleryManager rideId={ride.id} photos={photos} />
-      </div>
-      <div className="border-t border-border pt-10">
+      </AdminSection>
+      <AdminSection num="04" title="Members" hint="Who is on this column">
         <MembersPanel rideId={ride.id} members={membersWithDetails as RideMember[]} />
-      </div>
+      </AdminSection>
     </div>
+  );
+}
+
+function AdminSection({
+  num,
+  title,
+  hint,
+  children,
+}: {
+  num: string;
+  title: string;
+  hint: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-surface/40 p-5 sm:p-7">
+      <div className="mb-6 flex items-baseline gap-3 border-b border-border pb-4">
+        <span className="font-mono text-xs font-bold text-accent">{num}</span>
+        <h2 className="text-lg font-bold">{title}</h2>
+        <span className="hidden font-mono text-[10px] tracking-wider text-muted uppercase sm:inline">
+          · {hint}
+        </span>
+      </div>
+      {children}
+    </section>
   );
 }
