@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, ShieldCheck, ShieldAlert } from "lucide-react";
+import { ChevronDown, LogOut, ShieldCheck, User as UserIcon, Settings } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/ui/avatar";
+import { cn } from "@/lib/cn";
 
 export function UserMenu() {
-  const { profile, registered, signOut } = useAuth();
+  const { user, profile, registered, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -33,64 +34,177 @@ export function UserMenu() {
     <div ref={ref} className="relative">
       <button
         type="button"
-        className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold transition-colors hover:bg-surface-2"
+        className={cn(
+          "flex items-center gap-2.5 rounded-full border border-border bg-surface pl-1.5 pr-3 py-1.5 transition-all",
+          "hover:border-border-strong hover:bg-surface-2 focus:outline-none focus:ring-1 focus:ring-accent/40",
+          open && "border-border-strong bg-surface-2 ring-1 ring-border-strong"
+        )}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
       >
-        <Avatar name={profile.display_name} src={profile.avatar_url} size="sm" className="size-6 text-[10px]" />
-        <span className="max-w-24 truncate">{profile.display_name.split(" ")[0]}</span>
-        <ChevronDown className="size-3 text-muted" aria-hidden />
+        <div className="relative">
+          <Avatar
+            name={profile.display_name}
+            src={profile.avatar_url}
+            size="sm"
+            className="size-7 text-[10px]"
+          />
+          {registered ? (
+            <span
+              className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-success ring-2 ring-surface"
+              title="Verified Rider"
+            />
+          ) : (
+            <span
+              className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-accent ring-2 ring-surface"
+              title="KYC Pending"
+            />
+          )}
+        </div>
+
+        <div className="flex flex-col text-left leading-tight">
+          <span className="max-w-28 truncate text-xs font-semibold text-text">
+            {profile.display_name}
+          </span>
+          <span className="font-mono text-[10px] text-muted">
+            {profile.role === "admin" ? (
+              <span className="font-bold uppercase tracking-wider text-[9px] text-orange">Admin</span>
+            ) : registered ? (
+              <span className="font-medium text-success">Verified</span>
+            ) : (
+              <span>Rider</span>
+            )}
+          </span>
+        </div>
+
+        <ChevronDown
+          className={cn(
+            "size-3.5 text-muted transition-transform duration-200",
+            open && "rotate-180 text-text"
+          )}
+          aria-hidden
+        />
       </button>
 
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-border-strong bg-surface-3 py-1 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+          className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-border bg-surface-2 p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-dropdown origin-top-right"
         >
-          <Link
-            href="/profile"
-            role="menuitem"
-            className="block px-4 py-2.5 text-sm transition-colors hover:bg-surface-2"
-            onClick={() => setOpen(false)}
-          >
-            Profile
-          </Link>
-          <Link
-            href="/profile/kyc"
-            role="menuitem"
-            className="flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-surface-2"
-            onClick={() => setOpen(false)}
-          >
-            <span>Rider KYC</span>
-            {registered ? (
-              <ShieldCheck className="size-3.5 text-accent" aria-label="Registered" />
-            ) : (
-              <ShieldAlert className="size-3.5 text-danger" aria-label="Incomplete" />
-            )}
-          </Link>
-          {profile.role === "admin" && (
+          {/* User Profile Card Header */}
+          <div className="flex items-center gap-3 border-b border-border/80 px-3 py-3 mb-1">
+            <Avatar
+              name={profile.display_name}
+              src={profile.avatar_url}
+              size="md"
+              className="size-10 shrink-0 text-xs"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className="truncate text-xs font-bold text-text">{profile.display_name}</p>
+                {profile.role === "admin" && (
+                  <span className="rounded bg-orange/15 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-orange border border-orange/30">
+                    Admin
+                  </span>
+                )}
+              </div>
+              <p className="truncate text-[11px] text-muted mt-0.5">
+                {user?.email || (profile.city ? `${profile.city}, TS` : "Warangal Rider")}
+              </p>
+              <div className="mt-1.5 flex items-center">
+                {registered ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-success border border-success/30">
+                    <span className="size-1.5 rounded-full bg-success animate-pulse" />
+                    Verified Rider
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-accent border border-accent/30">
+                    <span className="size-1.5 rounded-full bg-accent" />
+                    KYC Pending
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="space-y-0.5">
             <Link
-              href="/admin"
+              href="/profile"
               role="menuitem"
-              className="block px-4 py-2.5 text-sm transition-colors hover:bg-surface-2"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium text-secondary transition-colors hover:bg-surface-3 hover:text-text"
               onClick={() => setOpen(false)}
             >
-              Admin
+              <div className="rounded-md bg-surface p-1.5 text-muted border border-border/60">
+                <UserIcon className="size-3.5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-text font-semibold">Rider Profile</span>
+                <span className="text-[10px] text-muted">Activity, rides & stats</span>
+              </div>
             </Link>
-          )}
-          <div className="my-1 border-t border-border" />
+
+            <Link
+              href="/profile/kyc"
+              role="menuitem"
+              className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-secondary transition-colors hover:bg-surface-3 hover:text-text"
+              onClick={() => setOpen(false)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="rounded-md bg-surface p-1.5 text-muted border border-border/60">
+                  <ShieldCheck className={cn("size-3.5", registered ? "text-success" : "text-accent")} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-text font-semibold">Safety & KYC</span>
+                  <span className="text-[10px] text-muted">Bike, licence & safety waiver</span>
+                </div>
+              </div>
+              {registered ? (
+                <span className="rounded bg-success/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-success border border-success/20">
+                  Done
+                </span>
+              ) : (
+                <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+                  Pending
+                </span>
+              )}
+            </Link>
+
+            {profile.role === "admin" && (
+              <Link
+                href="/admin"
+                role="menuitem"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium text-secondary transition-colors hover:bg-surface-3 hover:text-text"
+                onClick={() => setOpen(false)}
+              >
+                <div className="rounded-md bg-surface p-1.5 text-orange border border-border/60">
+                  <Settings className="size-3.5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-text font-semibold">Admin Panel</span>
+                  <span className="text-[10px] text-muted">Rides, members & notices</span>
+                </div>
+              </Link>
+            )}
+          </div>
+
+          <div className="my-1 border-t border-border/80" />
+
+          {/* Sign Out */}
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-danger transition-colors hover:bg-surface-2"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-danger transition-colors hover:bg-danger/10"
             onClick={() => {
               signOut();
               setOpen(false);
             }}
           >
-            <LogOut className="size-3.5" aria-hidden />
-            Sign out
+            <div className="rounded-md bg-danger/10 p-1.5 text-danger border border-danger/20">
+              <LogOut className="size-3.5" aria-hidden />
+            </div>
+            <span className="font-semibold">Sign out</span>
           </button>
         </div>
       )}

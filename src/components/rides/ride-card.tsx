@@ -1,6 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Clock, ArrowUpRight } from "lucide-react";
+import { MapPin, Clock, ArrowUpRight, Compass } from "lucide-react";
 import { formatRideDate, isPast } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { Ride } from "@/lib/types";
@@ -11,7 +14,44 @@ const difficultyDot: Record<string, string> = {
   hard: "bg-orange",
 };
 
+function RideCoverFallback({ meetingPoint }: { meetingPoint?: string | null }) {
+  return (
+    <div className="relative flex size-full flex-col justify-between overflow-hidden bg-gradient-to-br from-[#121417] via-[#181B20] to-[#0D0F11] p-4 select-none">
+      <svg
+        className="absolute inset-0 size-full opacity-15"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 400 250"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <path
+          d="M0 60 Q100 20 200 70 T400 40 M0 120 Q120 80 240 140 T400 110 M0 180 Q80 160 200 200 T400 170"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          fill="none"
+          className="text-accent"
+        />
+        <circle cx="340" cy="80" r="40" stroke="currentColor" strokeWidth="1" fill="none" className="text-border-strong" />
+        <circle cx="340" cy="80" r="70" stroke="currentColor" strokeWidth="1" fill="none" className="text-border" />
+      </svg>
+      <div className="relative z-10 flex items-center justify-between">
+        <span className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent/80 uppercase">
+          MBI · Expedition
+        </span>
+        <Compass className="size-4 text-accent/50" aria-hidden />
+      </div>
+      <div className="relative z-10 flex items-center gap-1.5">
+        <MapPin className="size-3.5 text-accent shrink-0" aria-hidden />
+        <span className="truncate font-mono text-xs font-semibold text-text">
+          {meetingPoint || "Warangal Column"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function RideCard({ ride }: { ride: Ride }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const past = isPast(ride.starts_at) || ride.status === "completed";
   const cancelled = ride.status === "cancelled";
   const href = ride.slug ? `/rides/${ride.slug}` : `/rides/${ride.id}`;
@@ -19,24 +59,20 @@ export function RideCard({ ride }: { ride: Ride }) {
   return (
     <Link
       href={href}
-      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-border-strong hover:bg-surface-2"
+      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-xl hover:shadow-black/40 active:translate-y-0"
     >
       <div className="relative aspect-16/10 bg-surface-2">
-        {ride.cover_url ? (
+        {ride.cover_url && !imgFailed ? (
           <Image
             src={ride.cover_url}
             alt={ride.title}
             fill
             sizes="(min-width:1024px) 33vw, (min-width:768px) 50vw, 100vw"
             className="object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-105 group-hover:opacity-100"
+            onError={() => setImgFailed(true)}
           />
         ) : (
-          <div className="flex size-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-surface-2 to-surface-3">
-            <MapPin className="size-7 text-accent/60" aria-hidden />
-            <span className="font-mono text-[10px] tracking-wider text-muted uppercase">
-              {ride.meeting_point || "Warangal"}
-            </span>
-          </div>
+          <RideCoverFallback meetingPoint={ride.meeting_point} />
         )}
 
         <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-lg bg-bg/90 px-2.5 py-1 font-mono text-[10px] tracking-wider uppercase backdrop-blur">

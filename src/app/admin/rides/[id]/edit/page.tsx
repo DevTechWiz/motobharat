@@ -44,12 +44,16 @@ export default async function EditRidePage({
     blood_group: string | null;
     emergency_contact_name: string | null;
     emergency_contact_phone: string | null;
+    emergency_contact_relation: string | null;
     bike_model: string | null;
+    bike_reg_no: string | null;
+    gear_level: "helmet_only" | "basic" | "full_armored" | null;
+    experience_level: "beginner" | "intermediate" | "experienced" | null;
   }[] = [];
   if (memberIds.length) {
     const { data } = await supabase
       .from("rider_details")
-      .select("user_id, blood_group, emergency_contact_name, emergency_contact_phone, bike_model")
+      .select("user_id, blood_group, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, bike_model, bike_reg_no, gear_level, experience_level")
       .in("user_id", memberIds);
     detailsRows = data ?? [];
   }

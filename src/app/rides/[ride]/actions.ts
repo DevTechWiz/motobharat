@@ -2,11 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { RATE_LIMITS, rateLimit } from "@/lib/rateLimit";
 
 export async function joinRide(rideId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not signed in" };
+  if (!rateLimit("ride", user.id, RATE_LIMITS.rideJoinLeave)) {
+    return { ok: false, error: "Too many attempts — try again later." };
+  }
 
   const { data: rd } = await supabase
     .from("rider_details")
@@ -32,6 +36,9 @@ export async function leaveRide(rideId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not signed in" };
+  if (!rateLimit("ride", user.id, RATE_LIMITS.rideJoinLeave)) {
+    return { ok: false, error: "Too many attempts — try again later." };
+  }
 
   const { error } = await supabase
     .from("event_members")

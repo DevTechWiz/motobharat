@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
   --bg: #0c0d0e;
   --surface: #141618;
   --surface-2: #181a1d;
@@ -15,7 +16,7 @@
   --accent-fg: #0c0d0e;
   --orange: #ff5722;
   --danger: #dc2626;
-  --success: #16a34a;
+  --success: #22c55e;
   --overlay: rgba(0, 0, 0, 0.8);
 }
 
@@ -41,6 +42,12 @@
 }
 
 @layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    scroll-padding-top: 6.5rem;
+  }
+
   body {
     background: var(--bg);
     color: var(--text);
@@ -59,6 +66,77 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
+
+  select,
+  option,
+  input,
+  textarea {
+    color-scheme: dark;
+  }
+
+  select,
+  option {
+    background-color: var(--surface-2);
+    color: var(--text);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-dropdown {
+  animation: dropdownSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -69,3 +147,4 @@
     animation-duration: 0.01ms !important;
   }
 }
+

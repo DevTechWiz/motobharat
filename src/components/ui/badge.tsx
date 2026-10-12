@@ -1,11 +1,11 @@
 import { cn } from "@/lib/cn";
 
 const tones = {
-  easy: "bg-success/15 text-success",
-  moderate: "bg-accent/15 text-accent",
-  hard: "bg-orange/15 text-orange",
-  neutral: "bg-surface-2 text-secondary",
-  danger: "bg-danger/15 text-danger",
+  easy: "bg-success/15 text-success border border-success/30",
+  moderate: "bg-accent/15 text-accent border border-accent/30",
+  hard: "bg-orange/15 text-orange border border-orange/30",
+  neutral: "bg-surface-2 text-secondary border border-border",
+  danger: "bg-danger/15 text-danger border border-danger/30",
 } as const;
 
 type Tone = keyof typeof tones;

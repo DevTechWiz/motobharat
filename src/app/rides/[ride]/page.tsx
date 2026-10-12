@@ -9,6 +9,8 @@ import {
   Users,
   ChevronRight,
   ShieldCheck,
+  ArrowUpRight,
+  Share2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container } from "@/components/layout/container";
@@ -198,12 +200,25 @@ export default async function RideDetailPage({
                 </div>
               </div>
               {ride.meeting_point && (
-                <div className="flex items-center gap-4 p-5">
-                  <MapPin className="size-5 shrink-0 text-accent" aria-hidden />
-                  <div>
-                    <dt className="text-xs text-muted">Meeting Point</dt>
-                    <dd className="font-semibold">{ride.meeting_point}</dd>
+                <div className="flex items-center justify-between p-5">
+                  <div className="flex items-center gap-4">
+                    <MapPin className="size-5 shrink-0 text-accent" aria-hidden />
+                    <div>
+                      <dt className="text-xs text-muted">Meeting Point</dt>
+                      <dd className="font-semibold">{ride.meeting_point}</dd>
+                    </div>
                   </div>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${ride.meeting_point}, Warangal`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+                  >
+                    Maps
+                    <ArrowUpRight className="size-3 text-accent" aria-hidden />
+                  </a>
                 </div>
               )}
               {ride.distance_km != null && (
@@ -281,7 +296,20 @@ export default async function RideDetailPage({
             </div>
 
             {!cancelled && (
-              <JoinLeaveButton rideId={ride.id} isMember={isMember} />
+              <>
+                <JoinLeaveButton rideId={ride.id} isMember={isMember} />
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                    `🏍️ MotoBharat Warangal — ${ride.title}\n📅 ${formatRideDate(ride.starts_at)} · ${formatRideTime(ride.starts_at)}\n📍 Meeting: ${ride.meeting_point ?? "Warangal"}\n\nJoin the ride: https://motobharat.in/rides/${ride.slug ?? ride.id}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-xs font-bold tracking-wider text-secondary uppercase transition-colors hover:border-[#25D366]/60 hover:text-[#25D366] hover:bg-surface-3"
+                >
+                  <Share2 className="size-3.5" aria-hidden />
+                  Share on WhatsApp
+                </a>
+              </>
             )}
 
             <div className="space-y-2.5 border-t border-border pt-4 text-xs text-secondary">

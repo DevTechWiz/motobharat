@@ -6,13 +6,22 @@ import Image from "next/image";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
-import { deleteMedia, uploadGalleryPhotos, type MediaFormState } from "../../../actions";
+import { deleteMedia, addGalleryPhotoByUrl, uploadGalleryPhotos, type MediaFormState } from "../../../actions";
 
 function UploadButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" size="sm" disabled={pending}>
       {pending ? "Uploading..." : "Upload Photos"}
+    </Button>
+  );
+}
+
+function AddUrlButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" size="sm" disabled={pending}>
+      {pending ? "Checking..." : "Add Photo"}
     </Button>
   );
 }
@@ -43,6 +52,8 @@ export function GalleryManager({
 }) {
   const action = uploadGalleryPhotos.bind(null, rideId);
   const [state, formAction] = useActionState(action, {} as MediaFormState);
+  const urlAction = addGalleryPhotoByUrl.bind(null, rideId);
+  const [urlState, urlFormAction] = useActionState(urlAction, {} as MediaFormState);
 
   return (
     <section className="space-y-4">
@@ -62,6 +73,22 @@ export function GalleryManager({
           <Input id="alt" name="alt" required placeholder="Riders at the Pakhal Lake viewpoint" />
         </Field>
         <UploadButton />
+      </form>
+
+      <form action={urlFormAction} className="max-w-xl space-y-3 border-t border-border pt-4">
+        {urlState.error && (
+          <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+            {urlState.error}
+          </p>
+        )}
+        {urlState.ok && <p className="text-sm text-success">Photo added from link.</p>}
+        <Field label="Add from link — image URL (https, JPEG / WebP / PNG, max 10 MB)" htmlFor="photo-url">
+          <Input id="photo-url" name="url" type="url" required placeholder="https://…" />
+        </Field>
+        <Field label="Alt text" htmlFor="photo-url-alt">
+          <Input id="photo-url-alt" name="alt" required placeholder="Riders at the Pakhal Lake viewpoint" />
+        </Field>
+        <AddUrlButton />
       </form>
 
       {photos.length === 0 ? (

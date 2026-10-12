@@ -36,12 +36,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${manrope.variable} h-full antialiased`}>
+    <html lang="en" className={`${jakarta.variable} ${manrope.variable} dark h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <AuthProvider>
           <ToastProvider>
             <Topbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 animate-fade-in">{children}</main>
             <Footer />
           </ToastProvider>
         </AuthProvider>

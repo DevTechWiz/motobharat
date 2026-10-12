@@ -3,11 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { RATE_LIMITS, rateLimit } from "@/lib/rateLimit";
+import { validateIndianPhone } from "@/lib/phone";
 
 export type ProfileFormState = { error?: string };
 
 const GENDERS = ["male", "female", "other", "prefer_not_to_say"];
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+const EXPERIENCE_LEVELS = ["beginner", "intermediate", "experienced"];
+const GEAR_LEVELS = ["helmet_only", "basic", "full_armored"];
+const INSURANCE_STATUSES = ["valid_insured", "expired", "none"];
 
 async function requireUser() {
   const supabase = await createClient();
@@ -16,31 +21,60 @@ async function requireUser() {
   return { supabase, user };
 }
 
-function validPhone(value: string): boolean {
-  const digits = value.replace(/\D/g, "");
-  return digits.length >= 8 && digits.length <= 15;
-}
-
-// Basic info: display_name + city on profiles; age + gender on rider_details (registered untouched).
+// Basic info: display_name + city on profiles; age, dob, gender, phone, whatsapp_number, occupation on rider_details.
 export async function saveBasicProfile(
   _prev: ProfileFormState,
   formData: FormData,
 ): Promise<ProfileFormState> {
   const { supabase, user } = await requireUser();
+  if (!rateLimit("profile", user.id, RATE_LIMITS.profile)) {
+    return { error: "Too many attempts — try again later." };
+  }
 
   const displayName = String(formData.get("display_name") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
+  const dobRaw = String(formData.get("dob") ?? "").trim();
   const ageRaw = String(formData.get("age") ?? "").trim();
   const gender = String(formData.get("gender") ?? "");
+  const phone = String(formData.get("phone") ?? "").trim();
+  const whatsappNumberRaw = String(formData.get("whatsapp_number") ?? "").trim();
+  const occupation = String(formData.get("occupation") ?? "").trim() || null;
 
   if (!displayName) return { error: "Name is required." };
   if (displayName.length > 50) return { error: "Name must be 50 characters or fewer." };
 
-  const age = Number(ageRaw);
-  if (!ageRaw || !Number.isInteger(age) || age < 18 || age > 90) {
-    return { error: "Age must be a whole number between 18 and 90." };
+  let age = Number(ageRaw);
+  if (dobRaw) {
+    const birthDate = new Date(dobRaw);
+    if (!isNaN(birthDate.getTime())) {
+      const today = new Date();
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        calculatedAge--;
+      }
+      age = calculatedAge;
+    }
   }
-  if (!GENDERS.includes(gender)) return { error: "Pick a gender option." };
+
+  if (!age || !Number.isInteger(age) || age < 18 || age > 90) {
+    return { error: "You must be 18 or older to join MotoBharat (18–90 years)." };
+  }
+  if (!GENDERS.includes(gender)) return { error: "Pick a valid gender option." };
+
+  const phoneValidation = validateIndianPhone(phone);
+  if (!phoneValidation.valid) {
+    return { error: phoneValidation.error ?? "Enter a valid Indian mobile number." };
+  }
+
+  let formattedWhatsapp = phoneValidation.formatted;
+  if (whatsappNumberRaw) {
+    const waValidation = validateIndianPhone(whatsappNumberRaw);
+    if (!waValidation.valid) {
+      return { error: `WhatsApp number: ${waValidation.error ?? "Enter a valid Indian mobile number."}` };
+    }
+    formattedWhatsapp = waValidation.formatted;
+  }
 
   const { error: pErr } = await supabase
     .from("profiles")
@@ -51,7 +85,16 @@ export async function saveBasicProfile(
   const { error: rErr } = await supabase
     .from("rider_details")
     .upsert(
-      { user_id: user.id, age, gender, updated_at: new Date().toISOString() },
+      {
+        user_id: user.id,
+        age,
+        dob: dobRaw || null,
+        gender,
+        phone: phoneValidation.formatted,
+        whatsapp_number: formattedWhatsapp,
+        occupation,
+        updated_at: new Date().toISOString(),
+      },
       { onConflict: "user_id" },
     );
   if (rErr) return { error: rErr.message };
@@ -60,52 +103,144 @@ export async function saveBasicProfile(
   redirect("/profile/kyc");
 }
 
-// KYC: rider safety fields; only place registered flips to true.
+// KYC: rider safety, bike, licensing, emergency & declaration fields; flips registered to true.
 export async function saveRiderDetails(
   _prev: ProfileFormState,
   formData: FormData,
 ): Promise<ProfileFormState> {
+  console.log("[saveRiderDetails] Invoked. Starting KYC submission...");
   const { supabase, user } = await requireUser();
+  console.log("[saveRiderDetails] User resolved:", user?.id);
+  if (!rateLimit("profile", user.id, RATE_LIMITS.profile)) {
+    console.warn("[saveRiderDetails] Rate limit tripped for user:", user?.id);
+    return { error: "Too many attempts — try again later." };
+  }
 
-  const phone = String(formData.get("phone") ?? "").trim();
+  // Motorcycle & Licence
+  const rawBikeModel = String(formData.get("bike_model") ?? "").trim();
+  const customBikeModel = String(formData.get("custom_bike_model") ?? "").trim();
+  const bikeModel = rawBikeModel === "other" ? customBikeModel : rawBikeModel;
+  const bikeRegNo = String(formData.get("bike_reg_no") ?? "").trim().toUpperCase();
+  const drivingLicence = String(formData.get("driving_licence") ?? "").trim().toUpperCase();
+  const experienceLevel = String(formData.get("experience_level") ?? "");
+  const gearLevel = String(formData.get("gear_level") ?? "");
+  const vehicleInsuranceStatus = String(formData.get("vehicle_insurance_status") ?? "valid_insured");
+  const hasRsa = formData.get("has_rsa") === "true" || formData.get("has_rsa") === "on";
+  const ridesWithPillion = formData.get("rides_with_pillion") === "true" || formData.get("rides_with_pillion") === "on";
+
+  // Emergency & Medical
   const bloodGroup = String(formData.get("blood_group") ?? "");
   const ecName = String(formData.get("emergency_contact_name") ?? "").trim();
   const ecPhone = String(formData.get("emergency_contact_phone") ?? "").trim();
-  const bikeModel = String(formData.get("bike_model") ?? "").trim();
+  const ecRelation = String(formData.get("emergency_contact_relation") ?? "").trim();
+  const ec2Phone = String(formData.get("emergency_contact_2_phone") ?? "").trim() || null;
+  const medicalConditions = String(formData.get("medical_conditions") ?? "").trim() || null;
+  const personalHealthInsurance = formData.get("personal_health_insurance") === "true" || formData.get("personal_health_insurance") === "on";
 
-  if (!phone || !validPhone(phone)) return { error: "Enter a valid phone number (8–15 digits)." };
-  if (!BLOOD_GROUPS.includes(bloodGroup)) return { error: "Pick a blood group." };
-  if (!ecName) return { error: "Emergency contact name is required." };
-  if (!ecPhone || !validPhone(ecPhone)) {
-    return { error: "Enter a valid emergency contact phone (8–15 digits)." };
+  // Community & Social
+  const permanentAddress = String(formData.get("permanent_address") ?? "").trim() || null;
+  const instagramHandle = String(formData.get("instagram_handle") ?? "").trim().replace(/^@/, "") || null;
+  const referralSource = String(formData.get("referral_source") ?? "").trim() || null;
+  const suggestions = String(formData.get("suggestions") ?? "").trim() || null;
+
+  // Declaration & Signature
+  const declarationConfirmed = formData.get("declaration_confirmed") === "true" || formData.get("declaration_confirmed") === "on";
+  const digitalSignature = String(formData.get("digital_signature") ?? "").trim();
+
+  // Field validations
+  if (!bikeModel) { console.log("[saveRiderDetails] Missing bikeModel"); return { error: "Motorcycle brand & model is required." }; }
+  if (!bikeRegNo) { console.log("[saveRiderDetails] Missing bikeRegNo"); return { error: "Vehicle registration/plate number is required." }; }
+  if (!drivingLicence) { console.log("[saveRiderDetails] Missing drivingLicence"); return { error: "Driving licence number is required." }; }
+  if (!EXPERIENCE_LEVELS.includes(experienceLevel)) { console.log("[saveRiderDetails] Invalid experienceLevel:", experienceLevel); return { error: "Select your riding experience level." }; }
+  if (!GEAR_LEVELS.includes(gearLevel)) { console.log("[saveRiderDetails] Invalid gearLevel:", gearLevel); return { error: "Select your overall riding gear level." }; }
+  if (!INSURANCE_STATUSES.includes(vehicleInsuranceStatus)) { console.log("[saveRiderDetails] Invalid vehicleInsuranceStatus:", vehicleInsuranceStatus); return { error: "Select vehicle insurance status." }; }
+
+  if (!BLOOD_GROUPS.includes(bloodGroup)) { console.log("[saveRiderDetails] Invalid bloodGroup:", bloodGroup); return { error: "Pick a valid blood group." }; }
+  if (!ecName) { console.log("[saveRiderDetails] Missing ecName"); return { error: "Primary emergency contact name is required." }; }
+
+  const ecValidation = validateIndianPhone(ecPhone);
+  if (!ecValidation.valid) {
+    console.log("[saveRiderDetails] Invalid ecPhone:", ecPhone, ecValidation.error);
+    return { error: `Emergency contact: ${ecValidation.error ?? "Enter a valid Indian mobile number."}` };
   }
-  if (!bikeModel) return { error: "Bike model is required." };
+
+  let formattedEc2: string | null = null;
+  if (ec2Phone) {
+    const ec2Validation = validateIndianPhone(ec2Phone);
+    if (!ec2Validation.valid) {
+      console.log("[saveRiderDetails] Invalid ec2Phone:", ec2Phone, ec2Validation.error);
+      return { error: `Secondary emergency contact: ${ec2Validation.error ?? "Enter a valid Indian mobile number."}` };
+    }
+    formattedEc2 = ec2Validation.formatted;
+  }
+
+  if (!ecRelation) { console.log("[saveRiderDetails] Missing ecRelation"); return { error: "Relationship with emergency contact is required." }; }
+
+  if (!declarationConfirmed) {
+    console.log("[saveRiderDetails] Missing declarationConfirmed");
+    return { error: "You must accept the safety rules and risk disclaimer to complete registration." };
+  }
+  if (!digitalSignature) {
+    console.log("[saveRiderDetails] Missing digitalSignature");
+    return { error: "Type your full name as digital signature to confirm." };
+  }
 
   // Basic info must exist before KYC (enforced by the setup flow).
   const { data: existing } = await supabase
     .from("rider_details")
-    .select("age, gender")
+    .select("age, gender, phone, dob, whatsapp_number, occupation")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!existing?.age || !existing?.gender) redirect("/profile/setup");
+  if (!existing?.age || !existing?.gender || !existing?.phone) {
+    console.warn("[saveRiderDetails] Basic info missing in rider_details for user:", user.id);
+    redirect("/profile/setup");
+  }
 
+  console.log("[saveRiderDetails] Performing upsert on rider_details for user:", user.id);
   const { error } = await supabase
     .from("rider_details")
     .upsert(
       {
         user_id: user.id,
-        phone,
+        age: existing.age,
+        gender: existing.gender,
+        phone: existing.phone,
+        dob: existing.dob,
+        whatsapp_number: existing.whatsapp_number,
+        occupation: existing.occupation,
         blood_group: bloodGroup,
         emergency_contact_name: ecName,
-        emergency_contact_phone: ecPhone,
+        emergency_contact_phone: ecValidation.formatted,
+        emergency_contact_relation: ecRelation,
+        emergency_contact_2_phone: formattedEc2,
         bike_model: bikeModel,
+        bike_reg_no: bikeRegNo,
+        driving_licence: drivingLicence,
+        experience_level: experienceLevel,
+        gear_level: gearLevel,
+        vehicle_insurance_status: vehicleInsuranceStatus,
+        medical_conditions: medicalConditions,
+        personal_health_insurance: personalHealthInsurance,
+        has_rsa: hasRsa,
+        rides_with_pillion: ridesWithPillion,
+        permanent_address: permanentAddress,
+        instagram_handle: instagramHandle,
+        referral_source: referralSource,
+        suggestions: suggestions,
+        declaration_confirmed: true,
+        digital_signature: digitalSignature,
         registered: true,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },
     );
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("[saveRiderDetails] Upsert ERROR:", error);
+    return { error: error.message };
+  }
 
+  console.log("[saveRiderDetails] SUCCESS! Revalidating and redirecting to /profile...");
   revalidatePath("/profile", "layout");
   redirect("/profile");
 }
+

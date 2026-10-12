@@ -18,6 +18,9 @@ next-env.d.ts
 .wrangler/
 .open-next/
 
+# supabase CLI link state (per-machine, created by `supabase link`)
+supabase/.temp/
+
 # testing / quality
 coverage/
 playwright-report/
@@ -34,3 +37,16 @@ Thumbs.db
 # personal / local-only — never committed
 docs/
 AGENTS.md
+.agent/
+.agents/
+.gsd/
+GSD-STYLE.md
+PROJECT_RULES.md
+model_capabilities.yaml
+.gemini/
+.playwright-mcp/
+adapters/
+tools/
+scripts/
+VERSION
+test_avatar.png

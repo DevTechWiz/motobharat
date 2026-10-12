@@ -38,8 +38,10 @@ export function MembersPanel({
                     <p className="truncate text-[11px] text-muted">
                       <span className="font-semibold text-danger">{m.details.blood_group}</span>
                       {" · EC: "}
-                      {m.details.emergency_contact_name} ({m.details.emergency_contact_phone})
+                      {m.details.emergency_contact_name}
+                      {m.details.emergency_contact_relation ? ` (${m.details.emergency_contact_relation}: ${m.details.emergency_contact_phone})` : ` (${m.details.emergency_contact_phone})`}
                       {m.details.bike_model ? ` · ${m.details.bike_model}` : ""}
+                      {m.details.bike_reg_no ? ` [${m.details.bike_reg_no}]` : ""}
                     </p>
                   ) : (
                     <p className="font-mono text-[11px] text-danger">KYC incomplete</p>

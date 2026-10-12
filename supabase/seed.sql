@@ -1,6 +1,6 @@
 -- MotoBharat seed — demo riders, rides, joins, gallery, announcements.
 -- Idempotent: fixed ids + ON CONFLICT DO NOTHING. Safe to run twice.
--- Run in the Supabase SQL editor AFTER 0001_init.sql + 0002_rider_details.sql. Docs: 11_WORKFLOWS.md
+-- Run in the Supabase SQL editor AFTER migrations 0001–0005. Docs: 11_WORKFLOWS.md
 -- Demo notes:
 --   * riders = stub rows in auth.users (fake UUIDs, password unused — Google-only auth,
 --     they cannot sign in); the signup trigger auto-creates their profiles rows.
@@ -60,12 +60,17 @@ on conflict (id) do nothing;
 
 -- Demo rider KYC (registered, so joins pass the 0002 insert policy) ------------
 insert into public.rider_details
-  (user_id, age, gender, phone, blood_group, emergency_contact_name, emergency_contact_phone, bike_model, registered)
+  (
+    user_id, age, gender, phone, whatsapp_number, blood_group,
+    emergency_contact_name, emergency_contact_phone, emergency_contact_relation,
+    bike_model, bike_reg_no, driving_licence, experience_level, gear_level,
+    vehicle_insurance_status, declaration_confirmed, digital_signature, registered
+  )
 values
-  ('c0000000-0000-4000-8000-000000000001', 28, 'male', '+919876500001', 'B+', 'Lakshmi Rao', '+919876500101', 'Royal Enfield Classic 350', true),
-  ('c0000000-0000-4000-8000-000000000002', 25, 'female', '+919876500002', 'O+', 'Suresh Reddy', '+919876500102', 'TVS Ronin', true),
-  ('c0000000-0000-4000-8000-000000000003', 31, 'male', '+919876500003', 'A+', 'Prasad Kumar', '+919876500103', 'Bajaj Dominar 400', true),
-  ('c0000000-0000-4000-8000-000000000004', 24, 'female', '+919876500004', 'AB-', 'Radhika Devi', '+919876500104', 'Honda CB350', true)
+  ('c0000000-0000-4000-8000-000000000001', 28, 'male', '+919876500001', '+919876500001', 'B+', 'Lakshmi Rao', '+919876500101', 'Mother', 'Royal Enfield Classic 350', 'TS 03 AB 1001', 'TS0320180010001', 'experienced', 'full_armored', 'valid_insured', true, 'Lakshmi Rao', true),
+  ('c0000000-0000-4000-8000-000000000002', 25, 'female', '+919876500002', '+919876500002', 'O+', 'Suresh Reddy', '+919876500102', 'Father', 'TVS Ronin', 'TS 03 BC 2002', 'TS0320200020002', 'intermediate', 'basic', 'valid_insured', true, 'Suresh Reddy', true),
+  ('c0000000-0000-4000-8000-000000000003', 31, 'male', '+919876500003', '+919876500003', 'A+', 'Prasad Kumar', '+919876500103', 'Father', 'Bajaj Dominar 400', 'TS 03 CD 3003', 'TS0320150030003', 'experienced', 'full_armored', 'valid_insured', true, 'Prasad Kumar', true),
+  ('c0000000-0000-4000-8000-000000000004', 24, 'female', '+919876500004', '+919876500004', 'AB-', 'Radhika Devi', '+919876500104', 'Mother', 'Honda CB350', 'TS 03 DE 4004', 'TS0320210040004', 'intermediate', 'basic', 'valid_insured', true, 'Radhika Devi', true)
 on conflict (user_id) do nothing;
 
 -- Rides -------------------------------------------------------------------

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { cn } from "@/lib/cn";
 
 const sizes = {
@@ -18,18 +21,26 @@ export function Avatar({
   size?: keyof typeof sizes;
   className?: string;
 }) {
+  const [hasError, setHasError] = useState(false);
   const initial = name.trim().charAt(0).toUpperCase() || "?";
+
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 font-semibold text-muted",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2 font-semibold text-muted select-none",
         sizes[size],
         className,
       )}
     >
-      {src ? (
+      {src && !hasError ? (
         // eslint-disable-next-line @next/next/no-img-element -- avatars rendered via next/image in M1
-        <img src={src} alt={name} className="size-full object-cover" />
+        <img
+          src={src}
+          alt={name}
+          referrerPolicy="no-referrer"
+          onError={() => setHasError(true)}
+          className="size-full object-cover"
+        />
       ) : (
         initial
       )}

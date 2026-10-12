@@ -2,12 +2,36 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Camera } from "lucide-react";
 
 export interface GalleryPhoto {
   url: string;
   thumb: string;
   alt: string;
+}
+
+function PhotoThumb({ photo }: { photo: GalleryPhoto }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className="flex size-full flex-col items-center justify-center bg-gradient-to-br from-surface-2 to-surface-3 p-3 text-center">
+        <Camera className="size-6 text-accent/60 mb-1" aria-hidden />
+        <span className="text-[10px] font-mono text-muted line-clamp-1">{photo.alt}</span>
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={photo.thumb}
+      alt={photo.alt}
+      fill
+      sizes="(min-width:768px) 25vw, 50vw"
+      className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+      onError={() => setFailed(true)}
+    />
+  );
 }
 
 export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
@@ -52,20 +76,14 @@ export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
             className="group relative aspect-4/3 overflow-hidden rounded-lg border border-border bg-surface-2"
             aria-label={`View photo: ${p.alt}`}
           >
-            <Image
-              src={p.thumb}
-              alt={p.alt}
-              fill
-              sizes="(min-width:768px) 25vw, 50vw"
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-            />
+            <PhotoThumb photo={p} />
           </button>
         ))}
       </div>
 
       {open && index !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-fade-in"
           role="dialog"
           aria-modal="true"
           aria-label="Photo viewer"
@@ -103,7 +121,7 @@ export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
             </>
           )}
 
-          <figure className="max-h-full max-w-4xl space-y-3">
+          <figure className="max-h-full max-w-4xl space-y-3 animate-scale-in">
             <Image
               src={photos[index].url}
               alt={photos[index].alt}

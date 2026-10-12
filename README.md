@@ -23,11 +23,13 @@ npm run dev                  # local dev — http://localhost:3000
 
 # quality gates
 npm run lint && npm run typecheck && npm test && npm run build
+npm run test:rls    # pgTAP RLS suite (needs `supabase start` local stack)
+npm run test:e2e    # Playwright smoke (needs `npm run build` first)
 ```
 
 ## First-time setup (see docs/11_WORKFLOWS.md for the full runbook)
 
-1. Apply `supabase/migrations/0001_init.sql` then `supabase/migrations/0002_rider_details.sql` in the Supabase SQL editor, in order (cloud project; CLI is a different account).
+1. Apply `supabase/migrations/0001`–`0005` in order in the Supabase SQL editor (cloud project; CLI is a different account).
 2. Sign in once with Google → promote yourself to admin (SQL snippet in `docs/05_ADMIN.md`).
 3. Optional demo data: run `supabase/seed.sql` (4 demo riders + rides + joins + gallery + announcements — demo covers/gallery are placeholders to replace via admin upload; demo photos render without R2).
 4. Optional media uploads: create the R2 bucket + API token, fill the 5 `R2_*` env vars — admin uploads then work end-to-end.
@@ -41,10 +43,10 @@ npm run lint && npm run typecheck && npm test && npm run build
 | `/rides/[ride]` | public (join needs login) | Ride detail, rider list, gallery + lightbox, join/leave |
 | `/announcements` + `/announcements/[a]` | public | Community notices + detail |
 | `/safety` | public | Safety code + emergency numbers |
-| `/login` | public | Google sign-in |
+| `/login` | public | Google sign-in — isolated full-screen (no topbar/footer) |
 | `/profile` | signed-in | Your rides + registration status |
-| `/profile/setup` | signed-in | Step 1 — name, age (18+), gender, city (forced after first signup) |
-| `/profile/kyc` | signed-in | Step 2 — phone, blood group, emergency contact, bike (unlocks joining) |
+| `/profile/setup` | signed-in | Step 1 — basic info: name, dob/age, gender, city, phone (forced after first signup) |
+| `/profile/kyc` | signed-in | Step 2 — bike, licence, emergency contact, safety declaration (unlocks joining) |
 | `/admin` | admin only | Rides CRUD + gallery + members, announcements CRUD |
 | `/dev/ui` | dev-only | Design-system primitives gallery |
 

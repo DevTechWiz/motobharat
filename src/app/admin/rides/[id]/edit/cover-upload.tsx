@@ -5,13 +5,22 @@ import { useFormStatus } from "react-dom";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
-import { uploadRideCover, type MediaFormState } from "../../../actions";
+import { setRideCoverByUrl, uploadRideCover, type MediaFormState } from "../../../actions";
 
 function UploadButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" size="sm" disabled={pending}>
       {pending ? "Uploading..." : "Upload Cover"}
+    </Button>
+  );
+}
+
+function SetUrlButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" size="sm" disabled={pending}>
+      {pending ? "Checking..." : "Set Cover from Link"}
     </Button>
   );
 }
@@ -25,6 +34,8 @@ export function CoverUpload({
 }) {
   const action = uploadRideCover.bind(null, rideId);
   const [state, formAction] = useActionState(action, {} as MediaFormState);
+  const urlAction = setRideCoverByUrl.bind(null, rideId);
+  const [urlState, urlFormAction] = useActionState(urlAction, {} as MediaFormState);
 
   return (
     <section className="space-y-4">
@@ -50,6 +61,19 @@ export function CoverUpload({
           <UploadButton />
         </form>
       </div>
+
+      <form action={urlFormAction} className="max-w-xl space-y-3 border-t border-border pt-4">
+        {urlState.error && (
+          <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+            {urlState.error}
+          </p>
+        )}
+        {urlState.ok && <p className="text-sm text-success">Cover set from link.</p>}
+        <Field label="…or paste an image URL (https, JPEG / WebP / PNG)" htmlFor="cover-url">
+          <Input id="cover-url" name="cover_url" type="url" required placeholder="https://…" />
+        </Field>
+        <SetUrlButton />
+      </form>
     </section>
   );
 }

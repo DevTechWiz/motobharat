@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container, Section } from "@/components/layout/container";
-import { formatDate } from "@/lib/format";
 import { EmptyState } from "@/components/ui/feedback";
 import type { Announcement } from "@/lib/types";
 
@@ -50,9 +49,17 @@ export default async function AnnouncementsPage() {
                   key={a.id}
                   className="group rounded-xl border border-border bg-surface p-6 transition-colors hover:border-accent/40 hover:bg-surface-2"
                 >
-                  <div className="flex gap-5">
-                    <div className="w-fit shrink-0 rounded-lg border border-border bg-bg px-3 py-2 font-mono text-[11px] leading-relaxed tracking-wider text-muted uppercase tabular-nums">
-                      {formatDate(a.created_at)}
+                  <div className="flex items-start gap-5">
+                    <div className="self-start flex flex-col items-center justify-center rounded-xl border border-border bg-surface-2/90 px-3.5 py-2.5 min-w-[4.25rem] text-center shrink-0 select-none">
+                      <span className="font-mono text-[10px] font-bold text-accent uppercase tracking-wider">
+                        {new Date(a.created_at).toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" })}
+                      </span>
+                      <span className="font-mono text-xl font-black text-text leading-tight my-0.5">
+                        {new Date(a.created_at).toLocaleDateString("en-IN", { day: "2-digit", timeZone: "Asia/Kolkata" })}
+                      </span>
+                      <span className="font-mono text-[10px] text-muted">
+                        {new Date(a.created_at).toLocaleDateString("en-IN", { year: "numeric", timeZone: "Asia/Kolkata" })}
+                      </span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-4">

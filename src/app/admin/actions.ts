@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/format";
 import { processImage, validateImageFile } from "@/lib/media";
+import { validateExternalImageUrl } from "@/lib/url-image";
 import { deleteR2Object, putR2Object, r2Configured, r2KeyFromUrl, r2PublicUrl } from "@/lib/r2";
+import { RATE_LIMITS, rateLimit } from "@/lib/rateLimit";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -19,6 +21,9 @@ async function requireAdmin() {
     .single();
 
   if (profile?.role !== "admin") redirect("/");
+  if (!rateLimit("admin", user.id, RATE_LIMITS.admin)) {
+    return { error: "Too many admin actions — wait a minute and try again." };
+  }
   console.log(`[admin] ${user.id} ${new Date().toISOString()}`);
   return { supabase, user };
 }
@@ -40,7 +45,9 @@ export async function createRide(
   _prev: RideFormState,
   formData: FormData,
 ): Promise<RideFormState> {
-  const { supabase, user } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return admin;
+  const { supabase, user } = admin;
 
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -82,7 +89,9 @@ export async function updateRide(
   _prev: RideFormState,
   formData: FormData,
 ): Promise<RideFormState> {
-  const { supabase } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return admin;
+  const { supabase } = admin;
 
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -118,7 +127,9 @@ export async function updateRide(
 }
 
 export async function deleteRide(id: string) {
-  const { supabase } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return { ok: false, error: admin.error };
+  const { supabase } = admin;
   const { data: ride } = await supabase.from("events").select("slug").eq("id", id).maybeSingle();
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (!error) {
@@ -137,7 +148,9 @@ export async function uploadRideCover(
   _prev: MediaFormState,
   formData: FormData,
 ): Promise<MediaFormState> {
-  const { supabase } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return admin;
+  const { supabase } = admin;
   if (!r2Configured()) return { error: "R2 not configured — add the R2_* env vars (.env.example)." };
 
   const file = formData.get("cover") as File | null;
@@ -180,7 +193,9 @@ export async function uploadGalleryPhotos(
   _prev: MediaFormState,
   formData: FormData,
 ): Promise<MediaFormState> {
-  const { supabase } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return admin;
+  const { supabase } = admin;
   if (!r2Configured()) return { error: "R2 not configured — add the R2_* env vars (.env.example)." };
 
   const alt = String(formData.get("alt") ?? "").trim();
@@ -233,8 +248,89 @@ export async function uploadGalleryPhotos(
   return { ok: true };
 }
 
+// URL-based alternative to R2 uploads (06_MEDIA.md § URL-based photos) — no R2 config needed.
+export async function addGalleryPhotoByUrl(
+  rideId: string,
+  _prev: MediaFormState,
+  formData: FormData,
+): Promise<MediaFormState> {
+  const admin = await requireAdmin();
+  if ("error" in admin) return admin;
+  const { supabase } = admin;
+
+  const url = String(formData.get("url") ?? "").trim();
+  const alt = String(formData.get("alt") ?? "").trim();
+  if (!alt) return { error: "Alt text is required (describes the photo)." };
+  if (alt.length > 200) return { error: "Alt text must be 200 characters or fewer." };
+
+  const { data: ride } = await supabase
+    .from("events")
+    .select("id, slug")
+    .eq("id", rideId)
+    .maybeSingle();
+  if (!ride) return { error: "Ride not found." };
+
+  const result = await validateExternalImageUrl(url);
+  if (!result.ok) return { error: result.error };
+
+  const { error } = await supabase.from("gallery").insert({
+    event_id: rideId,
+    url: result.info.url,
+    thumb_url: result.info.url,
+    mime: result.info.mime,
+    width: result.info.width,
+    height: result.info.height,
+    alt,
+  });
+  if (error) return { error: error.message };
+
+  revalidateRidePaths(rideId, ride.slug);
+  return { ok: true };
+}
+
+export async function setRideCoverByUrl(
+  rideId: string,
+  _prev: MediaFormState,
+  formData: FormData,
+): Promise<MediaFormState> {
+  const admin = await requireAdmin();
+  if ("error" in admin) return admin;
+  const { supabase } = admin;
+
+  const url = String(formData.get("cover_url") ?? "").trim();
+  const { data: ride } = await supabase
+    .from("events")
+    .select("id, slug, cover_url")
+    .eq("id", rideId)
+    .maybeSingle();
+  if (!ride) return { error: "Ride not found." };
+
+  const result = await validateExternalImageUrl(url);
+  if (!result.ok) return { error: result.error };
+
+  const { error } = await supabase
+    .from("events")
+    .update({ cover_url: result.info.url })
+    .eq("id", rideId);
+  if (error) return { error: error.message };
+
+  const oldKey = ride.cover_url ? r2KeyFromUrl(ride.cover_url) : null;
+  if (oldKey) {
+    try {
+      await deleteR2Object(oldKey);
+    } catch (e) {
+      console.warn(`[admin] failed to delete old cover ${oldKey}:`, e);
+    }
+  }
+
+  revalidateRidePaths(rideId, ride.slug);
+  return { ok: true };
+}
+
 export async function deleteMedia(mediaId: string) {
-  const { supabase } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return { ok: false, error: admin.error };
+  const { supabase } = admin;
 
   const { data: media } = await supabase
     .from("gallery")
@@ -264,7 +360,9 @@ export async function deleteMedia(mediaId: string) {
 }
 
 export async function removeMember(rideId: string, userId: string) {
-  const { supabase } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return { ok: false, error: admin.error };
+  const { supabase } = admin;
 
   const { data: ride } = await supabase.from("events").select("slug").eq("id", rideId).maybeSingle();
   const { error } = await supabase
@@ -281,7 +379,9 @@ export async function createAnnouncement(
   _prev: RideFormState,
   formData: FormData,
 ): Promise<RideFormState> {
-  const { supabase, user } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return admin;
+  const { supabase, user } = admin;
 
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
@@ -311,7 +411,9 @@ export async function updateAnnouncement(
   _prev: RideFormState,
   formData: FormData,
 ): Promise<RideFormState> {
-  const { supabase } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return admin;
+  const { supabase } = admin;
 
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
@@ -333,7 +435,9 @@ export async function updateAnnouncement(
 }
 
 export async function deleteAnnouncement(id: string) {
-  const { supabase } = await requireAdmin();
+  const admin = await requireAdmin();
+  if ("error" in admin) return { ok: false, error: admin.error };
+  const { supabase } = admin;
   const { error } = await supabase.from("announcements").delete().eq("id", id);
   if (!error) {
     revalidatePath("/announcements");

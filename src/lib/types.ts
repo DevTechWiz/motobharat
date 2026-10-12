@@ -14,12 +14,32 @@ export interface Profile {
 export interface RiderDetails {
   user_id: string;
   age: number | null;
+  dob: string | null;
   gender: string | null;
   phone: string | null;
+  whatsapp_number: string | null;
+  permanent_address: string | null;
   blood_group: string | null;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
+  emergency_contact_relation: string | null;
+  emergency_contact_2_phone: string | null;
   bike_model: string | null;
+  bike_reg_no: string | null;
+  driving_licence: string | null;
+  experience_level: "beginner" | "intermediate" | "experienced" | null;
+  gear_level: "helmet_only" | "basic" | "full_armored" | null;
+  vehicle_insurance_status: "valid_insured" | "expired" | "none" | null;
+  medical_conditions: string | null;
+  personal_health_insurance: boolean;
+  has_rsa: boolean;
+  rides_with_pillion: boolean;
+  instagram_handle: string | null;
+  occupation: string | null;
+  referral_source: string | null;
+  suggestions: string | null;
+  declaration_confirmed: boolean;
+  digital_signature: string | null;
   registered: boolean;
   updated_at: string;
 }
@@ -46,7 +66,14 @@ export interface RideMember {
   profile?: Pick<Profile, "id" | "display_name" | "avatar_url">;
   details?: Pick<
     RiderDetails,
-    "blood_group" | "emergency_contact_name" | "emergency_contact_phone" | "bike_model"
+    | "blood_group"
+    | "emergency_contact_name"
+    | "emergency_contact_phone"
+    | "emergency_contact_relation"
+    | "bike_model"
+    | "bike_reg_no"
+    | "gear_level"
+    | "experience_level"
   > | null;
 }
 
