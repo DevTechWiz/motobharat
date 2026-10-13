@@ -57,12 +57,12 @@ export function CoverUpload({
     <section className="space-y-4">
       <h3 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">Cover Photo</h3>
 
-      <div className="flex flex-wrap items-start gap-6">
+      <div className="flex flex-wrap items-start gap-4 sm:gap-6">
         {/* Current cover display */}
-        <div className="space-y-2">
-          <div className="relative aspect-16/10 w-56 overflow-hidden rounded-xl border border-border bg-surface-2">
+        <div className="w-full sm:w-56 space-y-2">
+          <div className="relative aspect-16/10 w-full overflow-hidden rounded-xl border border-border bg-surface-2">
             {coverUrl ? (
-              <Image src={coverUrl} alt="Current ride cover" fill sizes="224px" className="object-cover" />
+              <Image src={coverUrl} alt="Current ride cover" fill sizes="(max-width: 640px) 100vw, 224px" className="object-cover" />
             ) : (
               <p className="flex size-full items-center justify-center text-xs text-muted">No cover</p>
             )}

@@ -124,7 +124,7 @@ export default async function RideDetailPage({
   return (
     <>
       {/* Hero */}
-      <section className="grain relative overflow-hidden border-b border-border">
+      <section className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-surface-2">
           {ride.cover_url && (
             <Image
@@ -132,17 +132,13 @@ export default async function RideDetailPage({
               alt={ride.title}
               fill
               sizes="100vw"
-              className="animate-ken-burns object-cover opacity-40"
+              className="animate-ken-burns object-cover opacity-65"
               priority
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/70 to-bg/20" />
-          <div
-            className="absolute -top-32 left-1/4 h-72 w-[36rem] rounded-full bg-accent/10 blur-[120px]"
-            aria-hidden
-          />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/65 to-bg/20" />
         </div>
-        <Container className="relative py-8 sm:py-12">
+        <Container className="relative py-5 sm:py-10">
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-2 text-xs text-secondary" aria-label="Breadcrumb">
             <Link href="/" className="transition-colors hover:text-white">
@@ -153,7 +149,7 @@ export default async function RideDetailPage({
               Rides
             </Link>
             <ChevronRight className="size-3 text-muted" aria-hidden />
-            <span className="truncate font-semibold text-accent max-w-[16rem]">{ride.title}</span>
+            <span className="truncate font-semibold text-accent max-w-[12rem] sm:max-w-[16rem]">{ride.title}</span>
             {isAdmin && (
               <span className="ml-auto">
                 <AdminEditLink href={`/admin/rides/${ride.id}/edit`} label="Edit" />
@@ -161,7 +157,7 @@ export default async function RideDetailPage({
             )}
           </nav>
 
-          <div className="mt-6 flex flex-wrap items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-1.5 sm:mt-6 sm:gap-2">
             {ride.difficulty && (
               <Badge tone={difficultyTone[ride.difficulty]}>{ride.difficulty}</Badge>
             )}
@@ -171,18 +167,18 @@ export default async function RideDetailPage({
               <Badge tone="easy">Open for joining</Badge>
             )}
           </div>
-          <h1 className="animate-fade-in-up mt-4 max-w-3xl text-3xl font-extrabold tracking-tight sm:text-5xl">{ride.title}</h1>
+          <h1 className="animate-fade-in-up mt-2 max-w-3xl text-2xl font-extrabold tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">{ride.title}</h1>
 
           {(ride.meeting_point || ride.destination) && (
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-secondary">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/80 px-3 py-1">
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-medium text-secondary sm:mt-3 sm:gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/80 px-2.5 py-0.5 sm:px-3 sm:py-1">
                 <MapPin className="size-3 text-accent shrink-0" aria-hidden />
                 <span>Start: <strong className="text-white">{ride.meeting_point ?? "Warangal"}</strong></span>
               </span>
               {ride.destination && (
                 <>
                   <ArrowRight className="size-3 text-muted shrink-0" aria-hidden />
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-accent font-semibold">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 sm:px-3 sm:py-1 text-accent font-semibold">
                     <Flag className="size-3 shrink-0" aria-hidden />
                     <span>Destination: <strong className="text-white">{ride.destination}</strong></span>
                   </span>
@@ -192,11 +188,11 @@ export default async function RideDetailPage({
           )}
 
           {Array.isArray(ride.activities) && ride.activities.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <div className="mt-2 flex flex-wrap items-center gap-1 sm:mt-3 sm:gap-1.5">
               {ride.activities.map((act) => (
                 <span
                   key={act}
-                  className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold text-accent"
+                  className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-accent"
                 >
                   <Sparkles className="size-2.5" aria-hidden />
                   {act}
@@ -210,15 +206,15 @@ export default async function RideDetailPage({
       {/* Metrics strip */}
       <div className="border-b border-border bg-surface">
         <Container>
-          <div className="grid grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
+          <div className="grid grid-cols-2 divide-y divide-border sm:grid-cols-4 sm:divide-x sm:divide-y-0 [&>*:nth-child(2)]:border-t-0">
             {metrics.map((m) => (
-              <div key={m.label} className="flex items-center gap-3 px-2 py-5 sm:px-6">
-                <m.icon className="size-5 shrink-0 text-accent" aria-hidden />
+              <div key={m.label} className="flex items-center gap-2.5 px-4 py-3 sm:gap-3 sm:px-6 sm:py-5">
+                <m.icon className="size-4 sm:size-5 shrink-0 text-accent" aria-hidden />
                 <div className="min-w-0">
-                  <p className="font-mono text-[10px] tracking-wider text-muted uppercase">
+                  <p className="font-mono text-[9px] sm:text-[10px] tracking-wider text-muted uppercase">
                     {m.label}
                   </p>
-                  <p className="truncate text-sm font-bold tabular-nums">{m.value}</p>
+                  <p className="truncate text-xs sm:text-sm font-bold tabular-nums">{m.value}</p>
                 </div>
               </div>
             ))}
@@ -227,8 +223,8 @@ export default async function RideDetailPage({
       </div>
 
       {/* Body: details + sticky join card */}
-      <Container className="grid gap-8 py-8 lg:grid-cols-[2fr_1fr]">
-        <div className="space-y-8">
+      <Container className="grid gap-6 py-6 lg:grid-cols-[2fr_1fr] lg:gap-8 lg:py-8">
+        <div className="min-w-0 space-y-6 sm:space-y-8">
           {ride.description && (
             <div className="space-y-3">
               <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
@@ -239,30 +235,30 @@ export default async function RideDetailPage({
           )}
 
           <div className="space-y-3">
-            <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
+            <h2 className="text-xs sm:text-sm font-bold tracking-[0.18em] text-accent uppercase">
               Ride Details
             </h2>
             <div className="divide-y divide-border rounded-xl border border-border bg-surface">
-              <div className="flex items-center gap-4 p-5">
-                <Calendar className="size-5 shrink-0 text-accent" aria-hidden />
+              <div className="flex items-center gap-3 p-3.5 sm:gap-4 sm:p-5">
+                <Calendar className="size-4 sm:size-5 shrink-0 text-accent" aria-hidden />
                 <div>
-                  <p className="text-xs text-muted">Date</p>
-                  <p className="font-semibold">{formatRideDate(ride.starts_at)}</p>
+                  <p className="text-[11px] sm:text-xs text-muted">Date</p>
+                  <p className="text-xs sm:text-sm font-semibold">{formatRideDate(ride.starts_at)}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 p-5">
-                <Clock className="size-5 shrink-0 text-accent" aria-hidden />
+              <div className="flex items-center gap-3 p-3.5 sm:gap-4 sm:p-5">
+                <Clock className="size-4 sm:size-5 shrink-0 text-accent" aria-hidden />
                 <div>
-                  <p className="text-xs text-muted">Assembly Time</p>
-                  <p className="font-semibold">{formatRideTime(ride.starts_at)}</p>
+                  <p className="text-[11px] sm:text-xs text-muted">Assembly Time</p>
+                  <p className="text-xs sm:text-sm font-semibold">{formatRideTime(ride.starts_at)}</p>
                 </div>
               </div>
               {ride.meeting_point && (
-                <div className="flex items-center gap-4 p-5">
-                  <MapPin className="size-5 shrink-0 text-accent" aria-hidden />
+                <div className="flex items-center gap-3 p-3.5 sm:gap-4 sm:p-5">
+                  <MapPin className="size-4 sm:size-5 shrink-0 text-accent" aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted">Assembly / Start Point</p>
-                    <p className="font-semibold">{ride.meeting_point}</p>
+                    <p className="text-[11px] sm:text-xs text-muted">Assembly / Start Point</p>
+                    <p className="text-xs sm:text-sm font-semibold">{ride.meeting_point}</p>
                   </div>
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -270,7 +266,7 @@ export default async function RideDetailPage({
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
                   >
                     Maps
                     <ArrowUpRight className="size-3 text-accent" aria-hidden />
@@ -278,11 +274,11 @@ export default async function RideDetailPage({
                 </div>
               )}
               {ride.destination && (
-                <div className="flex items-center gap-4 p-5">
-                  <Flag className="size-5 shrink-0 text-accent" aria-hidden />
+                <div className="flex items-center gap-3 p-3.5 sm:gap-4 sm:p-5">
+                  <Flag className="size-4 sm:size-5 shrink-0 text-accent" aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted">Destination</p>
-                    <p className="font-semibold">{ride.destination}</p>
+                    <p className="text-[11px] sm:text-xs text-muted">Destination</p>
+                    <p className="text-xs sm:text-sm font-semibold">{ride.destination}</p>
                   </div>
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -290,7 +286,7 @@ export default async function RideDetailPage({
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
                   >
                     Maps
                     <ArrowUpRight className="size-3 text-accent" aria-hidden />
@@ -298,11 +294,11 @@ export default async function RideDetailPage({
                 </div>
               )}
               {ride.distance_km != null && (
-                <div className="flex items-center gap-4 p-5">
-                  <Gauge className="size-5 shrink-0 text-accent" aria-hidden />
+                <div className="flex items-center gap-3 p-3.5 sm:gap-4 sm:p-5">
+                  <Gauge className="size-4 sm:size-5 shrink-0 text-accent" aria-hidden />
                   <div>
-                    <p className="text-xs text-muted">Distance</p>
-                    <p className="font-semibold tabular-nums">{ride.distance_km} km</p>
+                    <p className="text-[11px] sm:text-xs text-muted">Distance</p>
+                    <p className="text-xs sm:text-sm font-semibold tabular-nums">{ride.distance_km} km</p>
                   </div>
                 </div>
               )}
@@ -311,30 +307,30 @@ export default async function RideDetailPage({
 
           {/* Route Itinerary / Stops */}
           {Array.isArray(ride.itinerary) && ride.itinerary.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2">
                 <Route className="size-4 text-accent" aria-hidden />
-                <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
+                <h2 className="text-xs sm:text-sm font-bold tracking-[0.18em] text-accent uppercase">
                   Route & Itinerary ({ride.itinerary.length} {ride.itinerary.length === 1 ? "Stop" : "Stops"})
                 </h2>
               </div>
-              <div className="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-3 before:bottom-3 before:w-[2px] before:bg-border">
+              <div className="relative pl-5 sm:pl-6 space-y-3 sm:space-y-4 before:absolute before:left-[9px] sm:before:left-[11px] before:top-3 before:bottom-3 before:w-[2px] before:bg-border">
                 {ride.itinerary.map((item, idx) => (
-                  <div key={idx} className="relative flex items-start gap-4">
-                    <div className="absolute -left-6 flex size-6 items-center justify-center rounded-full border border-accent/50 bg-surface text-accent text-[11px] font-mono font-bold shadow-sm">
+                  <div key={idx} className="relative flex items-start gap-3 sm:gap-4">
+                    <div className="absolute -left-5 sm:-left-6 flex size-5 sm:size-6 items-center justify-center rounded-full border border-accent/50 bg-surface text-accent text-[10px] sm:text-[11px] font-mono font-bold shadow-sm">
                       {idx + 1}
                     </div>
-                    <div className="flex-1 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-accent/40">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h3 className="text-sm font-bold text-white">{item.title}</h3>
+                    <div className="flex-1 rounded-xl border border-border bg-surface p-3 sm:p-4 transition-colors hover:border-accent/40">
+                      <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+                        <h3 className="text-xs sm:text-sm font-bold text-white">{item.title}</h3>
                         {item.activity && (
-                          <span className="rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                          <span className="rounded-md border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-accent">
                             {item.activity}
                           </span>
                         )}
                       </div>
                       {item.description && (
-                        <p className="mt-1.5 text-xs text-secondary whitespace-pre-wrap leading-relaxed">
+                        <p className="mt-1 text-[11px] sm:text-xs text-secondary whitespace-pre-wrap leading-relaxed">
                           {item.description}
                         </p>
                       )}
@@ -346,26 +342,26 @@ export default async function RideDetailPage({
           )}
 
           <div className="space-y-3">
-            <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
+            <h2 className="text-xs sm:text-sm font-bold tracking-[0.18em] text-accent uppercase">
               Who&apos;s Riding ({riderList.length})
             </h2>
             {riderList.length === 0 ? (
-              <p className="text-sm text-muted">
+              <p className="text-xs sm:text-sm text-muted">
                 No riders joined yet — be the first on the column.
               </p>
             ) : (
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <ul className="grid grid-cols-2 gap-2">
                 {riderList.map((m) => (
                   <li
                     key={m.user_id}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3"
+                    className="flex min-w-0 items-center gap-2.5 rounded-xl border border-border bg-surface px-3 py-2"
                   >
                     <Avatar
                       name={m.profile?.display_name ?? "Rider"}
                       src={m.profile?.avatar_url}
                       size="sm"
                     />
-                    <span className="truncate text-sm font-semibold">
+                    <span className="truncate text-xs font-semibold sm:text-sm">
                       {m.profile?.display_name ?? "Rider"}
                     </span>
                   </li>
@@ -376,7 +372,7 @@ export default async function RideDetailPage({
 
           {photos.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
+              <h2 className="text-xs sm:text-sm font-bold tracking-[0.18em] text-accent uppercase">
                 Ride Gallery ({photos.length})
               </h2>
               <PhotoGrid photos={photos} />
@@ -385,8 +381,8 @@ export default async function RideDetailPage({
         </div>
 
         {/* Sticky join card */}
-        <aside>
-          <div className="relative sticky top-28 space-y-5 overflow-hidden rounded-xl border border-border bg-surface p-6 transition-colors duration-300 hover:border-accent/30">
+        <aside className="min-w-0">
+          <div className="relative space-y-4 overflow-hidden rounded-xl border border-border bg-surface p-4 transition-[border-color] duration-200 hover:border-accent/30 sm:sticky sm:top-24 sm:p-6">
             <div
               className="pointer-events-none absolute -top-20 -right-20 h-48 w-48 rounded-full bg-accent/10 blur-[80px]"
               aria-hidden
@@ -395,7 +391,7 @@ export default async function RideDetailPage({
               <p className="font-mono text-[10px] tracking-wider text-accent uppercase">
                 Column Allocation
               </p>
-              <h3 className="text-lg font-bold">
+              <h3 className="text-base font-bold sm:text-lg">
                 {cancelled
                   ? "Ride Cancelled"
                   : past
@@ -420,7 +416,7 @@ export default async function RideDetailPage({
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-xs font-bold tracking-wider text-secondary uppercase transition-colors hover:border-[#25D366]/60 hover:text-[#25D366] hover:bg-surface-3"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-3 text-xs font-bold tracking-wider text-secondary uppercase transition-[color,border-color,background-color,transform] duration-150 ease-out hover:border-[#25D366]/60 hover:bg-surface-3 hover:text-[#25D366] active:scale-[0.97]"
                 >
                   <Share2 className="size-3.5" aria-hidden />
                   Share on WhatsApp
@@ -428,7 +424,7 @@ export default async function RideDetailPage({
               </>
             )}
 
-            <div className="space-y-2.5 border-t border-border pt-4 text-xs text-secondary">
+            <div className="space-y-2 border-t border-border pt-3.5 text-xs text-secondary">
               <div className="flex items-start gap-2">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
                 <span>

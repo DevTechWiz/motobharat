@@ -162,7 +162,7 @@ export function GalleryManager({
   };
 
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-surface p-4 max-w-xl">
+    <div className="space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4 max-w-xl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -292,7 +292,7 @@ export function GalleryManager({
           No photos in gallery yet. Click Browse to select photos from your device, or paste a link above.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 pt-2">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4 lg:grid-cols-6 pt-2">
           {photos.map((p) => (
             <div
               key={p.id}

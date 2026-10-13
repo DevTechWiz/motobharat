@@ -36,20 +36,16 @@ export function LoginForm({ stats }: { stats: LoginStats }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-[55fr_45fr]">
       {/* Visual panel */}
-      <div className="grain relative flex min-h-[46vh] flex-col justify-between overflow-hidden p-6 sm:p-10 lg:min-h-0 lg:p-12">
+      <div className="relative flex min-h-[46vh] flex-col justify-between overflow-hidden p-6 sm:p-10 lg:min-h-0 lg:p-12">
         <Image
           src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1600&q=75"
           alt="Mountain highway winding into the hills at golden hour"
           fill
           sizes="(min-width: 1024px) 55vw, 100vw"
           priority
-          className="animate-ken-burns object-cover object-center opacity-55"
+          className="animate-ken-burns object-cover object-center opacity-65"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/35 to-bg/60" />
-        <div
-          className="absolute -bottom-48 -left-40 size-96 rounded-full bg-accent/12 blur-[120px]"
-          aria-hidden
-        />
+        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-bg/60" />
 
         <Link
           href="/"

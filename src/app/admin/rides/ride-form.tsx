@@ -251,14 +251,14 @@ export function RideForm({
         </Field>
 
         {/* Ride Activities & Highlights */}
-        <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
+        <div className="space-y-2.5 sm:space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-accent" />
             <div>
               <p className="text-xs font-bold tracking-wider text-accent uppercase">
                 Ride Highlights & Activities
               </p>
-              <p className="text-[11px] text-muted">
+              <p className="text-[10px] sm:text-[11px] text-muted">
                 Pick or add activities riders will experience (e.g. Campfire, Off-roading, Photography)
               </p>
             </div>
@@ -270,7 +270,7 @@ export function RideForm({
               {activities.map((act) => (
                 <span
                   key={act}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold text-accent"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-semibold text-accent"
                 >
                   <span>{act}</span>
                   <button
@@ -288,8 +288,8 @@ export function RideForm({
 
           {/* Suggestions */}
           <div className="space-y-1.5 pt-1 border-t border-border/60">
-            <p className="text-[10px] uppercase font-mono tracking-wider text-muted">Quick Suggestions</p>
-            <div className="flex flex-wrap gap-1.5">
+            <p className="text-[9px] sm:text-[10px] uppercase font-mono tracking-wider text-muted">Quick Suggestions</p>
+            <div className="flex flex-wrap gap-1 sm:gap-1.5">
               {POPULAR_ACTIVITIES.map((act) => {
                 const isSelected = activities.includes(act);
                 return (
@@ -297,7 +297,7 @@ export function RideForm({
                     key={act}
                     type="button"
                     onClick={() => toggleActivity(act)}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-all ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-[11px] font-medium transition-all ${
                       isSelected
                         ? "border-accent bg-accent text-accent-fg font-semibold"
                         : "border-border bg-surface-2 text-secondary hover:border-accent/40 hover:text-white"
@@ -337,13 +337,13 @@ export function RideForm({
         </div>
 
         {/* Route Itinerary / Stops */}
-        <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-2.5 sm:space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-xs font-bold tracking-wider text-accent uppercase">
                 Route Itinerary & Stops (Optional)
               </p>
-              <p className="text-[11px] text-muted">
+              <p className="text-[10px] sm:text-[11px] text-muted">
                 Add route stops, scenic viewpoints, or day-by-day plan with specific activities
               </p>
             </div>
@@ -352,22 +352,23 @@ export function RideForm({
               variant="outline"
               size="sm"
               onClick={addItineraryStop}
+              className="shrink-0"
             >
               <Plus className="size-3.5" />
-              Add Stop / Day
+              <span>Add Stop</span>
             </Button>
           </div>
 
           {itinerary.length === 0 ? (
-            <p className="text-xs text-muted italic">
+            <p className="text-[11px] sm:text-xs text-muted italic">
               No itinerary stops added yet. (e.g. Stop 1: Breakfast at Highway Dhaba, Stop 2: Laknavaram Boating, etc.)
             </p>
           ) : (
-            <div className="space-y-3 pt-2">
+            <div className="space-y-2.5 sm:space-y-3 pt-1">
               {itinerary.map((item, idx) => (
                 <div
                   key={idx}
-                  className="relative rounded-lg border border-border bg-surface-2 p-3 space-y-2"
+                  className="relative rounded-lg border border-border bg-surface-2 p-2.5 sm:p-3 space-y-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="rounded bg-accent/10 px-2 py-0.5 font-mono text-[11px] font-bold text-accent">

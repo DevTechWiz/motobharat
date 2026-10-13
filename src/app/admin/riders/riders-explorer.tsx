@@ -123,11 +123,11 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-surface text-left text-xs text-muted">
-                <th className="px-4 py-3 font-semibold">Rider</th>
-                <th className="px-4 py-3 font-semibold">City</th>
-                <th className="px-4 py-3 font-semibold">Role</th>
-                <th className="px-4 py-3 font-semibold">KYC Status</th>
-                <th className="px-4 py-3 font-semibold">Licence</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Rider</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">City</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Role</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">KYC Status</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Licence</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-surface">
@@ -149,17 +149,17 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
                     }}
                     className="cursor-pointer transition-colors outline-none hover:bg-surface-2/70 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <span className="flex items-center gap-3">
                         <Avatar name={r.display_name} src={r.avatar_url} size="sm" />
                         <span className="font-semibold">{r.display_name}</span>
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-secondary">{r.city ?? "—"}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-secondary">{r.city ?? "—"}</td>
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <Badge tone={r.role === "admin" ? "hard" : "neutral"}>{r.role}</Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <Badge
                         tone={
                           s === "registered" ? "easy" : s === "rejected" ? "danger" : s === "pending" ? "moderate" : "neutral"
@@ -174,7 +174,7 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
                               : "Incomplete"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                       <Badge tone="neutral">{r.hasDoc ? "Doc on file" : "No doc"}</Badge>
                     </td>
                   </tr>

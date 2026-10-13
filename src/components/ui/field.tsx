@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 
 const base =
-  "w-full rounded-lg border border-border bg-surface px-3.5 py-3 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50 scroll-mt-28";
+  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 sm:px-3.5 sm:py-3 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50 scroll-mt-28";
 
 export function Input({
   className,

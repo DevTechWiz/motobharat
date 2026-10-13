@@ -59,7 +59,7 @@ export function RideCard({ ride }: { ride: Ride }) {
   return (
     <Link
       href={href}
-      className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_24px_60px_-20px_rgba(245,158,11,0.4),0_16px_40px_-16px_rgba(0,0,0,0.6)] active:translate-y-0 active:scale-[0.99]"
+      className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-[transform,border-color,background-color,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_24px_60px_-20px_rgba(245,158,11,0.4),0_16px_40px_-16px_rgba(0,0,0,0.6)] active:scale-[0.97]"
     >
       <div className="relative aspect-16/10 overflow-hidden bg-surface-2">
         {ride.cover_url && !imgFailed ? (
@@ -68,7 +68,7 @@ export function RideCard({ ride }: { ride: Ride }) {
             alt={ride.title}
             fill
             sizes="(min-width:1024px) 33vw, (min-width:768px) 50vw, 100vw"
-            className="object-cover opacity-90 transition-transform duration-700 ease-out group-hover:scale-110 group-hover:opacity-100"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             onError={() => setImgFailed(true)}
           />
         ) : (
@@ -103,8 +103,8 @@ export function RideCard({ ride }: { ride: Ride }) {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-secondary">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-secondary">
           <span>{formatRideDate(ride.starts_at)}</span>
           {ride.difficulty && (
             <>
@@ -121,47 +121,47 @@ export function RideCard({ ride }: { ride: Ride }) {
           )}
         </div>
 
-        <h2 className="text-lg font-bold leading-snug transition-colors group-hover:text-accent">
+        <h2 className="text-base sm:text-lg font-bold leading-snug transition-colors group-hover:text-accent">
           {ride.title}
         </h2>
 
         {ride.destination ? (
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted flex-wrap">
+          <div className="mt-2 flex items-center gap-1.5 text-[11px] sm:text-xs text-muted flex-wrap">
             <span className="inline-flex items-center gap-1 font-medium text-text">
               <Flag className="size-3 shrink-0 text-accent" aria-hidden />
-              {ride.meeting_point}
+              <span>{ride.meeting_point}</span>
             </span>
             <ArrowRight className="size-3 text-muted shrink-0" aria-hidden />
             <span className="inline-flex items-center gap-1 font-semibold text-accent">
               <MapPin className="size-3 shrink-0 text-accent" aria-hidden />
-              {ride.destination}
+              <span>{ride.destination}</span>
             </span>
           </div>
         ) : ride.meeting_point ? (
-          <p className="mt-1.5 flex items-center gap-1 text-xs text-muted">
+          <p className="mt-1.5 flex items-center gap-1 text-[11px] sm:text-xs text-muted">
             <Flag className="size-3 shrink-0 text-accent" aria-hidden />
             <span>Start: <span className="text-secondary font-medium">{ride.meeting_point}</span></span>
           </p>
         ) : null}
 
         {ride.description && (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-secondary">
+          <p className="mt-2 line-clamp-2 text-xs sm:text-sm leading-relaxed text-secondary">
             {ride.description}
           </p>
         )}
 
         {Array.isArray(ride.activities) && ride.activities.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1">
+          <div className="mt-2.5 flex flex-wrap gap-1">
             {ride.activities.slice(0, 3).map((act) => (
               <span
                 key={act}
-                className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-secondary"
+                className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium text-secondary"
               >
                 {act}
               </span>
             ))}
             {ride.activities.length > 3 && (
-              <span className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-mono text-muted">
+              <span className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-mono text-muted">
                 +{ride.activities.length - 3}
               </span>
             )}
@@ -169,7 +169,7 @@ export function RideCard({ ride }: { ride: Ride }) {
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border px-5 py-3">
+      <div className="flex items-center justify-between border-t border-border px-4 py-3 sm:px-5">
         <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted tabular-nums">
           <Clock className="size-3" aria-hidden />
           {new Date(ride.starts_at).toLocaleTimeString("en-IN", {

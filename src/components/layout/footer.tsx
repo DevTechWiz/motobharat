@@ -82,9 +82,9 @@ export function Footer() {
           MOTOBHARAT
         </text>
       </svg>
-      <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr_1.2fr]">
-          <div className="max-w-sm space-y-4">
+      <div className="relative mx-auto max-w-7xl px-4 py-7 sm:py-10 sm:px-6 lg:px-8">
+        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr_1.2fr]">
+          <div className="max-w-sm space-y-3.5 sm:space-y-4">
             <Link
               href="/"
               onClick={(e) => {
@@ -96,10 +96,10 @@ export function Footer() {
               className="inline-flex items-center gap-1"
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
-              <img src="/brand/logo-512.png" alt="" className="size-14" />
+              <img src="/brand/logo-512.png" alt="" className="size-11 sm:size-14" />
               <Wordmark size="lg" />
             </Link>
-            <p className="text-sm text-secondary leading-relaxed">
+            <p className="text-xs sm:text-sm text-secondary leading-relaxed">
               Different Roads. One Community. Warangal riders exploring India with discipline, safety, and camaraderie.
             </p>
 
@@ -122,7 +122,7 @@ export function Footer() {
           {columns.map((col) => (
             <nav key={col.heading} aria-label={col.heading}>
               <ColumnHeading>{col.heading}</ColumnHeading>
-              <ul className="mt-4 flex flex-col gap-2.5">
+              <ul className="mt-3 sm:mt-4 flex flex-col gap-2 sm:gap-2.5">
                 {col.links.map((l) => (
                   <li key={l.href}>
                     <Link
@@ -133,7 +133,7 @@ export function Footer() {
                           scrollToTop();
                         }
                       }}
-                      className="text-sm text-secondary transition-colors hover:text-accent"
+                      className="text-xs sm:text-sm text-secondary transition-colors hover:text-accent"
                     >
                       {l.label}
                     </Link>
@@ -161,7 +161,7 @@ export function Footer() {
       </div>
 
       <div className="relative border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-1.5 sm:gap-2 px-4 py-3 sm:py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p className="font-mono text-[10px] tracking-wider text-muted uppercase">
             © {YEAR} MotoBharat (Warangal Chapter) · All rights reserved
           </p>

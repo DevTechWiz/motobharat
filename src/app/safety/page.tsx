@@ -64,17 +64,17 @@ export default function SafetyPage() {
             eyebrow="Non-negotiable"
             title="Ride Safe. Ride Smart. Ride Together."
           />
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3.5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {principles.map((p) => (
               <div
                 key={p.title}
-                className="group rounded-xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_20px_50px_-20px_rgba(245,158,11,0.4)]"
+                className="group rounded-xl border border-border bg-surface p-4 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_20px_50px_-20px_rgba(245,158,11,0.4)]"
               >
-                <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-accent/10 transition-colors duration-300 group-hover:bg-accent/20">
-                  <p.icon className="size-5 text-accent" aria-hidden />
+                <div className="mb-3 sm:mb-4 flex size-9 sm:size-10 items-center justify-center rounded-lg bg-accent/10 transition-colors duration-300 group-hover:bg-accent/20">
+                  <p.icon className="size-4.5 sm:size-5 text-accent" aria-hidden />
                 </div>
-                <h3 className="text-lg font-bold">{p.title}</h3>
-                <p className="mt-2 text-sm text-secondary">{p.body}</p>
+                <h3 className="text-base sm:text-lg font-bold">{p.title}</h3>
+                <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-secondary">{p.body}</p>
               </div>
             ))}
           </div>
@@ -88,16 +88,16 @@ export default function SafetyPage() {
             title="Pre-Ride Checklist"
             cta={{ href: "/rides", label: "Find a Ride" }}
           />
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-2.5 sm:gap-3 sm:grid-cols-2">
             {checklist.map((item) => (
               <li
                 key={item}
-                className="flex items-center gap-3 rounded-xl border border-border bg-bg px-5 py-4 transition-all duration-200 hover:border-accent/30 hover:bg-surface"
+                className="flex items-center gap-2.5 sm:gap-3 rounded-xl border border-border bg-bg px-3.5 py-3 sm:px-5 sm:py-4 transition-all duration-200 hover:border-accent/30 hover:bg-surface"
               >
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent/12">
-                  <Check className="size-3.5 text-accent" aria-hidden />
+                <span className="flex size-5 sm:size-6 shrink-0 items-center justify-center rounded-full bg-accent/12">
+                  <Check className="size-3 sm:size-3.5 text-accent" aria-hidden />
                 </span>
-                <span className="text-sm text-secondary">{item}</span>
+                <span className="text-xs sm:text-sm text-secondary">{item}</span>
               </li>
             ))}
           </ul>
@@ -106,8 +106,8 @@ export default function SafetyPage() {
 
       <Section bg="surface" border="both">
         <Container className="max-w-2xl text-center">
-          <h2 className="text-2xl font-extrabold">Emergency Numbers</h2>
-          <div className="mt-6 flex flex-wrap justify-center gap-4">
+          <h2 className="text-xl sm:text-2xl font-extrabold">Emergency Numbers</h2>
+          <div className="mt-4 sm:mt-6 flex flex-wrap justify-center gap-2.5 sm:gap-4">
             {[
               { label: "Ambulance", num: "108" },
               { label: "Police", num: "100" },
@@ -117,7 +117,7 @@ export default function SafetyPage() {
               <a
                 key={e.num}
                 href={`tel:${e.num}`}
-                className="group min-w-36 rounded-xl border border-border bg-surface-2 px-6 py-4 transition-all hover:border-accent hover:bg-surface-3 active:scale-[0.98]"
+                className="group flex-1 min-w-[130px] sm:min-w-36 rounded-xl border border-border bg-surface-2 px-4 py-3 sm:px-6 sm:py-4 transition-all hover:border-accent hover:bg-surface-3 active:scale-[0.98]"
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <Phone className="size-3 text-muted group-hover:text-accent transition-colors" />
@@ -125,8 +125,8 @@ export default function SafetyPage() {
                     Tap to call
                   </span>
                 </div>
-                <p className="font-mono text-2xl font-bold text-accent tabular-nums">{e.num}</p>
-                <p className="mt-1 text-xs text-muted">{e.label}</p>
+                <p className="font-mono text-xl sm:text-2xl font-bold text-accent tabular-nums">{e.num}</p>
+                <p className="mt-0.5 sm:mt-1 text-[11px] sm:text-xs text-muted">{e.label}</p>
               </a>
             ))}
           </div>

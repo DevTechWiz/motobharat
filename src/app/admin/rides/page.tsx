@@ -47,10 +47,10 @@ export default async function AdminRidesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-surface text-left text-xs text-muted">
-                <th className="px-4 py-3 font-semibold">Title</th>
-                <th className="px-4 py-3 font-semibold">Date</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Actions</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Title</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Date</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Status</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-surface">

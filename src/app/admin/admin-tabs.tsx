@@ -29,7 +29,7 @@ export function AdminTabs() {
             href={t.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold tracking-wider uppercase transition-all duration-200",
+              "flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold tracking-wider uppercase transition-all duration-200",
               active
                 ? "bg-surface-3 text-accent shadow-[0_4px_16px_rgba(0,0,0,0.4)]"
                 : "text-secondary hover:bg-surface-2 hover:text-white"

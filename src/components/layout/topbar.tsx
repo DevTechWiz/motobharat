@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X, ShieldAlert, ShieldCheck, User as UserIcon, LogOut, Settings, IdCard } from "lucide-react";
+import { Menu, X, ShieldAlert, ShieldCheck, User as UserIcon, LogOut, Settings, IdCard, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { scrollToTop } from "@/lib/scroll";
 import { Wordmark } from "@/components/ui/wordmark";
@@ -22,6 +22,7 @@ export function Topbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, profile, registered, approval, refreshProfile, signOut } = useAuth();
+  const isHome = pathname === "/";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -63,12 +64,17 @@ export function Topbar() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b backdrop-blur-md transition-all duration-300",
-        scrolled
-          ? "border-border bg-bg/85 shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
-          : "border-border/60 bg-bg/95"
+        "sticky top-0 z-50 transition-all duration-300",
+        isHome
+          ? scrolled
+            ? "border-none bg-bg/90 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            : "border-none bg-black/10 backdrop-blur-sm -mb-14 sm:-mb-16"
+          : scrolled
+            ? "border-b border-border/70 bg-bg/90 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            : "border-b border-border/60 bg-bg/95"
       )}
-    >      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
+    >
+      <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
           onClick={(e) => {
@@ -77,33 +83,34 @@ export function Topbar() {
               scrollToTop();
             }
           }}
-          className="flex shrink-0 items-center gap-1"
+          className="flex shrink-0 items-center py-2"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
-          <img src="/brand/logo-128.png" alt="" className="size-12" />
-          <Wordmark size="sm" />
+          <Wordmark size="lg" className="h-7 sm:h-9 w-auto" />
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex" aria-label="Primary">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={cn(
-                "group relative shrink-0 py-1 text-sm font-medium transition-colors duration-200",
-                isActive(l.href) ? "font-bold text-white" : "text-secondary hover:text-white"
-              )}
-            >
-              {l.label}
-              <span
+        <nav className="hidden items-center gap-7 lg:gap-9 md:flex" aria-label="Primary">
+          {links.map((l) => {
+            const active = isActive(l.href);
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
                 className={cn(
-                  "absolute -bottom-0.5 left-0 h-0.5 bg-accent transition-all duration-300",
-                  isActive(l.href) ? "w-full" : "w-0 group-hover:w-full group-hover:bg-white/20"
+                  "group relative flex flex-col items-center py-1 text-xs font-semibold tracking-[0.2em] uppercase transition-colors duration-200",
+                  active ? "text-white" : "text-white/80 hover:text-white"
                 )}
-                aria-hidden
-              />
-            </Link>
-          ))}
+              >
+                <span>{l.label}</span>
+                <span
+                  className={cn(
+                    "mt-1.5 h-0.5 rounded-full bg-accent shadow-[0_0_8px_rgba(245,158,11,0.6)] transition-all duration-300",
+                    active ? "w-full" : "w-0 group-hover:w-full"
+                  )}
+                  aria-hidden
+                />
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="hidden shrink-0 md:block">
@@ -112,16 +119,17 @@ export function Topbar() {
           ) : (
             <Link
               href="/login"
-              className="inline-flex items-center rounded-lg bg-accent px-4 py-2.5 text-[11px] font-bold tracking-wider text-accent-fg uppercase shadow-[0_8px_24px_-8px_var(--accent)] transition-all duration-200 hover:-translate-y-px hover:bg-accent-hover hover:shadow-[0_12px_32px_-8px_var(--accent)] active:scale-[0.97]"
+              className="group inline-flex items-center gap-2 rounded-full border border-accent/80 bg-accent/5 px-5 py-2 text-xs font-semibold tracking-wider text-accent uppercase backdrop-blur-sm transition-all duration-300 hover:border-accent hover:bg-accent hover:text-black hover:shadow-[0_0_24px_rgba(245,158,11,0.4)] active:scale-[0.97]"
             >
-              Join Us
+              <span>Join Us</span>
+              <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
             </Link>
           )}
         </div>
 
         <button
           type="button"
-          className="inline-flex size-11 items-center justify-center text-secondary md:hidden"
+          className="inline-flex size-11 items-center justify-center text-white/80 hover:text-white md:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
@@ -317,14 +325,14 @@ export function Topbar() {
                 <Link
                   href="/login"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg border border-border-strong py-2.5 text-center text-[11px] font-bold tracking-wider uppercase hover:bg-surface"
+                  className="rounded-full border border-border-strong py-2.5 text-center text-xs font-semibold tracking-wider uppercase hover:bg-surface"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/login"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg bg-accent py-2.5 text-center text-[11px] font-bold tracking-wider text-accent-fg uppercase hover:bg-accent-hover"
+                  className="rounded-full border border-accent bg-accent/15 text-accent py-2.5 text-center text-xs font-semibold tracking-wider uppercase hover:bg-accent hover:text-black transition-colors"
                 >
                   Join Us
                 </Link>

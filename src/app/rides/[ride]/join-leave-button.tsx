@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
+import { Button, buttonStyles } from "@/components/ui/button";
 import { joinRide, leaveRide } from "./actions";
 
 export function JoinLeaveButton({
@@ -19,13 +19,13 @@ export function JoinLeaveButton({
   const [busy, setBusy] = useState(false);
   const [member, setMember] = useState(isMember);
 
-  if (loading) return <div className="h-12 w-40 animate-pulse rounded-lg bg-surface-2" />;
+  if (loading) return <div className="h-12 w-full animate-pulse rounded-lg bg-surface-2" />;
 
   if (!user) {
     return (
       <Link
         href={`/login?next=/rides/${rideId}`}
-        className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-xs font-bold tracking-wider text-accent-fg uppercase transition-colors hover:bg-accent-hover"
+        className={buttonStyles("primary", "md", true)}
       >
         Sign in to join
       </Link>
@@ -36,7 +36,7 @@ export function JoinLeaveButton({
     return (
       <Link
         href="/profile/kyc"
-        className="inline-flex items-center justify-center gap-2 rounded-lg border border-accent/60 bg-accent/10 px-6 py-3.5 text-xs font-bold tracking-wider text-accent uppercase transition-colors hover:bg-accent/20"
+        className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-accent/60 bg-accent/10 px-4 py-3.5 text-center text-xs font-bold tracking-wider text-accent uppercase transition-[background-color,transform] duration-150 ease-out hover:bg-accent/20 active:scale-[0.97]"
       >
         {approval === "pending"
           ? "KYC under review — check status"
@@ -62,7 +62,7 @@ export function JoinLeaveButton({
       variant={member ? "outline" : "primary"}
       disabled={busy}
       onClick={toggle}
-      className="min-w-40"
+      fullWidth
     >
       {busy ? "..." : member ? "Leave Ride" : "Join Ride"}
     </Button>

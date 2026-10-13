@@ -44,23 +44,23 @@ export default async function AnnouncementsPage() {
               {items.map((a) => (
                 <article
                   key={a.id}
-                  className="group relative rounded-xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_20px_50px_-24px_rgba(245,158,11,0.45)]"
+                  className="group relative rounded-xl border border-border bg-surface p-3.5 sm:p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_20px_50px_-24px_rgba(245,158,11,0.45)]"
                 >
-                  <div className="flex items-start gap-5">
-                    <div className="self-start flex flex-col items-center justify-center rounded-xl border border-border bg-surface-2/90 px-3.5 py-2.5 min-w-[4.25rem] text-center shrink-0 select-none">
-                      <span className="font-mono text-[10px] font-bold text-accent uppercase tracking-wider">
+                  <div className="flex items-start gap-3 sm:gap-5">
+                    <div className="self-start flex flex-col items-center justify-center rounded-xl border border-border bg-surface-2/90 px-2.5 py-1.5 sm:px-3.5 sm:py-2.5 min-w-[3.5rem] sm:min-w-[4.25rem] text-center shrink-0 select-none">
+                      <span className="font-mono text-[9px] sm:text-[10px] font-bold text-accent uppercase tracking-wider">
                         {new Date(a.created_at).toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" })}
                       </span>
-                      <span className="font-mono text-xl font-black text-text leading-tight my-0.5">
+                      <span className="font-mono text-base sm:text-xl font-black text-text leading-tight my-0.5">
                         {new Date(a.created_at).toLocaleDateString("en-IN", { day: "2-digit", timeZone: "Asia/Kolkata" })}
                       </span>
-                      <span className="font-mono text-[10px] text-muted">
+                      <span className="font-mono text-[9px] sm:text-[10px] text-muted">
                         {new Date(a.created_at).toLocaleDateString("en-IN", { year: "numeric", timeZone: "Asia/Kolkata" })}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-4">
-                        <h2 className="text-xl font-bold">
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                        <h2 className="text-base sm:text-xl font-bold">
                           {a.slug ? (
                             <Link
                               href={`/announcements/${a.slug}`}
@@ -74,13 +74,13 @@ export default async function AnnouncementsPage() {
                         </h2>
                         {a.slug && (
                           <ArrowUpRight
-                            className="mt-1 size-4 shrink-0 text-accent opacity-0 transition-opacity group-hover:opacity-100"
+                            className="mt-1 size-3.5 sm:size-4 shrink-0 text-accent opacity-0 transition-opacity group-hover:opacity-100"
                             aria-hidden
                           />
                         )}
                       </div>
                       {a.body && (
-                        <p className="mt-2 line-clamp-3 whitespace-pre-wrap leading-relaxed text-secondary">
+                        <p className="mt-1.5 sm:mt-2 line-clamp-3 whitespace-pre-wrap text-xs sm:text-sm leading-relaxed text-secondary">
                           {a.body}
                         </p>
                       )}

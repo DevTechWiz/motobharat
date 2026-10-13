@@ -48,18 +48,18 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       {/* Filter strip */}
-      <div className="space-y-4 rounded-xl border border-border bg-surface p-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-bg p-1">
+      <div className="space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-1 rounded-xl bg-bg p-1">
             {TABS.map((t) => (
               <button
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
                 className={cn(
-                  "relative rounded-lg px-4 py-2 text-xs font-bold tracking-wider uppercase transition-colors duration-200",
+                  "relative min-h-[44px] flex-1 rounded-lg px-3 py-2 text-xs font-bold tracking-wider whitespace-nowrap uppercase transition-[color,transform] duration-150 ease-out active:scale-[0.97] sm:flex-none sm:px-4 md:flex-none",
                   tab === t.key ? "text-accent-fg" : "text-secondary hover:text-white"
                 )}
               >
@@ -67,7 +67,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
                   <motion.span
                     layoutId="rides-tab-pill"
                     className="absolute inset-0 rounded-lg bg-accent shadow-[0_8px_24px_-8px_var(--accent)]"
-                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                   />
                 )}
                 <span className="relative">{t.label}</span>
@@ -86,12 +86,12 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filter by title or meeting point…"
               aria-label="Search rides"
-              className="w-full rounded-lg border border-border bg-bg py-2 pr-3 pl-9 text-sm text-white placeholder-muted focus:border-accent focus:outline-none"
+              className="min-h-[44px] w-full rounded-lg border border-border bg-bg py-2.5 pr-3 pl-9 text-sm text-white placeholder-muted focus:border-accent focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-2.5">
           <span className="mr-1 font-mono text-[10px] tracking-wider text-muted uppercase">
             Difficulty
           </span>
@@ -101,7 +101,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
               type="button"
               onClick={() => setDifficulty(d)}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors",
+                "min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.97]",
                 difficulty === d
                   ? "bg-surface-3 text-white"
                   : "text-secondary hover:text-white",
@@ -132,16 +132,16 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
           </div>
         </div>
       ) : (
-        <motion.div layout className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div layout className="grid grid-cols-1 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filtered.map((ride) => (
               <motion.div
                 key={ride.id}
                 layout
-                initial={{ opacity: 0, scale: 0.96, y: 16 }}
+                initial={{ opacity: 0, scale: 0.97, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96, y: 8 }}
-                transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+                exit={{ opacity: 0, scale: 0.97, y: 8 }}
+                transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
               >
                 <RideCard ride={ride} />
               </motion.div>
