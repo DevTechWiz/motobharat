@@ -7,7 +7,7 @@ const sections: LegalSection[] = [
   {
     title: "Acceptance",
     body: [
-      "By using motobharat.in or joining a MotoBharat ride, you agree to these terms and our Privacy Policy. If you don't agree, please don't use the service.",
+      "By using motobharat.co or joining a MotoBharat ride, you agree to these terms and our Privacy Policy. If you don't agree, please don't use the service.",
     ],
   },
   {

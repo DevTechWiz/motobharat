@@ -17,7 +17,7 @@ export default async function AdminOverviewPage() {
   const cards = [
     { label: "Rides", value: rides ?? 0, href: "/admin/rides", icon: Bike },
     { label: "Announcements", value: announcements ?? 0, href: "/admin/announcements", icon: Megaphone },
-    { label: "Registered Riders", value: members ?? 0, href: null, icon: Users },
+    { label: "Registered Riders", value: members ?? 0, href: "/admin/riders", icon: Users },
   ];
 
   return (

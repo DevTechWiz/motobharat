@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Container } from "@/components/layout/container";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
+import { AdminEditLink } from "@/components/layout/admin-edit-link";
 import { formatRideDate, formatRideTime, isPast } from "@/lib/format";
 import { JoinLeaveButton } from "./join-leave-button";
 import { PhotoGrid, type GalleryPhoto } from "@/components/rides/photo-grid";
@@ -62,6 +63,18 @@ export default async function RideDetailPage({
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  // Server-side role check for the admin edit shortcut (display only —
+  // /admin enforces proxy + requireAdmin + RLS independently).
+  let isAdmin = false;
+  if (user) {
+    const { data: self } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    isAdmin = self?.role === "admin";
+  }
 
   const [{ data: members }, { data: membership }, { data: media }] = await Promise.all([
     supabase
@@ -137,6 +150,11 @@ export default async function RideDetailPage({
             </Link>
             <ChevronRight className="size-3 text-muted" aria-hidden />
             <span className="truncate font-semibold text-accent max-w-[16rem]">{ride.title}</span>
+            {isAdmin && (
+              <span className="ml-auto">
+                <AdminEditLink href={`/admin/rides/${ride.id}/edit`} label="Edit" />
+              </span>
+            )}
           </nav>
 
           <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -156,19 +174,19 @@ export default async function RideDetailPage({
       {/* Metrics strip */}
       <div className="border-b border-border bg-surface">
         <Container>
-          <dl className="grid grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
+          <div className="grid grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
             {metrics.map((m) => (
               <div key={m.label} className="flex items-center gap-3 px-2 py-5 sm:px-6">
                 <m.icon className="size-5 shrink-0 text-accent" aria-hidden />
                 <div className="min-w-0">
-                  <dt className="font-mono text-[10px] tracking-wider text-muted uppercase">
+                  <p className="font-mono text-[10px] tracking-wider text-muted uppercase">
                     {m.label}
-                  </dt>
-                  <dd className="truncate text-sm font-bold tabular-nums">{m.value}</dd>
+                  </p>
+                  <p className="truncate text-sm font-bold tabular-nums">{m.value}</p>
                 </div>
               </div>
             ))}
-          </dl>
+          </div>
         </Container>
       </div>
 
@@ -188,29 +206,27 @@ export default async function RideDetailPage({
             <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
               Ride Details
             </h2>
-            <dl className="divide-y divide-border rounded-xl border border-border bg-surface">
+            <div className="divide-y divide-border rounded-xl border border-border bg-surface">
               <div className="flex items-center gap-4 p-5">
                 <Calendar className="size-5 shrink-0 text-accent" aria-hidden />
                 <div>
-                  <dt className="text-xs text-muted">Date</dt>
-                  <dd className="font-semibold">{formatRideDate(ride.starts_at)}</dd>
+                  <p className="text-xs text-muted">Date</p>
+                  <p className="font-semibold">{formatRideDate(ride.starts_at)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 p-5">
                 <Clock className="size-5 shrink-0 text-accent" aria-hidden />
                 <div>
-                  <dt className="text-xs text-muted">Time</dt>
-                  <dd className="font-semibold">{formatRideTime(ride.starts_at)}</dd>
+                  <p className="text-xs text-muted">Time</p>
+                  <p className="font-semibold">{formatRideTime(ride.starts_at)}</p>
                 </div>
               </div>
               {ride.meeting_point && (
-                <div className="flex items-center justify-between p-5">
-                  <div className="flex items-center gap-4">
-                    <MapPin className="size-5 shrink-0 text-accent" aria-hidden />
-                    <div>
-                      <dt className="text-xs text-muted">Meeting Point</dt>
-                      <dd className="font-semibold">{ride.meeting_point}</dd>
-                    </div>
+                <div className="flex items-center gap-4 p-5">
+                  <MapPin className="size-5 shrink-0 text-accent" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted">Meeting Point</p>
+                    <p className="font-semibold">{ride.meeting_point}</p>
                   </div>
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -218,7 +234,7 @@ export default async function RideDetailPage({
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
                   >
                     Maps
                     <ArrowUpRight className="size-3 text-accent" aria-hidden />
@@ -229,12 +245,12 @@ export default async function RideDetailPage({
                 <div className="flex items-center gap-4 p-5">
                   <Gauge className="size-5 shrink-0 text-accent" aria-hidden />
                   <div>
-                    <dt className="text-xs text-muted">Distance</dt>
-                    <dd className="font-semibold tabular-nums">{ride.distance_km} km</dd>
+                    <p className="text-xs text-muted">Distance</p>
+                    <p className="font-semibold tabular-nums">{ride.distance_km} km</p>
                   </div>
                 </div>
               )}
-            </dl>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -308,7 +324,7 @@ export default async function RideDetailPage({
                 <JoinLeaveButton rideId={ride.id} isMember={isMember} />
                 <a
                   href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                    `🏍️ MotoBharat Warangal — ${ride.title}\n📅 ${formatRideDate(ride.starts_at)} · ${formatRideTime(ride.starts_at)}\n📍 Meeting: ${ride.meeting_point ?? "Warangal"}\n\nJoin the ride: https://motobharat.in/rides/${ride.slug ?? ride.id}`
+                    `🏍️ MotoBharat Warangal — ${ride.title}\n📅 ${formatRideDate(ride.starts_at)} · ${formatRideTime(ride.starts_at)}\n📍 Meeting: ${ride.meeting_point ?? "Warangal"}\n\nJoin the ride: https://motobharat.co/rides/${ride.slug ?? ride.id}`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

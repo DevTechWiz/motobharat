@@ -20,7 +20,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://motobharat.in"),
+  metadataBase: new URL("https://motobharat.co"),
   title: {
     default: "MotoBharat — Warangal Riders",
     template: "%s · MotoBharat",

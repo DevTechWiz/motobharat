@@ -38,7 +38,7 @@ export function LoginForm({ stats }: { stats: LoginStats }) {
       {/* Visual panel */}
       <div className="grain relative flex min-h-[46vh] flex-col justify-between overflow-hidden p-6 sm:p-10 lg:min-h-0 lg:p-12">
         <Image
-          src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=2400&q=85"
+          src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1600&q=75"
           alt="Mountain highway winding into the hills at golden hour"
           fill
           sizes="(min-width: 1024px) 55vw, 100vw"

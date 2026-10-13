@@ -81,7 +81,7 @@ export default async function HomePage() {
       <section className="grain relative flex min-h-[86vh] items-center overflow-hidden border-b border-border">
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=2400&q=85"
+            src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1600&q=75"
             alt="Mountain highway winding into the hills at golden hour"
             fill
             sizes="100vw"

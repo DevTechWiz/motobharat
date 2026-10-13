@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin", "/profile", "/login", "/dev"],
       },
     ],
-    sitemap: "https://motobharat.in/sitemap.xml",
+    sitemap: "https://motobharat.co/sitemap.xml",
   };
 }

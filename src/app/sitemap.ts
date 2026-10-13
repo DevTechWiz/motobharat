@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = "https://motobharat.in";
+  const base = "https://motobharat.co";
   const supabase = await createClient();
 
   const [{ data: rides }, { data: announcements }] = await Promise.all([

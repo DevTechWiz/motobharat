@@ -43,29 +43,29 @@ export function RideForm({
         </div>
       )}
 
-      <Field label="Title" htmlFor="title">
+      <Field label="Title" htmlFor="title" required>
         <Input id="title" name="title" defaultValue={ride?.title} required placeholder="Sunday Morning Ride" />
       </Field>
 
-      <Field label="Description" htmlFor="description">
-        <Textarea id="description" name="description" defaultValue={ride?.description} rows={4} placeholder="Route highlights, pace, stops..." />
+      <Field label="Description" htmlFor="description" required>
+        <Textarea id="description" name="description" defaultValue={ride?.description} rows={4} required placeholder="Route highlights, pace, stops..." />
       </Field>
 
-      <Field label="Starts At (IST)" htmlFor="starts_at">
+      <Field label="Starts At (IST)" htmlFor="starts_at" required>
         <Input id="starts_at" name="starts_at" type="datetime-local" defaultValue={datetimeLocal} required />
       </Field>
 
-      <Field label="Meeting Point" htmlFor="meeting_point">
-        <Input id="meeting_point" name="meeting_point" defaultValue={ride?.meeting_point} placeholder="Hanamkonda Police Station" />
+      <Field label="Meeting Point" htmlFor="meeting_point" required>
+        <Input id="meeting_point" name="meeting_point" defaultValue={ride?.meeting_point} required placeholder="Hanamkonda Police Station" />
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Distance (km)" htmlFor="distance_km">
-          <Input id="distance_km" name="distance_km" type="number" defaultValue={ride?.distance_km ?? ""} placeholder="45" />
+        <Field label="Distance (km)" htmlFor="distance_km" required>
+          <Input id="distance_km" name="distance_km" type="number" min={1} step="any" required defaultValue={ride?.distance_km ?? ""} placeholder="45" />
         </Field>
-        <Field label="Difficulty" htmlFor="difficulty">
-          <Select id="difficulty" name="difficulty" defaultValue={ride?.difficulty ?? ""}>
-            <option value="">—</option>
+        <Field label="Difficulty" htmlFor="difficulty" required>
+          <Select id="difficulty" name="difficulty" required defaultValue={ride?.difficulty ?? ""}>
+            <option value="">Select…</option>
             <option value="easy">Easy</option>
             <option value="moderate">Moderate</option>
             <option value="hard">Hard</option>
@@ -73,7 +73,7 @@ export function RideForm({
         </Field>
       </div>
 
-      <Field label="Status" htmlFor="status">
+      <Field label="Status" htmlFor="status" required>
         <Select id="status" name="status" defaultValue={ride?.status ?? "draft"}>
           <option value="draft">Draft (hidden)</option>
           <option value="published">Upcoming (public)</option>
@@ -82,8 +82,21 @@ export function RideForm({
         </Select>
       </Field>
 
+      {!ride && (
+        <Field
+          label="Cover image URL"
+          htmlFor="cover_url"
+          hint="https JPEG / WebP / PNG — gallery uploads unlock after R2 keys land"
+          required
+        >
+          <Input id="cover_url" name="cover_url" type="url" required placeholder="https://…" />
+        </Field>
+      )}
+
       <p className="text-xs text-muted">
-        Cover photo and gallery are managed below after the ride is saved.
+        {ride
+          ? "Cover photo and gallery are managed in sections 02–03 below."
+          : "Gallery photos can be added after the ride is created."}
       </p>
 
       <SubmitButton label={ride ? "Update Ride" : "Create Ride"} />

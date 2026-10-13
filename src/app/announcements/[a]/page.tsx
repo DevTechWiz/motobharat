@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container, Section } from "@/components/layout/container";
+import { AdminEditLink } from "@/components/layout/admin-edit-link";
 import { formatDate } from "@/lib/format";
 import type { Announcement } from "@/lib/types";
 
@@ -38,7 +39,12 @@ export async function generateMetadata({
   const { a } = await params;
   const announcement = await getAnnouncement(a);
   if (!announcement) return { title: "Announcement not found" };
-  return { title: announcement.title };
+  return {
+    title: announcement.title,
+    description: announcement.body
+      ? announcement.body.slice(0, 155).trim()
+      : "Community notice from MotoBharat Warangal.",
+  };
 }
 
 export default async function AnnouncementDetailPage({
@@ -50,19 +56,38 @@ export default async function AnnouncementDetailPage({
   const announcement = await getAnnouncement(a);
   if (!announcement) notFound();
 
+  // Server-side role check for the admin edit shortcut (display only —
+  // /admin enforces proxy + requireAdmin + RLS independently).
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let isAdmin = false;
+  if (user) {
+    const { data: self } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    isAdmin = self?.role === "admin";
+  }
+
   const more = await getMoreNotices(announcement.id);
 
   return (
     <>
       <Section spacing="compact">
         <Container className="max-w-3xl">
-          <Link
-            href="/announcements"
-            className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-secondary uppercase transition-colors hover:text-accent"
-          >
-            <ArrowLeft className="size-3.5" aria-hidden />
-            All Announcements
-          </Link>
+          <div className="flex items-center justify-between gap-3">
+            <Link
+              href="/announcements"
+              className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-secondary uppercase transition-colors hover:text-accent"
+            >
+              <ArrowLeft className="size-3.5" aria-hidden />
+              All Announcements
+            </Link>
+            {isAdmin && (
+              <AdminEditLink href={`/admin/announcements/${announcement.id}/edit`} label="Edit" />
+            )}
+          </div>
 
           <p className="mt-8 inline-block rounded-lg border border-border bg-surface px-3 py-1.5 font-mono text-[11px] tracking-wider text-muted uppercase tabular-nums">
             {formatDate(announcement.created_at)}

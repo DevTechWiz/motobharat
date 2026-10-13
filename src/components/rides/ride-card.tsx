@@ -121,9 +121,9 @@ export function RideCard({ ride }: { ride: Ride }) {
           )}
         </div>
 
-        <h3 className="text-lg font-bold leading-snug transition-colors group-hover:text-accent">
+        <h2 className="text-lg font-bold leading-snug transition-colors group-hover:text-accent">
           {ride.title}
-        </h3>
+        </h2>
 
         {ride.meeting_point && (
           <p className="mt-1.5 flex items-center gap-1 text-xs text-muted">
