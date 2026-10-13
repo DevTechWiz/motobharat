@@ -127,20 +127,14 @@ export function SetupForm({
       )}
 
       <Group icon={User} title="Identity">
-        <Field
-          label="Full Name"
-          htmlFor="display_name"
-          required
-          hint={locked ? "Locked after approval — contact an admin to correct" : undefined}
-        >
+        <Field label="Profile Name" htmlFor="display_name" required hint="Public profile name — editable anytime">
           <Input
             id="display_name"
             name="display_name"
-            value={locked ? (profile?.display_name ?? "") : getDraftVal("display_name", profile?.display_name ?? "")}
+            value={getDraftVal("display_name", profile?.display_name ?? "")}
             onChange={(e) => updateDraft("display_name", e.target.value)}
             required
             maxLength={50}
-            disabled={locked}
             placeholder="As you want it on ride lists"
           />
         </Field>
@@ -194,17 +188,28 @@ export function SetupForm({
               })()}
             </p>
           </Field>
-          <Field label="Gender" htmlFor="gender" required className="min-[420px]:col-span-2">
-            <CustomSelect
-              id="gender"
-              name="gender"
-              required
-              value={getDraftVal("gender", initialData?.gender ?? "")}
-              onChange={(val) => updateDraft("gender", val)}
-              placeholder="Select gender…"
-              options={GENDER_OPTIONS}
-            />
-          </Field>
+        <Field
+          label="Gender"
+          htmlFor="gender"
+          hint={locked && initialData?.gender ? "Locked after approval" : undefined}
+          required
+          className="min-[420px]:col-span-2"
+        >
+          <CustomSelect
+            id="gender"
+            name="gender"
+            required
+            disabled={locked && Boolean(initialData?.gender)}
+            value={
+              locked && initialData?.gender
+                ? initialData.gender
+                : getDraftVal("gender", initialData?.gender ?? "")
+            }
+            onChange={(val) => updateDraft("gender", val)}
+            placeholder="Select gender…"
+            options={GENDER_OPTIONS}
+          />
+        </Field>
         </div>
       </Group>
 

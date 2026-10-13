@@ -585,14 +585,23 @@ function KycForm() {
         <Field
           label="Full Name / Digital Signature"
           htmlFor="digital_signature"
-          hint="Type your full legal name exactly as printed on your driving licence — an admin cross-checks both"
+          hint={
+            locked && prefill?.digital_signature
+              ? "Locked after approval — contact an admin to correct"
+              : "Type your full legal name exactly as printed on your driving licence — an admin cross-checks both"
+          }
           required
         >
           <Input
             id="digital_signature"
             name="digital_signature"
             required
-            value={getDraftVal("digital_signature", prefill?.digital_signature ?? profile?.display_name ?? "")}
+            disabled={locked && Boolean(prefill?.digital_signature)}
+            value={
+              locked && prefill?.digital_signature
+                ? prefill.digital_signature
+                : getDraftVal("digital_signature", prefill?.digital_signature ?? profile?.display_name ?? "")
+            }
             onChange={(e) => updateDraft("digital_signature", e.target.value)}
             placeholder="Your Full Name"
           />

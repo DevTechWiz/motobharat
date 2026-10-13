@@ -44,22 +44,18 @@ export async function saveBasicProfile(
   const displayNameInput = String(formData.get("display_name") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const dobRawInput = String(formData.get("dob") ?? "").trim();
-  const gender = String(formData.get("gender") ?? "");
+  const genderInput = String(formData.get("gender") ?? "");
   const phone = String(formData.get("phone") ?? "").trim();
   const whatsappNumberRaw = String(formData.get("whatsapp_number") ?? "").trim();
   const occupation = String(formData.get("occupation") ?? "").trim() || null;
   const isEdit = String(formData.get("edit") ?? "") === "true";
 
-  // Locked identity: approved riders can't change name/age/dob here (or via
-  // raw API) — submitted values are ignored in favour of stored ones.
-  const { data: stored } = await supabase
-    .from("profiles")
-    .select("display_name")
-    .eq("id", user.id)
-    .single();
+  // Locked identity: approved riders can't change age/dob/gender here (or via
+  // raw API) — submitted values are ignored while a stored value exists.
+  // Display name is a public profile label, not identity — always editable.
   const { data: storedDetails } = await supabase
     .from("rider_details")
-    .select("registered, age, dob, kyc_submitted_at, kyc_rejected")
+    .select("registered, age, dob, gender, kyc_submitted_at, kyc_rejected")
     .eq("user_id", user.id)
     .maybeSingle();
   const locked = Boolean(storedDetails?.registered);
@@ -70,10 +66,12 @@ export async function saveBasicProfile(
     return { error: "Application under review — wait for the admin verdict." };
   }
 
-  const displayName = locked ? (stored?.display_name ?? displayNameInput) : displayNameInput;  // Age is derived from the date of birth, never typed: locked rows reuse the
+  const displayName = displayNameInput;
+  // Age is derived from the date of birth, never typed: locked rows reuse the
   // stored age, everyone else must supply a DOB.
   const dobRaw = locked ? (storedDetails?.dob ?? "") : dobRawInput;
   const age = locked && storedDetails?.age != null ? storedDetails.age : ageFromDob(dobRaw);
+  const gender = locked && storedDetails?.gender ? storedDetails.gender : genderInput;
 
   if (!displayName) return { error: "Name is required." };
   if (displayName.length > 50) return { error: "Name must be 50 characters or fewer." };
@@ -169,7 +167,7 @@ export async function saveRiderDetails(
 
   // Declaration & Signature
   const declarationConfirmed = formData.get("declaration_confirmed") === "true" || formData.get("declaration_confirmed") === "on";
-  const digitalSignature = String(formData.get("digital_signature") ?? "").trim();
+  let digitalSignature = String(formData.get("digital_signature") ?? "").trim();
 
   // Field validations
   if (!bikeModel) { console.log("[saveRiderDetails] Missing bikeModel"); return { error: "Motorcycle brand & model is required." }; }
@@ -212,7 +210,7 @@ export async function saveRiderDetails(
   // Basic info must exist before KYC (enforced by the setup flow).
   const { data: existing } = await supabase
     .from("rider_details")
-    .select("registered, age, gender, phone, dob, whatsapp_number, occupation, dl_image_url, blood_group, driving_licence, kyc_submitted_at, kyc_rejected")
+    .select("registered, age, gender, phone, dob, whatsapp_number, occupation, dl_image_url, blood_group, driving_licence, digital_signature, kyc_submitted_at, kyc_rejected")
     .eq("user_id", user.id)
     .maybeSingle();
   if (!existing?.age || !existing?.gender || !existing?.phone) {
@@ -232,6 +230,9 @@ export async function saveRiderDetails(
   const locked = existing.registered ?? false;
   if (locked && existing.blood_group) bloodGroup = existing.blood_group;
   if (locked && existing.driving_licence) drivingLicence = existing.driving_licence;
+  // Full name / signature is identity, not profile text: same lock, same
+  // never-set-still-accepts rule as the other frozen fields.
+  if (locked && existing.digital_signature) digitalSignature = existing.digital_signature;
 
   // DL photo: mandatory KYC data until approval, purged at approval. Locked
   // rows ignore uploads entirely (approved accounts hold no photo); everyone

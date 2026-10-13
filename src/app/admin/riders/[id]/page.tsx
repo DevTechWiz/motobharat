@@ -105,10 +105,11 @@ export default async function RiderReviewPage({
       <LockedFieldsForm
         userId={id}
         initial={{
-          display_name: profile.display_name,
           dob: rd.dob ?? null,
+          gender: rd.gender ?? null,
           blood_group: rd.blood_group ?? null,
           driving_licence: rd.driving_licence ?? null,
+          digital_signature: rd.digital_signature ?? null,
           hasPhoto: Boolean(rd.dl_image_url),
           approved: rd.registered,
         }}

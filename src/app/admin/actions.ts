@@ -538,9 +538,10 @@ export async function rejectRider(userId: string) {
 }
 
 // Locked-field correction: the only path that can change a rider's frozen
-// identity (name, dob/age, blood group, DL number/photo). Full values are
-// always written (read-modify-write is unnecessary — the form is prefilled),
-// so the KYC trigger stays satisfied on registered rows.
+// identity (dob/age, gender, blood group, DL number/signature/photo). Display
+// name is a public label riders edit themselves — not handled here. Full
+// values are always written (the form is prefilled), so the KYC trigger stays
+// satisfied on registered rows.
 export async function updateLockedFields(
   _prev: { error?: string; ok?: boolean },
   formData: FormData,
@@ -552,13 +553,14 @@ export async function updateLockedFields(
   const userId = String(formData.get("user_id") ?? "").trim();
   if (!userId) return { error: "Missing rider id." };
 
-  const displayName = String(formData.get("display_name") ?? "").trim();
   const dobRaw = String(formData.get("dob") ?? "").trim();
+  const gender = String(formData.get("gender") ?? "");
   const bloodGroup = String(formData.get("blood_group") ?? "");
   const drivingLicence = String(formData.get("driving_licence") ?? "").trim().toUpperCase();
+  const digitalSignature = String(formData.get("digital_signature") ?? "").trim();
 
-  if (!displayName) return { error: "Name is required." };
-  if (displayName.length > 50) return { error: "Name must be 50 characters or fewer." };
+  const GENDERS = ["male", "female", "other", "prefer_not_to_say"];
+  if (!GENDERS.includes(gender)) return { error: "Pick a valid gender option." };
 
   const age = ageFromDob(dobRaw);
   if (age == null || !Number.isInteger(age) || age < 18 || age > 90) {
@@ -566,6 +568,7 @@ export async function updateLockedFields(
   }
   if (!BLOOD_GROUPS.includes(bloodGroup)) return { error: "Pick a valid blood group." };
   if (!drivingLicence) return { error: "Driving licence number is required." };
+  if (!digitalSignature) return { error: "Full name / digital signature is required." };
 
   const { data: current } = await supabase
     .from("rider_details")
@@ -595,19 +598,15 @@ export async function updateLockedFields(
     nextDlUrl = r2PublicUrl(key);
   }
 
-  const { error: pErr } = await supabase
-    .from("profiles")
-    .update({ display_name: displayName })
-    .eq("id", userId);
-  if (pErr) return { error: pErr.message };
-
   const { error: rErr } = await supabase
     .from("rider_details")
     .update({
       age,
       dob: dobRaw || null,
+      gender,
       blood_group: bloodGroup,
       driving_licence: drivingLicence,
+      digital_signature: digitalSignature,
       dl_image_url: nextDlUrl,
       updated_at: new Date().toISOString(),
     })
@@ -620,7 +619,8 @@ export async function updateLockedFields(
   return { ok: true };
 }
 
-function revalidateRidePaths(rideId: string, slug: string | null | undefined) {  revalidatePath("/");
+function revalidateRidePaths(rideId: string, slug: string | null | undefined) {
+  revalidatePath("/");
   revalidatePath("/rides");
   revalidatePath("/admin/rides");
   revalidatePath(`/rides/${slug ?? rideId}`);

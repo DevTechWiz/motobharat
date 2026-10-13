@@ -13,6 +13,13 @@ const BLOOD_OPTIONS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((bg
   label: bg,
 }));
 
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
+];
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -28,10 +35,11 @@ export function LockedFieldsForm({
 }: {
   userId: string;
   initial: {
-    display_name: string;
     dob: string | null;
+    gender: string | null;
     blood_group: string | null;
     driving_licence: string | null;
+    digital_signature: string | null;
     hasPhoto: boolean;
     approved: boolean;
   };
@@ -55,8 +63,15 @@ export function LockedFieldsForm({
         </div>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Full Name" htmlFor="lf-name" required>
-          <Input id="lf-name" name="display_name" required maxLength={50} defaultValue={initial.display_name} />
+        <Field label="Gender" htmlFor="lf-gender" required>
+          <CustomSelect
+            id="lf-gender"
+            name="gender"
+            required
+            defaultValue={initial.gender ?? ""}
+            placeholder="Select gender…"
+            options={GENDER_OPTIONS}
+          />
         </Field>
         <Field label="Blood Group" htmlFor="lf-blood" required>
           <CustomSelect
@@ -85,6 +100,15 @@ export function LockedFieldsForm({
             required
             defaultValue={initial.driving_licence ?? ""}
             className="uppercase font-mono"
+          />
+        </Field>
+        <Field label="Full Name / Digital Signature" htmlFor="lf-sig" required>
+          <Input
+            id="lf-sig"
+            name="digital_signature"
+            required
+            defaultValue={initial.digital_signature ?? ""}
+            placeholder="Full legal name as on DL"
           />
         </Field>
         {!initial.approved && (
