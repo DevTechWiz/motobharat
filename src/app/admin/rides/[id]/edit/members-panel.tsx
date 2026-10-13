@@ -1,12 +1,28 @@
+"use client";
+
+import { useTransition } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
 import { removeMember } from "../../../actions";
 import type { RideMember } from "@/lib/types";
 
-async function removeMemberAction(rideId: string, userId: string) {
-  "use server";
-  await removeMember(rideId, userId);
+function RemoveMemberButton({ rideId, userId }: { rideId: string; userId: string }) {
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <form
+      action={() => {
+        startTransition(async () => {
+          await removeMember(rideId, userId);
+        });
+      }}
+    >
+      <Button type="submit" variant="danger" size="sm" disabled={isPending}>
+        {isPending ? "Removing..." : "Remove"}
+      </Button>
+    </form>
+  );
 }
 
 export function MembersPanel({
@@ -49,11 +65,7 @@ export function MembersPanel({
                   <p className="font-mono text-[11px] text-muted">joined {formatDate(m.created_at)}</p>
                 </div>
               </div>
-              <form action={removeMemberAction.bind(null, rideId, m.user_id)}>
-                <Button type="submit" variant="danger" size="sm">
-                  Remove
-                </Button>
-              </form>
+              <RemoveMemberButton rideId={rideId} userId={m.user_id} />
             </li>
           ))}
         </ul>

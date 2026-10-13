@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, useRef } from "react";
-import { useFormStatus } from "react-dom";
+import { useActionState, useEffect, useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,7 +13,6 @@ import { Input, Textarea, Field } from "@/components/ui/field";
 import { PhotoPicker } from "@/components/ui/photo-picker";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { useFormDraft } from "@/lib/use-form-draft";
 import { saveRiderDetails, type ProfileFormState } from "../actions";
 import type { RiderDetails } from "@/lib/types";
 import { MOTORCYCLES_BY_BRAND, POPULAR_MOTORCYCLES } from "@/lib/motorcycles";
@@ -67,10 +65,9 @@ const HEALTH_INSURANCE_OPTIONS = [
   { value: "true", label: "Active Mediclaim", sublabel: "Active health or accidental insurance policy" },
 ];
 
-function SubmitButton({ done }: { done: boolean }) {
-  const { pending } = useFormStatus();
+function SubmitButton({ done, pending }: { done: boolean; pending: boolean }) {
   return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+    <Button type="submit" disabled={pending}>
       {pending ? "Saving Registration..." : done ? "Update KYC Details" : "Submit & Complete Registration"}
     </Button>
   );
@@ -107,10 +104,13 @@ function KycForm() {
   const router = useRouter();
   const { user, profile, loading } = useAuth();
   const [state, formAction] = useActionState(saveRiderDetails, {} as ProfileFormState);
+  const [isPending, startTransition] = useTransition();
   const [prefill, setPrefill] = useState<Partial<RiderDetails> | null>(null);
   const [done, setDone] = useState(false);
   const [checking, setChecking] = useState(true);
-  const { updateDraft, getDraftVal, clearDraft, draft } = useFormDraft("motobharat_draft_kyc");
+  // Ephemeral UI state only (never persisted): custom-bike toggle.
+  const [bikeSel, setBikeSel] = useState<string | null>(null);
+  const [customBikeSel, setCustomBikeSel] = useState<string | null>(null);
   const lastInvalidRef = useRef<number>(0);
   const serverErrorRef = useRef<HTMLDivElement>(null);
 
@@ -120,13 +120,6 @@ function KycForm() {
       serverErrorRef.current.focus();
     }
   }, [state?.error]);
-
-  // Clean up Step 1 draft now that user is on Step 2
-  useEffect(() => {
-    try {
-      localStorage.removeItem("motobharat_draft_setup");
-    } catch {}
-  }, []);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -143,25 +136,18 @@ function KycForm() {
           return;
         }
         setPrefill(data);
-        // Drafts die on submit: a filed (pending) or approved application always
-        // displays server truth, never stale keystrokes.
-        if (data.registered || (!data.kyc_rejected && data.kyc_submitted_at)) {
-          clearDraft();
-        }
         setDone(data.registered);
         setChecking(false);
       });
-  }, [loading, user, router, clearDraft]);
+  }, [loading, user, router]);
 
   const frozen = Boolean(prefill?.kyc_submitted_at && !prefill?.registered && !prefill?.kyc_rejected);
-  const dirty = Object.keys(draft).length > 0;
 
   useEffect(() => {
     if (state?.ok) {
-      clearDraft();
       router.push("/profile");
     }
-  }, [state?.ok, clearDraft, router]);
+  }, [state?.ok, router]);
 
   const handleInvalid = (e: React.FormEvent<HTMLFormElement>) => {
     const now = Date.now();
@@ -179,19 +165,14 @@ function KycForm() {
     }, 450);
   };
 
-  const activeBikeSelection = String(getDraftVal("bike_model", prefill?.bike_model ?? ""));
+  const activeBikeSelection = bikeSel ?? prefill?.bike_model ?? "";
   const isCustomBike =
     activeBikeSelection === "other" ||
     (Boolean(activeBikeSelection) && !POPULAR_MOTORCYCLES.includes(activeBikeSelection));
   const selectDisplayValue = isCustomBike ? "other" : activeBikeSelection;
-  const customBikeValue = String(
-    getDraftVal(
-      "custom_bike_model",
-      prefill?.bike_model && !POPULAR_MOTORCYCLES.includes(prefill.bike_model)
-        ? prefill.bike_model
-        : ""
-    )
-  );
+  const customBikeValue =
+    customBikeSel ??
+    (prefill?.bike_model && !POPULAR_MOTORCYCLES.includes(prefill.bike_model) ? prefill.bike_model : "");
   const locked = prefill?.registered ?? false;
 
   if (loading || checking || !user) {
@@ -199,8 +180,14 @@ function KycForm() {
   }
 
   return (
-    <form action={formAction} onInvalidCapture={handleInvalid}>
-      <fieldset disabled={frozen} className="min-w-0 space-y-8 border-0 m-0 p-0">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        startTransition(() => formAction(new FormData(e.currentTarget)));
+      }}
+      onInvalidCapture={handleInvalid}
+    >
+      <fieldset disabled={frozen || isPending} className="min-w-0 space-y-8 border-0 m-0 p-0">
       {prefill?.kyc_rejected && !prefill?.registered && (
         <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-text">
           <ShieldAlert className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
@@ -237,9 +224,9 @@ function KycForm() {
               groups={MOTORCYCLES_BY_BRAND}
               options={[{ value: "other", label: "Other / Custom Model" }]}
               onChange={(val) => {
-                updateDraft("bike_model", val);
+                setBikeSel(val);
                 if (val !== "other") {
-                  updateDraft("custom_bike_model", "");
+                  setCustomBikeSel("");
                 }
               }}
             />
@@ -249,8 +236,7 @@ function KycForm() {
               id="bike_reg_no"
               name="bike_reg_no"
               required
-              value={getDraftVal("bike_reg_no", prefill?.bike_reg_no ?? "")}
-              onChange={(e) => updateDraft("bike_reg_no", e.target.value)}
+              defaultValue={prefill?.bike_reg_no ?? ""}
               placeholder="TS 03 AB 1234"
               className="uppercase font-mono"
             />
@@ -269,7 +255,7 @@ function KycForm() {
               name="custom_bike_model"
               required
               value={customBikeValue}
-              onChange={(e) => updateDraft("custom_bike_model", e.target.value)}
+              onChange={(e) => setCustomBikeSel(e.target.value)}
               placeholder="e.g. Benelli Imperiale 400"
             />
           </Field>
@@ -282,28 +268,33 @@ function KycForm() {
             hint={locked && prefill?.driving_licence ? "Locked after approval — contact an admin to correct" : "As on your DL card"}
             required
           >
-            <Input
-              id="driving_licence"
-              name="driving_licence"
-              required
-              disabled={locked && Boolean(prefill?.driving_licence)}
-              value={
-                locked && prefill?.driving_licence
-                  ? prefill.driving_licence
-                  : getDraftVal("driving_licence", prefill?.driving_licence ?? "")
-              }
-              onChange={(e) => updateDraft("driving_licence", e.target.value)}
-              placeholder="TS03 20200001234"
-              className="uppercase font-mono"
-            />
+            {locked && prefill?.driving_licence ? (
+              <Input
+                id="driving_licence"
+                name="driving_licence"
+                required
+                disabled
+                value={prefill.driving_licence}
+                placeholder="TS03 20200001234"
+                className="uppercase font-mono"
+              />
+            ) : (
+              <Input
+                id="driving_licence"
+                name="driving_licence"
+                required
+                defaultValue={prefill?.driving_licence ?? ""}
+                placeholder="TS03 20200001234"
+                className="uppercase font-mono"
+              />
+            )}
           </Field>
           <Field label="Vehicle Insurance Status" htmlFor="vehicle_insurance_status" required>
             <CustomSelect
               id="vehicle_insurance_status"
               name="vehicle_insurance_status"
               required
-              value={getDraftVal("vehicle_insurance_status", prefill?.vehicle_insurance_status ?? "valid_insured")}
-              onChange={(val) => updateDraft("vehicle_insurance_status", val)}
+              defaultValue={prefill?.vehicle_insurance_status ?? "valid_insured"}
               placeholder="Select insurance status…"
               options={INSURANCE_OPTIONS}
             />
@@ -358,8 +349,7 @@ function KycForm() {
             id="experience_level"
             name="experience_level"
             required
-            value={getDraftVal("experience_level", prefill?.experience_level ?? "")}
-            onChange={(val) => updateDraft("experience_level", val)}
+            defaultValue={prefill?.experience_level ?? ""}
             placeholder="Select experience level…"
             options={EXPERIENCE_OPTIONS}
           />
@@ -370,8 +360,7 @@ function KycForm() {
             id="gear_level"
             name="gear_level"
             required
-            value={getDraftVal("gear_level", prefill?.gear_level ?? "")}
-            onChange={(val) => updateDraft("gear_level", val)}
+            defaultValue={prefill?.gear_level ?? ""}
             placeholder="Select gear level…"
             options={GEAR_OPTIONS}
           />
@@ -382,8 +371,7 @@ function KycForm() {
             <CustomSelect
               id="has_rsa"
               name="has_rsa"
-              value={getDraftVal("has_rsa", prefill?.has_rsa ? "true" : "false")}
-              onChange={(val) => updateDraft("has_rsa", val)}
+              defaultValue={prefill?.has_rsa ? "true" : "false"}
               options={RSA_OPTIONS}
             />
           </Field>
@@ -391,8 +379,7 @@ function KycForm() {
             <CustomSelect
               id="rides_with_pillion"
               name="rides_with_pillion"
-              value={getDraftVal("rides_with_pillion", prefill?.rides_with_pillion ? "true" : "false")}
-              onChange={(val) => updateDraft("rides_with_pillion", val)}
+              defaultValue={prefill?.rides_with_pillion ? "true" : "false"}
               options={PILLION_OPTIONS}
             />
           </Field>
@@ -412,27 +399,32 @@ function KycForm() {
             hint={locked && prefill?.blood_group ? "Locked after approval" : undefined}
             required
           >
-            <CustomSelect
-              id="blood_group"
-              name="blood_group"
-              required
-              disabled={locked && Boolean(prefill?.blood_group)}
-              value={
-                locked && prefill?.blood_group
-                  ? prefill.blood_group
-                  : getDraftVal("blood_group", prefill?.blood_group ?? "")
-              }
-              onChange={(val) => updateDraft("blood_group", val)}
-              placeholder="Select blood group…"
-              options={BLOOD_OPTIONS}
-            />
+            {locked && prefill?.blood_group ? (
+              <CustomSelect
+                id="blood_group"
+                name="blood_group"
+                required
+                disabled
+                value={prefill.blood_group}
+                placeholder="Select blood group…"
+                options={BLOOD_OPTIONS}
+              />
+            ) : (
+              <CustomSelect
+                id="blood_group"
+                name="blood_group"
+                required
+                defaultValue={prefill?.blood_group ?? ""}
+                placeholder="Select blood group…"
+                options={BLOOD_OPTIONS}
+              />
+            )}
           </Field>
           <Field label="Personal Health / Mediclaim Insurance" htmlFor="personal_health_insurance">
             <CustomSelect
               id="personal_health_insurance"
               name="personal_health_insurance"
-              value={getDraftVal("personal_health_insurance", prefill?.personal_health_insurance ? "true" : "false")}
-              onChange={(val) => updateDraft("personal_health_insurance", val)}
+              defaultValue={prefill?.personal_health_insurance ? "true" : "false"}
               options={HEALTH_INSURANCE_OPTIONS}
             />
           </Field>
@@ -444,8 +436,7 @@ function KycForm() {
               id="emergency_contact_name"
               name="emergency_contact_name"
               required
-              value={getDraftVal("emergency_contact_name", prefill?.emergency_contact_name ?? "")}
-              onChange={(e) => updateDraft("emergency_contact_name", e.target.value)}
+              defaultValue={prefill?.emergency_contact_name ?? ""}
               placeholder="e.g. Ramesh Rao"
             />
           </Field>
@@ -454,8 +445,7 @@ function KycForm() {
               id="emergency_contact_relation"
               name="emergency_contact_relation"
               required
-              value={getDraftVal("emergency_contact_relation", prefill?.emergency_contact_relation ?? "")}
-              onChange={(e) => updateDraft("emergency_contact_relation", e.target.value)}
+              defaultValue={prefill?.emergency_contact_relation ?? ""}
               placeholder="Father / Spouse / Friend"
             />
           </Field>
@@ -464,8 +454,7 @@ function KycForm() {
               id="emergency_contact_phone"
               name="emergency_contact_phone"
               required
-              value={getDraftVal("emergency_contact_phone", prefill?.emergency_contact_phone ?? "")}
-              onChange={(val) => updateDraft("emergency_contact_phone", val)}
+              defaultValue={prefill?.emergency_contact_phone ?? ""}
               placeholder="+91 98765 43210"
             />
           </Field>
@@ -476,8 +465,7 @@ function KycForm() {
             <PhoneInput
               id="emergency_contact_2_phone"
               name="emergency_contact_2_phone"
-              value={getDraftVal("emergency_contact_2_phone", prefill?.emergency_contact_2_phone ?? "")}
-              onChange={(val) => updateDraft("emergency_contact_2_phone", val)}
+              defaultValue={prefill?.emergency_contact_2_phone ?? ""}
               placeholder="+91 98765 00000"
             />
           </Field>
@@ -485,8 +473,7 @@ function KycForm() {
             <Input
               id="medical_conditions"
               name="medical_conditions"
-              value={getDraftVal("medical_conditions", prefill?.medical_conditions ?? "")}
-              onChange={(e) => updateDraft("medical_conditions", e.target.value)}
+              defaultValue={prefill?.medical_conditions ?? ""}
               placeholder="e.g. Asthmatic, No known drug allergies"
             />
           </Field>
@@ -500,14 +487,13 @@ function KycForm() {
         subtitle="Optional background info for the Warangal riders community"
       >
         <Field label="Permanent House Address" htmlFor="permanent_address" hint="Optional">
-          <Textarea
-            id="permanent_address"
-            name="permanent_address"
-            value={getDraftVal("permanent_address", prefill?.permanent_address ?? "")}
-            onChange={(e) => updateDraft("permanent_address", e.target.value)}
-            placeholder="H.No, Street, Landmark, Warangal, PIN..."
-            className="min-h-20"
-          />
+            <Textarea
+              id="permanent_address"
+              name="permanent_address"
+              defaultValue={prefill?.permanent_address ?? ""}
+              placeholder="H.No, Street, Landmark, Warangal, PIN..."
+              className="min-h-20"
+            />
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -515,11 +501,7 @@ function KycForm() {
             <Input
               id="instagram_handle"
               name="instagram_handle"
-              value={getDraftVal("instagram_handle", prefill?.instagram_handle ?? "")}
-              onChange={(e) => {
-                const cleaned = e.target.value.replace(/^@/, "");
-                updateDraft("instagram_handle", cleaned);
-              }}
+              defaultValue={prefill?.instagram_handle ?? ""}
               placeholder="rider_warangal"
             />
           </Field>
@@ -527,21 +509,19 @@ function KycForm() {
             <Input
               id="referral_source"
               name="referral_source"
-              value={getDraftVal("referral_source", prefill?.referral_source ?? "")}
-              onChange={(e) => updateDraft("referral_source", e.target.value)}
+              defaultValue={prefill?.referral_source ?? ""}
               placeholder="Instagram, Friends, WhatsApp..."
             />
           </Field>
         </div>
 
         <Field label="Suggestions / Expectations" htmlFor="suggestions" hint="Optional">
-          <Input
-            id="suggestions"
-            name="suggestions"
-            value={getDraftVal("suggestions", prefill?.suggestions ?? "")}
-            onChange={(e) => updateDraft("suggestions", e.target.value)}
-            placeholder="What kind of rides or destinations are you looking forward to?"
-          />
+            <Input
+              id="suggestions"
+              name="suggestions"
+              defaultValue={prefill?.suggestions ?? ""}
+              placeholder="What kind of rides or destinations are you looking forward to?"
+            />
         </Field>
       </SectionCard>
 
@@ -572,8 +552,7 @@ function KycForm() {
               id="declaration_confirmed"
               name="declaration_confirmed"
               required
-              checked={Boolean(getDraftVal("declaration_confirmed", prefill?.declaration_confirmed ?? false))}
-              onChange={(e) => updateDraft("declaration_confirmed", e.target.checked)}
+              defaultChecked={prefill?.declaration_confirmed ?? false}
               className="mt-1 size-4 rounded border-border text-accent focus:ring-accent"
             />
             <span className="text-xs text-text font-medium leading-normal">
@@ -592,19 +571,24 @@ function KycForm() {
           }
           required
         >
-          <Input
-            id="digital_signature"
-            name="digital_signature"
-            required
-            disabled={locked && Boolean(prefill?.digital_signature)}
-            value={
-              locked && prefill?.digital_signature
-                ? prefill.digital_signature
-                : getDraftVal("digital_signature", prefill?.digital_signature ?? profile?.display_name ?? "")
-            }
-            onChange={(e) => updateDraft("digital_signature", e.target.value)}
-            placeholder="Your Full Name"
-          />
+          {locked && prefill?.digital_signature ? (
+            <Input
+              id="digital_signature"
+              name="digital_signature"
+              required
+              disabled
+              value={prefill.digital_signature}
+              placeholder="Your Full Name"
+            />
+          ) : (
+            <Input
+              id="digital_signature"
+              name="digital_signature"
+              required
+              defaultValue={prefill?.digital_signature ?? profile?.display_name ?? ""}
+              placeholder="Your Full Name"
+            />
+          )}
         </Field>
       </SectionCard>
 
@@ -620,12 +604,6 @@ function KycForm() {
         </div>
       )}
 
-      {dirty && !frozen && (
-        <p className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 text-xs font-semibold text-accent">
-          Unsaved changes — press {done ? "Update KYC Details" : "Submit & Complete Registration"} to save.
-        </p>
-      )}
-
       <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-2">
         <Link
           href={done ? "/profile" : "/profile/setup"}
@@ -634,7 +612,7 @@ function KycForm() {
           <ArrowLeft className="size-3.5" aria-hidden />
           {done ? "Back to profile" : "Back to basic info"}
         </Link>
-        <SubmitButton done={done} />
+        <SubmitButton done={done} pending={isPending} />
       </div>
 
       <p className="border-t border-border pt-4 text-xs text-muted text-center sm:text-left">

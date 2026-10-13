@@ -338,13 +338,6 @@ export default async function ProfilePage() {
           </div>
         </Container>
       </Section>
-      {isRegistered && (
-        <script
-          dangerouslySetInnerHTML={{
-            __html: "try{localStorage.removeItem('motobharat_draft_kyc');localStorage.removeItem('motobharat_draft_setup');}catch(e){}",
-          }}
-        />
-      )}
     </>
   );
 }

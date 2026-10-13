@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { RideForm } from "../../ride-form";
 import { updateRide } from "../../../actions";
+import { AdminSection } from "../../admin-section";
 import { CoverUpload } from "./cover-upload";
 import { GalleryManager } from "./gallery-manager";
 import { MembersPanel } from "./members-panel";
@@ -93,30 +94,5 @@ export default async function EditRidePage({
         <MembersPanel rideId={ride.id} members={membersWithDetails as RideMember[]} />
       </AdminSection>
     </div>
-  );
-}
-
-function AdminSection({
-  num,
-  title,
-  hint,
-  children,
-}: {
-  num: string;
-  title: string;
-  hint: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-2xl border border-border bg-surface/40 p-5 sm:p-7">
-      <div className="mb-6 flex items-baseline gap-3 border-b border-border pb-4">
-        <span className="font-mono text-xs font-bold text-accent">{num}</span>
-        <h2 className="text-lg font-bold">{title}</h2>
-        <span className="hidden font-mono text-[10px] tracking-wider text-muted uppercase sm:inline">
-          · {hint}
-        </span>
-      </div>
-      {children}
-    </section>
   );
 }

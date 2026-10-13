@@ -42,6 +42,9 @@ export default async function VerifyPage({ params }: { params: Promise<{ uid: st
     );
   }
 
+  // Same identity as the card: legal full name, profile name as fallback.
+  const fullName = member?.full_name || member?.display_name;
+
   return (
     <Section spacing="compact">
       <Container className="max-w-xl">
@@ -51,12 +54,12 @@ export default async function VerifyPage({ params }: { params: Promise<{ uid: st
         <div className="mt-4 rounded-2xl border border-border bg-surface p-6 text-center sm:p-8">
           <Avatar
             src={member.avatar_url}
-            name={member.display_name}
+            name={fullName}
             size="xl"
             className="mx-auto"
           />
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-white">
-            {member.display_name}
+            {fullName}
           </h1>
           <p className="mt-1 font-mono text-sm font-bold tracking-widest text-accent">
             {memberIdFromUserId(uid)}

@@ -47,6 +47,12 @@ export interface RiderDetails {
   updated_at: string;
 }
 
+export interface ItineraryItem {
+  title: string;
+  description?: string;
+  activity?: string;
+}
+
 export interface Ride {
   id: string;
   slug: string | null;
@@ -54,6 +60,9 @@ export interface Ride {
   description: string;
   starts_at: string;
   meeting_point: string;
+  destination?: string | null;
+  itinerary?: ItineraryItem[] | null;
+  activities?: string[] | null;
   distance_km: number | null;
   difficulty: RideDifficulty | null;
   cover_url: string | null;

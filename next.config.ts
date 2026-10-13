@@ -21,7 +21,7 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' https: data:",
+      "img-src 'self' https: data: blob:",
       "font-src 'self'",
       "connect-src 'self' https://*.supabase.co https://*.supabase.in",
       "frame-src https://accounts.google.com",
@@ -38,6 +38,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
   images: { remotePatterns },
   turbopack: {
     rules: {

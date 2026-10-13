@@ -1,11 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
+import { useActionState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Field } from "@/components/ui/field";
-import { PhotoPicker } from "@/components/ui/photo-picker";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { PhotoPicker } from "@/components/ui/photo-picker";
 import { updateLockedFields } from "../../actions";
 
 const BLOOD_OPTIONS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((bg) => ({
@@ -20,8 +19,7 @@ const GENDER_OPTIONS = [
   { value: "prefer_not_to_say", label: "Prefer not to say" },
 ];
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
+function SubmitButton({ pending }: { pending: boolean }) {
   return (
     <Button type="submit" disabled={pending} size="sm">
       {pending ? "Saving…" : "Save corrections"}
@@ -45,10 +43,21 @@ export function LockedFieldsForm({
   };
 }) {
   const [state, formAction] = useActionState(updateLockedFields, {} as { error?: string; ok?: boolean });
+  // Manual dispatch (not action={}): React clears file inputs when a managed
+  // submit completes — manual dispatch leaves the whole form, files included,
+  // exactly as the admin left it when an error comes back.
+  const [isPending, startTransition] = useTransition();
 
   return (
-    <form action={formAction} className="space-y-4 rounded-xl border border-border bg-surface p-4 sm:p-5">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        startTransition(() => formAction(new FormData(e.currentTarget)));
+      }}
+      className="rounded-xl border border-border bg-surface p-4 sm:p-5"
+    >
       <input type="hidden" name="user_id" value={userId} />
+      <fieldset disabled={isPending} className="min-w-0 space-y-4 border-0 m-0 p-0">
       <p className="font-mono text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
         Correct locked fields
       </p>
@@ -127,7 +136,8 @@ export function LockedFieldsForm({
           </Field>
         )}
       </div>
-      <SubmitButton />
+      <SubmitButton pending={isPending} />
+      </fieldset>
     </form>
   );
 }

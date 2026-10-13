@@ -89,7 +89,7 @@ export default async function HomePage() {
             className="animate-ken-burns object-cover object-center opacity-40"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/80 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-bg/60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/20 to-bg/60" />
           <div
             className="animate-bloom absolute -top-40 -left-32 h-[34rem] w-[46rem] rounded-full bg-accent/12 blur-[130px]"
             aria-hidden
@@ -102,8 +102,8 @@ export default async function HomePage() {
 
         <div className="relative z-10 w-full">
           <Container>
-            <div className="max-w-3xl space-y-6 py-14 lg:py-20">
-              <div className="flex items-center gap-2.5 font-mono text-[11px] font-semibold tracking-[0.18em] text-secondary uppercase">
+            <div className="max-w-3xl space-y-5 py-10 sm:space-y-6 sm:py-14 lg:py-20">
+              <div className="flex items-center gap-2 font-mono text-[10px] font-semibold tracking-[0.16em] text-secondary uppercase sm:gap-2.5 sm:text-[11px] sm:tracking-[0.18em]">
                 <span className="inline-block size-1.5 bg-accent" aria-hidden />
                 <span className="text-accent">MOTOBHARAT_WARANGAL</span>
                 <span className="hidden text-border-strong sm:inline" aria-hidden>
@@ -112,7 +112,7 @@ export default async function HomePage() {
                 <span className="hidden sm:inline">Telangana Touring Chapter</span>
               </div>
 
-              <h1 className="text-4xl leading-[1.04] font-black tracking-tighter text-balance sm:text-6xl lg:text-7xl">
+              <h1 className="text-[2.65rem] leading-[1.02] font-black tracking-tighter text-balance sm:text-6xl sm:leading-[1.04] lg:text-7xl">
                 <span className="animate-fade-in-up block" style={{ animationDelay: "0.1s" }}>
                   Different Roads.
                 </span>
@@ -125,7 +125,7 @@ export default async function HomePage() {
               </h1>
 
               <p
-                className="animate-fade-in-up max-w-2xl text-base leading-relaxed text-secondary sm:text-xl"
+                className="animate-fade-in-up max-w-2xl text-[15px] leading-relaxed text-secondary sm:text-xl"
                 style={{ animationDelay: "0.4s" }}
               >
                 Warangal&apos;s community of riders — built on road discipline, safety and
@@ -135,7 +135,7 @@ export default async function HomePage() {
               {nextRide && (
                 <Link
                   href={nextRide.slug ? `/rides/${nextRide.slug}` : `/rides/${nextRide.id}`}
-                  className="group flex w-fit max-w-full flex-col gap-1.5 rounded-2xl border border-l-2 border-border border-l-accent bg-surface/60 px-5 py-4 backdrop-blur-md transition-all duration-150 hover:border-border-strong hover:border-l-accent-hover hover:bg-surface-2/80 active:scale-[0.98]"
+                  className="group flex w-full flex-col gap-1.5 rounded-2xl border border-l-2 border-border border-l-accent bg-surface/60 px-4 py-3.5 backdrop-blur-md transition-all duration-150 hover:border-border-strong hover:border-l-accent-hover hover:bg-surface-2/80 active:scale-[0.98] sm:w-fit sm:max-w-full sm:px-5 sm:py-4"
                 >
                   <span className="flex items-center gap-2 font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
                     Next Departure
@@ -159,17 +159,17 @@ export default async function HomePage() {
               </div>
 
               {/* Instrument-cluster stats strip — live counts (R7) */}
-              <div className="grid grid-cols-2 gap-3 pt-4 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2.5 pt-3 sm:grid-cols-4 sm:gap-3 sm:pt-4">
                 {stats.map((s) => (
                   <div
                     key={s.label}
-                    className="rounded-xl border border-border bg-surface/55 px-4 py-3.5 backdrop-blur-md transition-colors duration-200 hover:border-accent/40 hover:bg-surface-2/70"
+                    className="rounded-xl border border-border bg-surface/55 px-3 py-3 backdrop-blur-md transition-colors duration-200 hover:border-accent/40 hover:bg-surface-2/70 sm:px-4 sm:py-3.5"
                   >
-                    <span className="block font-mono text-2xl font-bold text-white tabular-nums">
+                    <span className="block font-mono text-xl font-bold text-white tabular-nums sm:text-2xl">
                       <CountUp to={s.value} />
                     </span>
                     <span className="mt-2 block h-px w-6 bg-accent/70" aria-hidden />
-                    <span className="mt-2 block font-mono text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
+                    <span className="mt-2 block font-mono text-[9px] font-semibold tracking-[0.14em] text-muted uppercase sm:text-[10px]">
                       {s.label}
                     </span>
                   </div>

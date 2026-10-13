@@ -4,7 +4,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(42);
+select extensions.plan(43);
 
 -- Runs a modification as the CALLING role (RLS applies) and returns the affected row count.
 create or replace function public.rls_test_mod(p_sql text) returns bigint
@@ -133,6 +133,10 @@ select extensions.is(
 select extensions.is(
   (select count(*) from public.verify_member('99999999-9999-4999-8999-999999999999')),
   0::bigint, 'A15 anon verify_member unknown uid = 0 rows');
+-- A16
+select extensions.is(
+  (select full_name from public.verify_member('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02')),
+  'RLS Rider', 'A16 anon verify_member exposes the legal full name');
 
 reset role;
 

@@ -11,6 +11,10 @@ import {
   ShieldCheck,
   ArrowUpRight,
   Share2,
+  Flag,
+  ArrowRight,
+  Route,
+  Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container } from "@/components/layout/container";
@@ -168,6 +172,38 @@ export default async function RideDetailPage({
             )}
           </div>
           <h1 className="animate-fade-in-up mt-4 max-w-3xl text-3xl font-extrabold tracking-tight sm:text-5xl">{ride.title}</h1>
+
+          {(ride.meeting_point || ride.destination) && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-secondary">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/80 px-3 py-1">
+                <MapPin className="size-3 text-accent shrink-0" aria-hidden />
+                <span>Start: <strong className="text-white">{ride.meeting_point ?? "Warangal"}</strong></span>
+              </span>
+              {ride.destination && (
+                <>
+                  <ArrowRight className="size-3 text-muted shrink-0" aria-hidden />
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-accent font-semibold">
+                    <Flag className="size-3 shrink-0" aria-hidden />
+                    <span>Destination: <strong className="text-white">{ride.destination}</strong></span>
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
+          {Array.isArray(ride.activities) && ride.activities.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {ride.activities.map((act) => (
+                <span
+                  key={act}
+                  className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold text-accent"
+                >
+                  <Sparkles className="size-2.5" aria-hidden />
+                  {act}
+                </span>
+              ))}
+            </div>
+          )}
         </Container>
       </section>
 
@@ -217,7 +253,7 @@ export default async function RideDetailPage({
               <div className="flex items-center gap-4 p-5">
                 <Clock className="size-5 shrink-0 text-accent" aria-hidden />
                 <div>
-                  <p className="text-xs text-muted">Time</p>
+                  <p className="text-xs text-muted">Assembly Time</p>
                   <p className="font-semibold">{formatRideTime(ride.starts_at)}</p>
                 </div>
               </div>
@@ -225,12 +261,32 @@ export default async function RideDetailPage({
                 <div className="flex items-center gap-4 p-5">
                   <MapPin className="size-5 shrink-0 text-accent" aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted">Meeting Point</p>
+                    <p className="text-xs text-muted">Assembly / Start Point</p>
                     <p className="font-semibold">{ride.meeting_point}</p>
                   </div>
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                       `${ride.meeting_point}, Warangal`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+                  >
+                    Maps
+                    <ArrowUpRight className="size-3 text-accent" aria-hidden />
+                  </a>
+                </div>
+              )}
+              {ride.destination && (
+                <div className="flex items-center gap-4 p-5">
+                  <Flag className="size-5 shrink-0 text-accent" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted">Destination</p>
+                    <p className="font-semibold">{ride.destination}</p>
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      ride.destination
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -252,6 +308,42 @@ export default async function RideDetailPage({
               )}
             </div>
           </div>
+
+          {/* Route Itinerary / Stops */}
+          {Array.isArray(ride.itinerary) && ride.itinerary.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Route className="size-4 text-accent" aria-hidden />
+                <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
+                  Route & Itinerary ({ride.itinerary.length} {ride.itinerary.length === 1 ? "Stop" : "Stops"})
+                </h2>
+              </div>
+              <div className="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-3 before:bottom-3 before:w-[2px] before:bg-border">
+                {ride.itinerary.map((item, idx) => (
+                  <div key={idx} className="relative flex items-start gap-4">
+                    <div className="absolute -left-6 flex size-6 items-center justify-center rounded-full border border-accent/50 bg-surface text-accent text-[11px] font-mono font-bold shadow-sm">
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-accent/40">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-sm font-bold text-white">{item.title}</h3>
+                        {item.activity && (
+                          <span className="rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                            {item.activity}
+                          </span>
+                        )}
+                      </div>
+                      {item.description && (
+                        <p className="mt-1.5 text-xs text-secondary whitespace-pre-wrap leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-3">
             <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
@@ -324,7 +416,7 @@ export default async function RideDetailPage({
                 <JoinLeaveButton rideId={ride.id} isMember={isMember} />
                 <a
                   href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                    `🏍️ MotoBharat Warangal — ${ride.title}\n📅 ${formatRideDate(ride.starts_at)} · ${formatRideTime(ride.starts_at)}\n📍 Meeting: ${ride.meeting_point ?? "Warangal"}\n\nJoin the ride: https://motobharat.co/rides/${ride.slug ?? ride.id}`
+                    `🏍️ MotoBharat Warangal — ${ride.title}\n📅 ${formatRideDate(ride.starts_at)} · ${formatRideTime(ride.starts_at)}\n📍 Start: ${ride.meeting_point ?? "Warangal"}${ride.destination ? `\n🏁 Destination: ${ride.destination}` : ""}\n\nJoin the ride: https://motobharat.co/rides/${ride.slug ?? ride.id}`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

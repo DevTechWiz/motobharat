@@ -1,15 +1,13 @@
 "use client";
 
-import { useActionState, useRef, useEffect, useState } from "react";
+import { useActionState, useRef, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { ArrowLeft, User, CalendarDays, Phone, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Field } from "@/components/ui/field";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { useFormDraft } from "@/lib/use-form-draft";
 import { ageFromDob } from "@/lib/format";
 import { saveBasicProfile, type ProfileFormState } from "../actions";
 import type { RiderDetails } from "@/lib/types";
@@ -21,8 +19,7 @@ const GENDER_OPTIONS = [
   { value: "prefer_not_to_say", label: "Prefer not to say" },
 ];
 
-function SubmitButton({ isEdit }: { isEdit: boolean }) {
-  const { pending } = useFormStatus();
+function SubmitButton({ isEdit, pending }: { isEdit: boolean; pending: boolean }) {
   return (
     <Button type="submit" disabled={pending}>
       {pending ? "Saving..." : isEdit ? "Save changes" : "Save & Continue"}
@@ -68,18 +65,22 @@ export function SetupForm({
 }) {
   const router = useRouter();
   const [state, formAction] = useActionState(saveBasicProfile, {} as ProfileFormState);
-  const { updateDraft, getDraftVal, clearDraft, draft } = useFormDraft("motobharat_draft_setup");
+  const [isPending, startTransition] = useTransition();
+  // No draft storage: inputs are uncontrolled (server values as defaults) and
+  // submit dispatches manually, so error returns never clear anything.
+  // Ephemeral UI state only (never persisted).
   const [sameAsPrimary, setSameAsPrimary] = useState(false);
+  // Ephemeral UI state only (never persisted): WhatsApp mirror + DOB age line.
+  const [wa, setWa] = useState<string | null>(null);
+  const [dobShown, setDobShown] = useState<string | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const lastInvalidRef = useRef<number>(0);
-  const dirty = Object.keys(draft).length > 0;
 
   useEffect(() => {
     if (state?.ok) {
-      clearDraft();
       router.push(state.next ?? "/profile");
     }
-  }, [state?.ok, state?.next, clearDraft, router]);
+  }, [state?.ok, state?.next, router]);
 
   const handleInvalid = (e: React.FormEvent<HTMLFormElement>) => {
     const now = Date.now();
@@ -111,12 +112,15 @@ export function SetupForm({
 
   return (
     <form
-      action={formAction}
+      onSubmit={(e) => {
+        e.preventDefault();
+        startTransition(() => formAction(new FormData(e.currentTarget)));
+      }}
       onInvalidCapture={handleInvalid}
       className="rounded-2xl border border-border bg-surface p-4 sm:p-6"
     >
       <input type="hidden" name="edit" value={isEdit ? "true" : "false"} />
-      <fieldset disabled={frozen} className="min-w-0 space-y-4 border-0 m-0 p-0">
+      <fieldset disabled={frozen || isPending} className="min-w-0 space-y-4 border-0 m-0 p-0">
       {frozen && (
         <div className="flex items-start gap-3 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-text">
           <p className="leading-relaxed">
@@ -131,8 +135,7 @@ export function SetupForm({
           <Input
             id="display_name"
             name="display_name"
-            value={getDraftVal("display_name", profile?.display_name ?? "")}
-            onChange={(e) => updateDraft("display_name", e.target.value)}
+            defaultValue={profile?.display_name ?? ""}
             required
             maxLength={50}
             placeholder="As you want it on ride lists"
@@ -144,8 +147,7 @@ export function SetupForm({
             <Input
               id="city"
               name="city"
-              value={getDraftVal("city", profile?.city ?? "")}
-              onChange={(e) => updateDraft("city", e.target.value)}
+              defaultValue={profile?.city ?? ""}
               placeholder="Warangal"
             />
           </Field>
@@ -153,8 +155,7 @@ export function SetupForm({
             <Input
               id="occupation"
               name="occupation"
-              value={getDraftVal("occupation", initialData?.occupation ?? "")}
-              onChange={(e) => updateDraft("occupation", e.target.value)}
+              defaultValue={initialData?.occupation ?? ""}
               placeholder="e.g. Student, Engineer"
             />
           </Field>
@@ -177,12 +178,12 @@ export function SetupForm({
               required
               disabled={locked}
               max={new Date().toISOString().slice(0, 10)}
-              value={locked ? (initialData?.dob ?? "") : getDraftVal("dob", initialData?.dob ?? "")}
-              onChange={(e) => updateDraft("dob", e.target.value)}
+              defaultValue={initialData?.dob ?? ""}
+              onChange={(e) => setDobShown(e.target.value)}
             />
             <p className="text-xs whitespace-nowrap text-muted" aria-live="polite">
               {(() => {
-                const dobVal = locked ? (initialData?.dob ?? "") : getDraftVal("dob", initialData?.dob ?? "");
+                const dobVal = locked ? (initialData?.dob ?? "") : (dobShown ?? initialData?.dob ?? "");
                 const shown = dobVal ? ageFromDob(String(dobVal)) : null;
                 return shown != null ? `Age: ${shown} (calculated automatically)` : "";
               })()}
@@ -195,20 +196,15 @@ export function SetupForm({
           required
           className="min-[420px]:col-span-2"
         >
-          <CustomSelect
-            id="gender"
-            name="gender"
-            required
-            disabled={locked && Boolean(initialData?.gender)}
-            value={
-              locked && initialData?.gender
-                ? initialData.gender
-                : getDraftVal("gender", initialData?.gender ?? "")
-            }
-            onChange={(val) => updateDraft("gender", val)}
-            placeholder="Select gender…"
-            options={GENDER_OPTIONS}
-          />
+            <CustomSelect
+              id="gender"
+              name="gender"
+              required
+              disabled={locked && Boolean(initialData?.gender)}
+              defaultValue={initialData?.gender ?? ""}
+              placeholder="Select gender…"
+              options={GENDER_OPTIONS}
+            />
         </Field>
         </div>
       </Group>
@@ -220,8 +216,7 @@ export function SetupForm({
               id="phone"
               name="phone"
               required
-              value={getDraftVal("phone", initialData?.phone ?? "")}
-              onChange={(val) => updateDraft("phone", val)}
+              defaultValue={initialData?.phone ?? ""}
               placeholder="+91 98765 43210"
             />
           </Field>
@@ -233,10 +228,10 @@ export function SetupForm({
                 required
                 readOnly={sameAsPrimary}
                 className={sameAsPrimary ? "opacity-50" : undefined}
-                value={getDraftVal("whatsapp_number", initialData?.whatsapp_number ?? "")}
+                value={wa ?? initialData?.whatsapp_number ?? ""}
                 onChange={(val) => {
                   setSameAsPrimary(false);
-                  updateDraft("whatsapp_number", val);
+                  setWa(val);
                 }}
                 placeholder="+91 98765 43210"
               />
@@ -252,10 +247,15 @@ export function SetupForm({
                 onChange={(e) => {
                   const checked = e.target.checked;
                   setSameAsPrimary(checked);
-                  updateDraft(
-                    "whatsapp_number",
-                    checked ? String(getDraftVal("phone", initialData?.phone ?? "")) : ""
-                  );
+                  if (!checked) {
+                    setWa("");
+                    return;
+                  }
+                  const form = e.currentTarget.form;
+                  const primary = form
+                    ? String(new FormData(form).get("phone") ?? "")
+                    : (initialData?.phone ?? "");
+                  setWa(primary);
                 }}
                 className="size-4 cursor-pointer accent-(--accent)"
               />
@@ -264,12 +264,6 @@ export function SetupForm({
           </div>
         </div>
       </Group>
-
-      {dirty && !frozen && (
-        <p className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 text-xs font-semibold text-accent">
-          Unsaved changes — press {isEdit ? "Save changes" : "Save & Continue"} to save.
-        </p>
-      )}
 
       <div className="flex items-center justify-between pt-1">
         {isEdit ? (
@@ -285,7 +279,7 @@ export function SetupForm({
             Skip for now
           </Link>
         )}
-        <SubmitButton isEdit={isEdit} />
+        <SubmitButton isEdit={isEdit} pending={isPending} />
       </div>
 
       {state.error && (

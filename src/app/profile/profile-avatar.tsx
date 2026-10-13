@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect, useCallback } from "react";
-import { Camera, Pencil, Upload, Link as LinkIcon, Trash2, X } from "lucide-react";
+import { Expand, Pencil, Upload, Link as LinkIcon, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input, Field } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/lib/auth-context";
+import { normalizeImageUrl } from "@/lib/image-link";
 import { updateAvatar } from "./actions";
 
 interface ProfileAvatarProps {
@@ -17,12 +18,14 @@ interface ProfileAvatarProps {
 
 export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"file" | "url">("file");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [urlInput, setUrlInput] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewBroken, setPreviewBroken] = useState(false);
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
 
@@ -40,6 +43,7 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
     setSelectedFile(null);
     setUrlInput("");
     setPreviewUrl(null);
+    setPreviewBroken(false);
     setIsRemoving(false);
     setError(null);
     setIsOpen(false);
@@ -54,15 +58,18 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
     };
   }, [previewUrl]);
 
-  // Handle escape key to close modal
+  // Handle escape key to close viewer first, then modal
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen && !viewOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
+      if (e.key === "Escape") {
+        if (viewOpen) setViewOpen(false);
+        else handleClose();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, handleClose]);
+  }, [isOpen, viewOpen, handleClose]);
 
   const handleOpen = () => {
     setError(null);
@@ -70,6 +77,7 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
     setUrlInput("");
     setIsRemoving(false);
     setPreviewUrl(null);
+    setPreviewBroken(false);
     setIsOpen(true);
   };
 
@@ -101,6 +109,7 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
     const val = e.target.value;
     setUrlInput(val);
     setError(null);
+    setPreviewBroken(false);
     setIsRemoving(false);
     if (val.trim().startsWith("http://") || val.trim().startsWith("https://")) {
       setPreviewUrl(val.trim());
@@ -162,18 +171,20 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
         {/* Concentric outer ring hugging the avatar */}
         <button
           type="button"
-          onClick={handleOpen}
+          onClick={() => activeAvatar && setViewOpen(true)}
           className="group relative flex rounded-full p-1 ring-2 ring-accent/40 bg-surface transition-all duration-200 hover:ring-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
-          aria-label="Change profile picture"
-          title="Click to change profile picture"
+          aria-label="View profile picture"
+          title="Click to view profile picture"
         >
           <Avatar name={displayName} src={activeAvatar} size="xl" />
-          <span
-            className="absolute inset-1 flex items-center justify-center rounded-full bg-black/60 opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
-            aria-hidden="true"
-          >
-            <Camera className="size-6 text-white drop-shadow-md" />
-          </span>
+          {activeAvatar && (
+            <span
+              className="absolute inset-1 flex items-center justify-center rounded-full bg-black/60 opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+              aria-hidden="true"
+            >
+              <Expand className="size-6 text-white drop-shadow-md" />
+            </span>
+          )}
         </button>
 
         {/* Pinned edit button at top right */}
@@ -181,12 +192,43 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
           type="button"
           onClick={handleOpen}
           className="absolute top-0 right-0 z-10 flex size-7 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-secondary shadow-md transition-all duration-150 hover:border-accent hover:bg-surface-3 hover:text-accent hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
-          aria-label="Edit profile picture"
-          title="Edit profile picture"
+          aria-label="Upload profile picture"
+          title="Upload profile picture"
         >
           <Pencil className="size-3.5" />
         </button>
       </div>
+
+      {/* Full-image viewer */}
+      {viewOpen && activeAvatar && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-overlay/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Profile picture viewer"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setViewOpen(false);
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setViewOpen(false)}
+            className="fixed top-4 right-4 z-10 flex size-9 items-center justify-center rounded-lg border border-border bg-bg/80 text-muted backdrop-blur transition-colors hover:text-white hover:border-border-strong cursor-pointer"
+            aria-label="Close viewer"
+          >
+            <X className="size-4" />
+          </button>
+          <div className="max-h-[85vh] overflow-hidden rounded-2xl border border-border-strong bg-surface shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- blob/data URLs can't go through next/image */}
+            <img
+              src={activeAvatar}
+              alt={displayName}
+              referrerPolicy="no-referrer"
+              className="max-h-[85vh] w-auto max-w-[90vw] object-contain"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modal Dialog */}
       {isOpen && (
@@ -228,33 +270,26 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
               </div>
             )}
 
+            <fieldset disabled={isPending} className="min-w-0 border-0 m-0 p-0">
             {/* Live Preview Section */}
             <div className="my-6 flex flex-col items-center justify-center gap-3">
               <div className="relative inline-flex shrink-0 items-center justify-center">
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => effectiveAvatar && setViewOpen(true)}
                   className="group relative flex rounded-full p-1 ring-2 ring-accent/60 bg-surface shadow-md transition-all duration-200 hover:ring-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
-                  title="Click to choose image"
-                  aria-label="Click to choose image"
+                  title="Click to view image"
+                  aria-label="Click to view image"
                 >
                   <Avatar name={displayName} src={effectiveAvatar} size="xl" />
-                  <span
-                    className="absolute inset-1 flex items-center justify-center rounded-full bg-black/60 opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
-                    aria-hidden="true"
-                  >
-                    <Camera className="size-6 text-white drop-shadow-md" />
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute top-0 right-0 z-10 flex size-7 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-secondary shadow-md transition-all duration-150 hover:border-accent hover:bg-surface-3 hover:text-accent hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
-                  title="Choose image"
-                  aria-label="Choose image"
-                >
-                  <Pencil className="size-3.5" />
+                  {effectiveAvatar && (
+                    <span
+                      className="absolute inset-1 flex items-center justify-center rounded-full bg-black/60 opacity-0 backdrop-blur-[2px] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+                      aria-hidden="true"
+                    >
+                      <Expand className="size-6 text-white drop-shadow-md" />
+                    </span>
+                  )}
                 </button>
               </div>
 
@@ -267,6 +302,26 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
                   ? "Current Photo"
                   : "No photo set"}
               </span>
+              {/* Probe: remote URLs that refuse hotlinking (401/403, expired CDN
+                  links) fail here immediately instead of only at Save. */}
+              {previewUrl && !previewUrl.startsWith("blob:") && (
+                // eslint-disable-next-line @next/next/no-img-element -- error probe only, never displayed
+                <img
+                  key={previewUrl}
+                  src={normalizeImageUrl(previewUrl)}
+                  alt=""
+                  aria-hidden
+                  referrerPolicy="no-referrer"
+                  className="hidden"
+                  onLoad={() => setPreviewBroken(false)}
+                  onError={() => setPreviewBroken(true)}
+                />
+              )}
+              {previewBroken && (
+                <span className="text-xs font-semibold text-danger">
+                  That link won&apos;t load here — use a direct public image link (https, ends in .jpg/.png/.webp).
+                </span>
+              )}
             </div>
 
             {/* Tabs for choosing method */}
@@ -356,7 +411,8 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
                   />
                 </Field>
                 <p className="text-[11px] text-muted">
-                  Direct link to an image file (e.g. Unsplash, Google, or Cloudflare).
+                  Direct link to an image file (Unsplash, Google Photos, Cloudflare) — Google Drive
+                  share links work too.
                 </p>
               </div>
             )}
@@ -413,6 +469,7 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
                 {isRemoving ? "Remove Photo" : "Save Picture"}
               </Button>
             </div>
+            </fieldset>
           </div>
         </div>
       )}

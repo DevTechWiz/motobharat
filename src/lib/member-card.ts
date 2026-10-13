@@ -8,6 +8,7 @@ export const MEMBER_ID_LEN = 6;
 
 export interface VerifiedMember {
   display_name: string;
+  full_name: string | null;
   avatar_url: string | null;
   city: string | null;
   member_since: string;

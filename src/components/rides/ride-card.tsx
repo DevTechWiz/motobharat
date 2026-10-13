@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Clock, ArrowUpRight, Compass } from "lucide-react";
+import { MapPin, Clock, ArrowUpRight, Compass, Flag, ArrowRight } from "lucide-react";
 import { formatRideDate, isPast } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { Ride } from "@/lib/types";
@@ -125,17 +125,47 @@ export function RideCard({ ride }: { ride: Ride }) {
           {ride.title}
         </h2>
 
-        {ride.meeting_point && (
+        {ride.destination ? (
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted flex-wrap">
+            <span className="inline-flex items-center gap-1 font-medium text-text">
+              <Flag className="size-3 shrink-0 text-accent" aria-hidden />
+              {ride.meeting_point}
+            </span>
+            <ArrowRight className="size-3 text-muted shrink-0" aria-hidden />
+            <span className="inline-flex items-center gap-1 font-semibold text-accent">
+              <MapPin className="size-3 shrink-0 text-accent" aria-hidden />
+              {ride.destination}
+            </span>
+          </div>
+        ) : ride.meeting_point ? (
           <p className="mt-1.5 flex items-center gap-1 text-xs text-muted">
-            <MapPin className="size-3 shrink-0" aria-hidden />
-            {ride.meeting_point}
+            <Flag className="size-3 shrink-0 text-accent" aria-hidden />
+            <span>Start: <span className="text-secondary font-medium">{ride.meeting_point}</span></span>
           </p>
-        )}
+        ) : null}
 
         {ride.description && (
           <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-secondary">
             {ride.description}
           </p>
+        )}
+
+        {Array.isArray(ride.activities) && ride.activities.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1">
+            {ride.activities.slice(0, 3).map((act) => (
+              <span
+                key={act}
+                className="rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-secondary"
+              >
+                {act}
+              </span>
+            ))}
+            {ride.activities.length > 3 && (
+              <span className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-mono text-muted">
+                +{ride.activities.length - 3}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
