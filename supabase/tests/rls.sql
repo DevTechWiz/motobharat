@@ -4,7 +4,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(35);
+select extensions.plan(42);
 
 -- Runs a modification as the CALLING role (RLS applies) and returns the affected row count.
 create or replace function public.rls_test_mod(p_sql text) returns bigint
@@ -23,18 +23,24 @@ $fn$;
 insert into auth.users (id, email, raw_user_meta_data) values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01', 'rls-admin@test.local',    '{"full_name":"RLS Admin"}'),
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02', 'rls-rider@test.local',    '{"full_name":"RLS Rider"}'),
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa03', 'rls-stranger@test.local', '{"full_name":"RLS Stranger"}')
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa03', 'rls-stranger@test.local', '{"full_name":"RLS Stranger"}'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa04', 'rls-pending@test.local',  '{"full_name":"RLS Pending"}')
 on conflict (id) do nothing;
 
 update public.profiles set role = 'admin'
- where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01';
+  where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01';
 
-insert into public.rider_details (user_id, age, gender, phone, blood_group, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, bike_model, bike_reg_no, driving_licence, experience_level, gear_level, declaration_confirmed, digital_signature, registered)
+insert into public.rider_details (user_id, age, gender, phone, blood_group, emergency_contact_name, emergency_contact_phone, emergency_contact_relation, bike_model, bike_reg_no, driving_licence, experience_level, gear_level, declaration_confirmed, digital_signature, registered, dl_image_url, kyc_submitted_at, kyc_rejected)
 values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02', 25, 'male', '9000000001', 'A+', 'EC One', '9000000002', 'spouse',
-   'Test Bike 200', 'TS 03 AB 1234', 'DL123456789', 'intermediate', 'full_armored', true, 'RLS Rider', true),
+    'Test Bike 200', 'TS 03 AB 1234', 'DL123456789', 'intermediate', 'full_armored', true, 'RLS Rider', true,
+    'https://test.local/dl02.webp', now(), false),
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa03', 20, 'female', null, null, null, null, null,
-   null, null, null, null, null, false, null, false)
+    null, null, null, null, null, false, null, false,
+    null, null, false),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa04', 30, 'male', '9000000003', 'O+', 'EC Four', '9000000004', 'friend',
+    'Test Bike 300', 'TS 03 CD 5678', 'DL987654321', 'intermediate', 'basic', true, 'RLS Pending', false,
+    'https://test.local/dl04.webp', now(), false)
 on conflict (user_id) do nothing;
 
 insert into public.events (id, slug, title, starts_at, status, created_by) values
@@ -115,6 +121,18 @@ select extensions.throws_ok(
 select extensions.throws_ok(
   $$insert into public.rider_details (user_id) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa03')$$,
   '42501', null, 'A12 anon insert rider_details denied');
+-- A13
+select extensions.is(
+  (select count(*) from public.verify_member('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02')),
+  1::bigint, 'A13 anon verify_member returns the registered rider');
+-- A14
+select extensions.is(
+  (select registered from public.verify_member('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02')),
+  true, 'A14 anon verify_member shows registered = true');
+-- A15
+select extensions.is(
+  (select count(*) from public.verify_member('99999999-9999-4999-8999-999999999999')),
+  0::bigint, 'A15 anon verify_member unknown uid = 0 rows');
 
 reset role;
 
@@ -212,6 +230,19 @@ select extensions.is(
 
 reset role;
 
+-- ── Phase B3: filed-but-unapproved rider (sub = pending) ────────────────────
+
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa04","role":"authenticated"}', true);
+set local role authenticated;
+
+-- B18
+select extensions.throws_ok(
+  $$insert into public.event_members (event_id, user_id)
+    values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeee01', auth.uid())$$,
+  '42501', null, 'B18 pending-approval rider join denied');
+
+reset role;
+
 -- ── Phase C: admin (sub = admin) ──────────────────────────────────────────────
 
 select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01","role":"authenticated"}', true);
@@ -248,6 +279,18 @@ select extensions.is(
 select extensions.is(
   public.rls_test_mod($$delete from public.event_members where event_id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeee01' and user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01'$$),
   1::bigint, 'C6 admin remove member = 1 row');
+-- C7
+select extensions.is(
+  public.rls_test_mod($$update public.rider_details set registered = true where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa04'$$),
+  1::bigint, 'C7 admin approve complete pending rider = 1 row');
+-- C8
+select extensions.throws_ok(
+  $$update public.rider_details set registered = true where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa03'$$,
+  'P0001', null, 'C8 admin approve incomplete rider blocked by trigger');
+-- C9
+select extensions.is(
+  public.rls_test_mod($$update public.rider_details set dl_image_url = null where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02'$$),
+  1::bigint, 'C9 approved row photo purge passes the trigger');
 
 reset role;
 

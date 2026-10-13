@@ -14,7 +14,7 @@ export function JoinLeaveButton({
   rideId: string;
   isMember: boolean;
 }) {
-  const { user, registered, loading } = useAuth();
+  const { user, registered, approval, loading } = useAuth();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [member, setMember] = useState(isMember);
@@ -38,7 +38,11 @@ export function JoinLeaveButton({
         href="/profile/kyc"
         className="inline-flex items-center justify-center gap-2 rounded-lg border border-accent/60 bg-accent/10 px-6 py-3.5 text-xs font-bold tracking-wider text-accent uppercase transition-colors hover:bg-accent/20"
       >
-        Complete your KYC to join
+        {approval === "pending"
+          ? "KYC under review — check status"
+          : approval === "rejected"
+            ? "KYC needs fixes — resubmit"
+            : "Complete your KYC to join"}
       </Link>
     );
   }

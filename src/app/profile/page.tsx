@@ -28,12 +28,14 @@ export default async function ProfilePage() {
 
   const { data: rd } = await supabase
     .from("rider_details")
-    .select("registered, age, gender, phone, blood_group, bike_model, bike_reg_no, gear_level, experience_level")
+    .select("registered, age, gender, phone, blood_group, bike_model, bike_reg_no, gear_level, experience_level, kyc_submitted_at, kyc_rejected")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const isStep1Done = Boolean(rd?.age && rd?.gender && (rd?.phone || profile?.phone));
   const isRegistered = Boolean(rd?.registered);
+  const isRejected = !isRegistered && Boolean(rd?.kyc_rejected);
+  const isPending = !isRegistered && !isRejected && Boolean(rd?.kyc_submitted_at);
 
   const registrationHref = isRegistered || isStep1Done ? "/profile/kyc" : "/profile/setup";
 
@@ -56,8 +58,6 @@ export default async function ProfilePage() {
       </Container>
     );
   }
-
-  const completion = isRegistered ? 100 : isStep1Done ? 50 : 25;
 
   return (
     <>
@@ -82,6 +82,10 @@ export default async function ProfilePage() {
                   </Badge>
                   {isRegistered ? (
                     <Badge tone="easy">Registered</Badge>
+                  ) : isRejected ? (
+                    <Badge tone="danger">KYC Rejected</Badge>
+                  ) : isPending ? (
+                    <Badge tone="moderate">Approval Pending</Badge>
                   ) : isStep1Done ? (
                     <Badge tone="moderate">KYC Pending</Badge>
                   ) : (
@@ -117,50 +121,43 @@ export default async function ProfilePage() {
                 </Link>
               </div>
             </div>
-          {!isRegistered && (
-            <div className="relative mt-5 border-t border-border pt-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-mono text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
-                  Registration {completion}% complete
-                </p>
-                <Link
-                  href={registrationHref}
-                  className="font-mono text-[10px] font-bold tracking-[0.14em] text-accent uppercase hover:underline"
-                >
-                  {isStep1Done ? "Finish KYC →" : "Continue →"}
-                </Link>
-              </div>
-              <div
-                className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3"
-                role="progressbar"
-                aria-valuenow={completion}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label="Registration progress"
-              >
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-accent to-orange transition-all"
-                  style={{ width: `${completion}%` }}
-                />
-              </div>
-            </div>
-          )}
           </div>
           </div>
 
-          {!isRegistered && (
+          {isRejected ? (
+            <div className="mt-5 flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-text">
+              <ShieldAlert className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
+              <p className="leading-relaxed">
+                An admin sent your KYC back — check your details and licence photo, then resubmit.{" "}
+                <Link href="/profile/kyc" className="font-semibold text-accent hover:text-accent-hover underline underline-offset-2 transition-colors">
+                  Fix and resubmit →
+                </Link>
+              </p>
+            </div>
+          ) : isPending ? (
+            <div className="mt-5 flex items-start gap-3 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-text">
+              <ShieldAlert className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+              <p className="leading-relaxed">
+                Your KYC is submitted — an admin will review it shortly. Joining rides and your ID
+                card unlock on approval.{" "}
+                <Link href="/profile/kyc" className="font-semibold text-accent hover:text-accent-hover underline underline-offset-2 transition-colors">
+                  View submission →
+                </Link>
+              </p>
+            </div>
+          ) : !isRegistered ? (
             <div className="mt-5 flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-text">
               <ShieldAlert className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
               <p className="leading-relaxed">
                 Your rider KYC is incomplete — you can browse everything, but{" "}
                 <span className="font-semibold text-white">joining rides is blocked</span> until you finish
-                registration.{" "}
+                registration and an admin approves it.{" "}
                 <Link href={registrationHref} className="font-semibold text-accent hover:text-accent-hover underline underline-offset-2 transition-colors">
                   Finish now →
                 </Link>
               </p>
             </div>
-          )}
+          ) : null}
 
           {rd?.registered && (
             <div className="mt-6 rounded-xl border border-success/30 bg-gradient-to-r from-success/10 via-surface-2 to-surface p-4 sm:p-5">

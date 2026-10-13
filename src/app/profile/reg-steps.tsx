@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/cn";
 
 const STEPS = [
@@ -9,7 +12,12 @@ const STEPS = [
 
 // Shared registration rail: back to profile + 2-step progress.
 // Used by /profile/setup (current=1) and /profile/kyc (current=2).
-export function RegSteps({ current }: { current: 1 | 2 }) {
+// nextHref makes the immediate next step clickable when its
+// prerequisites are already satisfied (e.g. editing basic info).
+// Once approved, both steps render green checks instead of the
+// current-step highlight — the rail shows status, not just position.
+export function RegSteps({ current, nextHref }: { current: 1 | 2; nextHref?: string }) {
+  const { registered } = useAuth();
   return (
     <div className="space-y-4">
       <Link
@@ -21,8 +29,9 @@ export function RegSteps({ current }: { current: 1 | 2 }) {
       </Link>
       <ol className="flex items-center gap-2" aria-label="Registration progress">
         {STEPS.map((s, i) => {
-          const done = s.n < current;
-          const active = s.n === current;
+          const done = registered || s.n < current;
+          const active = !registered && s.n === current;
+          const unlockedNext = !done && !active && nextHref && s.n === current + 1;
           const pill = (
             <>
               <span
@@ -49,9 +58,9 @@ export function RegSteps({ current }: { current: 1 | 2 }) {
           );
           return (
             <li key={s.n} className="flex flex-1 items-center gap-2 last:flex-none">
-              {done ? (
+              {done || unlockedNext ? (
                 <Link
-                  href={s.href}
+                  href={done ? s.href : (nextHref as string)}
                   className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 transition-colors hover:border-accent/40"
                 >
                   {pill}
@@ -71,7 +80,7 @@ export function RegSteps({ current }: { current: 1 | 2 }) {
                 <span
                   className={cn(
                     "h-px flex-1",
-                    current === 2 ? "bg-accent/50" : "bg-border"
+                    registered || current === 2 ? "bg-accent/50" : "bg-border"
                   )}
                   aria-hidden
                 />

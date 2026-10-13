@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { slugify } from "@/lib/format";
+import { ageFromDob, slugify } from "@/lib/format";
 import { processImage, validateImageFile } from "@/lib/media";
 import { validateExternalImageUrl } from "@/lib/url-image";
 import { deleteR2Object, putR2Object, r2Configured, r2KeyFromUrl, r2PublicUrl } from "@/lib/r2";
@@ -41,6 +41,34 @@ function uniqueConstraint(error: { code?: string } | null): boolean {
   return error?.code === "23505";
 }
 
+const DIFFICULTIES = ["easy", "moderate", "hard"];
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+
+// Every ride field is mandatory on create and on update (cover included at
+// create via URL; on edit it lives in section 02). Returns an error or null.
+function validateRideFields(fields: {
+  title: string;
+  description: string;
+  startsAt: string;
+  meetingPoint: string;
+  distanceKm: string;
+  difficulty: string;
+}): string | null {
+  const { title, description, startsAt, meetingPoint, distanceKm, difficulty } = fields;
+  if (!title) return "Title is required.";
+  if (title.length > 100) return "Title must be 100 characters or fewer.";
+  if (!description) return "Description is required.";
+  if (description.length > 2000) return "Description must be 2000 characters or fewer.";
+  if (!startsAt) return "Start date and time are required.";
+  if (!meetingPoint) return "Meeting point is required.";
+  const distance = Number(distanceKm);
+  if (!distanceKm || !Number.isFinite(distance) || distance <= 0) {
+    return "Distance must be a number above 0 km.";
+  }
+  if (!DIFFICULTIES.includes(difficulty)) return "Pick a difficulty: easy, moderate or hard.";
+  return null;
+}
+
 export async function createRide(
   _prev: RideFormState,
   formData: FormData,
@@ -56,19 +84,26 @@ export async function createRide(
   const distanceKm = String(formData.get("distance_km") ?? "").trim();
   const difficulty = String(formData.get("difficulty") ?? "");
   const status = String(formData.get("status") ?? "draft");
+  const coverUrl = String(formData.get("cover_url") ?? "").trim();
 
-  if (!title || !startsAt) return { error: "Title and start time are required." };
-  if (title.length > 100) return { error: "Title must be 100 characters or fewer." };
-  if (description.length > 2000) return { error: "Description must be 2000 characters or fewer." };
+  const fieldError = validateRideFields({ title, description, startsAt, meetingPoint, distanceKm, difficulty });
+  if (fieldError) return { error: fieldError };
+
+  // Cover is mandatory at create (no ride id exists yet for section 02).
+  // URL-based so it works before R2 credentials land.
+  if (!coverUrl) return { error: "Cover image URL is required." };
+  const cover = await validateExternalImageUrl(coverUrl);
+  if (!cover.ok) return { error: `Cover image: ${cover.error}` };
 
   const { error } = await supabase.from("events").insert({
     title,
     description,
     starts_at: istInputToIso(startsAt),
     meeting_point: meetingPoint,
-    distance_km: distanceKm ? Number(distanceKm) : null,
-    difficulty: difficulty || null,
+    distance_km: Number(distanceKm),
+    difficulty,
     status,
+    cover_url: cover.info.url,
     slug: slugify(title),
     created_by: user.id,
   });
@@ -101,9 +136,8 @@ export async function updateRide(
   const difficulty = String(formData.get("difficulty") ?? "");
   const status = String(formData.get("status") ?? "draft");
 
-  if (!title || !startsAt) return { error: "Title and start time are required." };
-  if (title.length > 100) return { error: "Title must be 100 characters or fewer." };
-  if (description.length > 2000) return { error: "Description must be 2000 characters or fewer." };
+  const fieldError = validateRideFields({ title, description, startsAt, meetingPoint, distanceKm, difficulty });
+  if (fieldError) return { error: fieldError };
 
   // slug is intentionally NOT updated — published links must stay stable.
   const { error } = await supabase
@@ -113,8 +147,8 @@ export async function updateRide(
       description,
       starts_at: istInputToIso(startsAt),
       meeting_point: meetingPoint,
-      distance_km: distanceKm ? Number(distanceKm) : null,
-      difficulty: difficulty || null,
+      distance_km: Number(distanceKm),
+      difficulty,
       status,
     })
     .eq("id", id);
@@ -446,8 +480,147 @@ export async function deleteAnnouncement(id: string) {
   return { ok: !error, error: error?.message };
 }
 
-function revalidateRidePaths(rideId: string, slug: string | null | undefined) {
-  revalidatePath("/");
+// Membership approval: admin reviews the KYC + licence photo, then approves
+// (registered = true — the trigger re-validates completeness) or rejects
+// (back to the rider for fixes; resubmit re-queues). Approval purges the DL
+// photo: it existed only to get verified, so the R2 object is deleted and the
+// column nulled (the 0010 trigger exempts already-registered rows).
+export async function approveRider(userId: string) {
+  const admin = await requireAdmin();
+  if ("error" in admin) return { ok: false, error: admin.error };
+  const { supabase } = admin;
+  const { data: row } = await supabase
+    .from("rider_details")
+    .select("dl_image_url")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const { error } = await supabase
+    .from("rider_details")
+    .update({ registered: true, kyc_rejected: false, updated_at: new Date().toISOString() })
+    .eq("user_id", userId);
+  if (error) return { ok: false, error: error.message };
+  const key = row?.dl_image_url ? r2KeyFromUrl(row.dl_image_url) : null;
+  if (key) {
+    try {
+      await deleteR2Object(key);
+    } catch (e) {
+      console.warn(`[admin] failed to delete approved DL ${key}:`, e);
+    }
+  }
+  // Null separately: same-statement nulling would trip the completeness check.
+  // Approval stands even if this housekeeping fails (photo retention is the
+  // safe direction); the warn keeps it visible.
+  const { error: nullErr } = await supabase
+    .from("rider_details")
+    .update({ dl_image_url: null })
+    .eq("user_id", userId);
+  if (nullErr) console.warn(`[admin] DL purge column null failed for ${userId}:`, nullErr.message);
+  revalidatePath("/admin/riders");
+  revalidatePath(`/admin/riders/${userId}`);
+  revalidatePath("/profile", "layout");
+  return { ok: true };
+}
+
+export async function rejectRider(userId: string) {
+  const admin = await requireAdmin();
+  if ("error" in admin) return { ok: false, error: admin.error };
+  const { supabase } = admin;
+  const { error } = await supabase
+    .from("rider_details")
+    .update({ registered: false, kyc_rejected: true, updated_at: new Date().toISOString() })
+    .eq("user_id", userId);
+  if (!error) {
+    revalidatePath("/admin/riders");
+    revalidatePath(`/admin/riders/${userId}`);
+    revalidatePath("/profile", "layout");
+  }
+  return { ok: !error, error: error?.message };
+}
+
+// Locked-field correction: the only path that can change a rider's frozen
+// identity (name, dob/age, blood group, DL number/photo). Full values are
+// always written (read-modify-write is unnecessary — the form is prefilled),
+// so the KYC trigger stays satisfied on registered rows.
+export async function updateLockedFields(
+  _prev: { error?: string; ok?: boolean },
+  formData: FormData,
+): Promise<{ error?: string; ok?: boolean }> {
+  const admin = await requireAdmin();
+  if ("error" in admin) return { error: admin.error };
+  const { supabase } = admin;
+
+  const userId = String(formData.get("user_id") ?? "").trim();
+  if (!userId) return { error: "Missing rider id." };
+
+  const displayName = String(formData.get("display_name") ?? "").trim();
+  const dobRaw = String(formData.get("dob") ?? "").trim();
+  const bloodGroup = String(formData.get("blood_group") ?? "");
+  const drivingLicence = String(formData.get("driving_licence") ?? "").trim().toUpperCase();
+
+  if (!displayName) return { error: "Name is required." };
+  if (displayName.length > 50) return { error: "Name must be 50 characters or fewer." };
+
+  const age = ageFromDob(dobRaw);
+  if (age == null || !Number.isInteger(age) || age < 18 || age > 90) {
+    return { error: "Enter a valid date of birth — the rider must be 18–90 years old." };
+  }
+  if (!BLOOD_GROUPS.includes(bloodGroup)) return { error: "Pick a valid blood group." };
+  if (!drivingLicence) return { error: "Driving licence number is required." };
+
+  const { data: current } = await supabase
+    .from("rider_details")
+    .select("registered, dl_image_url")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!current) return { error: "Rider details not found." };
+
+  // Approved rows hold no photo (purged at approval) — nothing to replace.
+  let nextDlUrl: string | null = current.dl_image_url ?? null;
+  const dlFile = formData.get("dl_photo") as File | null;
+  if (!current.registered && dlFile && dlFile.size > 0) {
+    if (!r2Configured()) return { error: "R2 not configured — add the R2_* env vars (.env.example)." };
+    const invalid = await validateImageFile(dlFile);
+    if (invalid) return { error: `Licence photo: ${invalid}` };
+    const image = await processImage(dlFile, 1600, 80);
+    const key = `rider-docs/${userId}/dl_${crypto.randomUUID()}.webp`;
+    await putR2Object(key, image.data, "image/webp");
+    const oldKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
+    if (oldKey) {
+      try {
+        await deleteR2Object(oldKey);
+      } catch (e) {
+        console.warn(`[admin] failed to delete replaced DL ${oldKey}:`, e);
+      }
+    }
+    nextDlUrl = r2PublicUrl(key);
+  }
+
+  const { error: pErr } = await supabase
+    .from("profiles")
+    .update({ display_name: displayName })
+    .eq("id", userId);
+  if (pErr) return { error: pErr.message };
+
+  const { error: rErr } = await supabase
+    .from("rider_details")
+    .update({
+      age,
+      dob: dobRaw || null,
+      blood_group: bloodGroup,
+      driving_licence: drivingLicence,
+      dl_image_url: nextDlUrl,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+  if (rErr) return { error: rErr.message };
+
+  revalidatePath("/admin/riders");
+  revalidatePath(`/admin/riders/${userId}`);
+  revalidatePath("/profile", "layout");
+  return { ok: true };
+}
+
+function revalidateRidePaths(rideId: string, slug: string | null | undefined) {  revalidatePath("/");
   revalidatePath("/rides");
   revalidatePath("/admin/rides");
   revalidatePath(`/rides/${slug ?? rideId}`);
