@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { headers } from "next/headers";
 import { ArrowLeft, Lock, ShieldAlert, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container, Section } from "@/components/layout/container";
@@ -32,7 +31,7 @@ export default async function MemberCardPage() {
 
   const { data: rd } = await supabase
     .from("rider_details")
-    .select("registered, age, gender, phone, bike_model, bike_reg_no, blood_group, experience_level, kyc_submitted_at, kyc_rejected")
+    .select("registered, age, gender, phone, bike_model, bike_reg_no, blood_group, experience_level, digital_signature, kyc_submitted_at, kyc_rejected")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -50,13 +49,15 @@ export default async function MemberCardPage() {
   const isStep1Done = Boolean(rd?.age && rd?.gender && rd?.phone);
   const registrationHref = isRegistered || isStep1Done ? "/profile/kyc" : "/profile/setup";
 
-  const hdrs = await headers();
-  const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host");
-  const proto = hdrs.get("x-forwarded-proto") ?? "https";
-  const base = host ? `${proto}://${host}` : SITE_BASE;
-
+  // QR URLs must be deterministic and public: a card gets screenshotted and
+  // scanned months later, so the base never comes from request headers
+  // (localhost on dev, staging hosts on preview). Explicit env wins, else prod.
+  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || SITE_BASE;
   const memberId = memberIdFromUserId(user.id);
   const verifyUrl = verifyUrlForUser(user.id, base);
+  // Legal identity goes on the card; fall back to the profile name for legacy
+  // rows approved before the signature existed.
+  const fullName = rd?.digital_signature || profile.display_name;
 
   return (
     <Section spacing="compact">
@@ -71,9 +72,6 @@ export default async function MemberCardPage() {
         <p className="card-print-hide mt-6 font-mono text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
           Member ID Card
         </p>
-        <h1 className="card-print-hide mt-1 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-          {profile.display_name}
-        </h1>
 
         {isRejected ? (
           <div className="card-print-hide mt-5 flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-text">
@@ -140,10 +138,10 @@ export default async function MemberCardPage() {
             </div>
 
             <div className="mt-5 flex items-center gap-5">
-              <Avatar src={profile.avatar_url} name={profile.display_name} size="xl" />
+              <Avatar src={profile.avatar_url} name={fullName} size="xl" />
               <div className="min-w-0">
                 <p className="truncate text-xl font-extrabold tracking-tight text-white">
-                  {profile.display_name}
+                  {fullName}
                 </p>
                 <p className="mt-0.5 text-sm text-secondary">
                   {profile.city ?? "Warangal"} · Member since {formatDate(profile.created_at)}
