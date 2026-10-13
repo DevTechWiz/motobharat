@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { LogOut, ShieldAlert, ShieldCheck, User as UserIcon, Settings } from "lucide-react";
+import { LogOut, ShieldAlert, ShieldCheck, User as UserIcon, Settings, IdCard } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/cn";
 
 export function UserMenu() {
-  const { user, profile, registered, signOut } = useAuth();
+  const { user, profile, registered, approval, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -82,6 +82,16 @@ export function UserMenu() {
                     <ShieldCheck className="size-3" aria-hidden />
                     Verified Rider
                   </span>
+                ) : approval === "rejected" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-danger/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-danger border border-danger/30">
+                    <ShieldAlert className="size-3" aria-hidden />
+                    KYC Rejected
+                  </span>
+                ) : approval === "pending" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-accent border border-accent/30">
+                    <ShieldAlert className="size-3" aria-hidden />
+                    Approval Pending
+                  </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-accent border border-accent/30">
                     <ShieldAlert className="size-3" aria-hidden />
@@ -128,9 +138,39 @@ export function UserMenu() {
                 <span className="rounded bg-success/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-success border border-success/20">
                   Done
                 </span>
+              ) : approval === "rejected" ? (
+                <span className="rounded bg-danger/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-danger border border-danger/20">
+                  Fix needed
+                </span>
               ) : (
                 <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-accent border border-accent/20">
                   Pending
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/profile/card"
+              role="menuitem"
+              className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-secondary transition-colors hover:bg-surface-3 hover:text-text"
+              onClick={() => setOpen(false)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="rounded-md bg-surface p-1.5 text-muted border border-border/60">
+                  <IdCard className={cn("size-3.5", registered ? "text-success" : "text-accent")} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-text font-semibold">Member ID Card</span>
+                  <span className="text-[10px] text-muted">QR for partner benefits</span>
+                </div>
+              </div>
+              {registered ? (
+                <span className="rounded bg-success/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-success border border-success/20">
+                  Active
+                </span>
+              ) : (
+                <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+                  Locked
                 </span>
               )}
             </Link>

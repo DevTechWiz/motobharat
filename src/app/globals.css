@@ -10,7 +10,7 @@
   --border-strong: #383d45;
   --text: #f3f4f6;
   --secondary: #9fa4ac;
-  --muted: #6c727d;
+  --muted: #82888f;
   --accent: #f59e0b;
   --accent-hover: #ffb020;
   --accent-fg: #0c0d0e;
@@ -251,6 +251,23 @@
   .animate-ken-burns,
   .animate-bloom {
     animation: none !important;
+  }
+}
+
+/* Member ID card printing: isolate the card, hide chrome and actions. */
+@media print {
+  body {
+    background: #fff;
+  }
+  header,
+  footer,
+  .card-print-hide {
+    display: none !important;
+  }
+  .card-print-area {
+    border-color: #999 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
   }
 }
 
