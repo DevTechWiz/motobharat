@@ -3,13 +3,15 @@
 import { useActionState, useEffect, useState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
-import { Bike, Shield, HeartPulse, FileText, CheckCircle2, ArrowLeft, type LucideIcon } from "lucide-react";
+import { Bike, Shield, ShieldAlert, HeartPulse, FileText, CheckCircle2, ArrowLeft, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { RegSteps } from "../reg-steps";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Field } from "@/components/ui/field";
+import { PhotoPicker } from "@/components/ui/photo-picker";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useFormDraft } from "@/lib/use-form-draft";
@@ -108,7 +110,7 @@ function KycForm() {
   const [prefill, setPrefill] = useState<Partial<RiderDetails> | null>(null);
   const [done, setDone] = useState(false);
   const [checking, setChecking] = useState(true);
-  const { updateDraft, getDraftVal, clearDraft } = useFormDraft("motobharat_draft_kyc");
+  const { updateDraft, getDraftVal, clearDraft, draft } = useFormDraft("motobharat_draft_kyc");
   const lastInvalidRef = useRef<number>(0);
   const serverErrorRef = useRef<HTMLDivElement>(null);
 
@@ -141,13 +143,25 @@ function KycForm() {
           return;
         }
         setPrefill(data);
-        if (data.registered) {
+        // Drafts die on submit: a filed (pending) or approved application always
+        // displays server truth, never stale keystrokes.
+        if (data.registered || (!data.kyc_rejected && data.kyc_submitted_at)) {
           clearDraft();
         }
         setDone(data.registered);
         setChecking(false);
       });
   }, [loading, user, router, clearDraft]);
+
+  const frozen = Boolean(prefill?.kyc_submitted_at && !prefill?.registered && !prefill?.kyc_rejected);
+  const dirty = Object.keys(draft).length > 0;
+
+  useEffect(() => {
+    if (state?.ok) {
+      clearDraft();
+      router.push("/profile");
+    }
+  }, [state?.ok, clearDraft, router]);
 
   const handleInvalid = (e: React.FormEvent<HTMLFormElement>) => {
     const now = Date.now();
@@ -178,13 +192,33 @@ function KycForm() {
         : ""
     )
   );
+  const locked = prefill?.registered ?? false;
 
   if (loading || checking || !user) {
     return <div className="h-96 animate-pulse rounded-xl bg-surface" />;
   }
 
   return (
-    <form action={formAction} onInvalidCapture={handleInvalid} className="space-y-8">
+    <form action={formAction} onInvalidCapture={handleInvalid}>
+      <fieldset disabled={frozen} className="min-w-0 space-y-8 border-0 m-0 p-0">
+      {prefill?.kyc_rejected && !prefill?.registered && (
+        <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-text">
+          <ShieldAlert className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
+          <p className="leading-relaxed">
+            An admin reviewed your KYC and sent it back — most often the profile photo, DL photo
+            or typed name don&apos;t match. Fix the details below and resubmit.
+          </p>
+        </div>
+      )}
+      {frozen && (
+        <div className="flex items-start gap-3 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-text">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+          <p className="leading-relaxed">
+            Submitted — under admin review. The form is locked until the verdict; what you see is
+            exactly what&apos;s filed.
+          </p>
+        </div>
+      )}
       {/* Section 1: Motorcycle & Licensing */}
       <SectionCard
         icon={Bike}
@@ -242,12 +276,22 @@ function KycForm() {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Driving Licence Number" htmlFor="driving_licence" hint="As on your DL card" required>
+          <Field
+            label="Driving Licence Number"
+            htmlFor="driving_licence"
+            hint={locked && prefill?.driving_licence ? "Locked after approval — contact an admin to correct" : "As on your DL card"}
+            required
+          >
             <Input
               id="driving_licence"
               name="driving_licence"
               required
-              value={getDraftVal("driving_licence", prefill?.driving_licence ?? "")}
+              disabled={locked && Boolean(prefill?.driving_licence)}
+              value={
+                locked && prefill?.driving_licence
+                  ? prefill.driving_licence
+                  : getDraftVal("driving_licence", prefill?.driving_licence ?? "")
+              }
               onChange={(e) => updateDraft("driving_licence", e.target.value)}
               placeholder="TS03 20200001234"
               className="uppercase font-mono"
@@ -265,6 +309,49 @@ function KycForm() {
             />
           </Field>
         </div>
+
+        {locked ? (
+          prefill?.dl_image_url ? (
+            <div>
+              <p className="mb-1.5 flex items-center justify-between text-xs font-bold tracking-wider text-secondary uppercase">
+                <span>Driving Licence Photo</span>
+              </p>
+              <div className="overflow-hidden rounded-xl border border-border bg-surface-2">
+                <Image
+                  src={prefill.dl_image_url}
+                  alt="Your driving licence photo on file"
+                  width={1200}
+                  height={800}
+                  sizes="(min-width:768px) 640px, 100vw"
+                  className="h-auto w-full object-contain opacity-90"
+                />
+                <p className="border-t border-border px-4 py-2 font-mono text-[10px] tracking-wider text-muted uppercase">
+                  Locked after approval — contact an admin to correct
+                </p>
+              </div>
+            </div>
+          ) : null
+        ) : prefill?.dl_image_url ? (
+          <div>
+            <p className="mb-1.5 flex items-center justify-between text-xs font-bold tracking-wider text-secondary uppercase">
+              <span>Driving Licence Photo</span>
+            </p>
+            <PhotoPicker
+              id="dl_document"
+              name="dl_document"
+              existingUrl={prefill.dl_image_url}
+            />
+          </div>
+        ) : (
+          <Field
+            label="Driving Licence Photo"
+            htmlFor="dl_document"
+            hint="Clear photo of your DL card (JPEG/WebP, max 10 MB). Checked once at approval, then deleted — only the number is kept."
+            required
+          >
+            <PhotoPicker id="dl_document" name="dl_document" required />
+          </Field>
+        )}
 
         <Field label="Riding Experience Level" htmlFor="experience_level" required>
           <CustomSelect
@@ -319,12 +406,22 @@ function KycForm() {
         subtitle="Used strictly by ride marshals and medical teams in case of an incident"
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Blood Group" htmlFor="blood_group" required>
+          <Field
+            label="Blood Group"
+            htmlFor="blood_group"
+            hint={locked && prefill?.blood_group ? "Locked after approval" : undefined}
+            required
+          >
             <CustomSelect
               id="blood_group"
               name="blood_group"
               required
-              value={getDraftVal("blood_group", prefill?.blood_group ?? "")}
+              disabled={locked && Boolean(prefill?.blood_group)}
+              value={
+                locked && prefill?.blood_group
+                  ? prefill.blood_group
+                  : getDraftVal("blood_group", prefill?.blood_group ?? "")
+              }
               onChange={(val) => updateDraft("blood_group", val)}
               placeholder="Select blood group…"
               options={BLOOD_OPTIONS}
@@ -488,7 +585,7 @@ function KycForm() {
         <Field
           label="Full Name / Digital Signature"
           htmlFor="digital_signature"
-          hint="Type your full legal name as your digital signature"
+          hint="Type your full legal name exactly as printed on your driving licence — an admin cross-checks both"
           required
         >
           <Input
@@ -514,6 +611,12 @@ function KycForm() {
         </div>
       )}
 
+      {dirty && !frozen && (
+        <p className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 text-xs font-semibold text-accent">
+          Unsaved changes — press {done ? "Update KYC Details" : "Submit & Complete Registration"} to save.
+        </p>
+      )}
+
       <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-2">
         <Link
           href={done ? "/profile" : "/profile/setup"}
@@ -528,6 +631,7 @@ function KycForm() {
       <p className="border-t border-border pt-4 text-xs text-muted text-center sm:text-left">
         Your safety & emergency data is private and accessible only to verified club administrators and organizers in case of road incidents.
       </p>
+      </fieldset>
     </form>
   );
 }
@@ -544,7 +648,8 @@ export default function ProfileKycPage() {
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Rider Safety & KYC</h1>
           <p className="text-sm text-secondary leading-relaxed">
             Complete your vehicle details, emergency contacts, and sign the safety waiver.
-            Once completed, your profile is marked as <span className="text-accent font-semibold">Registered</span> and you can freely join any community ride.
+            Once submitted, an admin reviews your application — approval marks you{" "}
+            <span className="text-accent font-semibold">Registered</span> and unlocks joining any community ride.
           </p>
         </div>
         <KycForm />

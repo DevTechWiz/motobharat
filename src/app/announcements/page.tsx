@@ -44,7 +44,7 @@ export default async function AnnouncementsPage() {
               {items.map((a) => (
                 <article
                   key={a.id}
-                  className="group rounded-xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_20px_50px_-24px_rgba(245,158,11,0.45)]"
+                  className="group relative rounded-xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_20px_50px_-24px_rgba(245,158,11,0.45)]"
                 >
                   <div className="flex items-start gap-5">
                     <div className="self-start flex flex-col items-center justify-center rounded-xl border border-border bg-surface-2/90 px-3.5 py-2.5 min-w-[4.25rem] text-center shrink-0 select-none">
@@ -64,7 +64,7 @@ export default async function AnnouncementsPage() {
                           {a.slug ? (
                             <Link
                               href={`/announcements/${a.slug}`}
-                              className="transition-colors hover:text-accent"
+                              className="transition-colors after:absolute after:inset-0 hover:text-accent focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-accent focus-visible:after:ring-inset focus-visible:after:rounded-xl"
                             >
                               {a.title}
                             </Link>
@@ -83,15 +83,6 @@ export default async function AnnouncementsPage() {
                         <p className="mt-2 line-clamp-3 whitespace-pre-wrap leading-relaxed text-secondary">
                           {a.body}
                         </p>
-                      )}
-                      {a.slug && (
-                        <Link
-                          href={`/announcements/${a.slug}`}
-                          className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase transition-colors hover:text-accent"
-                        >
-                          Read notice
-                          <ArrowUpRight className="size-3.5 text-accent" aria-hidden />
-                        </Link>
                       )}
                     </div>
                   </div>

@@ -41,6 +41,9 @@ export interface RiderDetails {
   declaration_confirmed: boolean;
   digital_signature: string | null;
   registered: boolean;
+  dl_image_url: string | null;
+  kyc_submitted_at: string | null;
+  kyc_rejected: boolean;
   updated_at: string;
 }
 

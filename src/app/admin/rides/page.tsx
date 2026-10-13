@@ -1,21 +1,11 @@
-import Link from "next/link";
-import { Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/feedback";
-import { formatRideDate } from "@/lib/format";
-import { DeleteRideButton } from "./delete-ride-button";
+import { RideRow } from "./ride-row";
 import type { Ride } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-const statusTone = {
-  draft: "neutral",
-  published: "easy",
-  completed: "moderate",
-  cancelled: "hard",
-} as const;
 
 export default async function AdminRidesPage() {
   const supabase = await createClient();
@@ -65,31 +55,7 @@ export default async function AdminRidesPage() {
             </thead>
             <tbody className="divide-y divide-border bg-surface">
               {list.map((ride) => (
-                <tr key={ride.id} className="transition-colors hover:bg-surface-2/70">
-                  <td className="px-4 py-3">
-                    <p className="font-semibold">{ride.title}</p>
-                    {ride.meeting_point && (
-                      <p className="mt-0.5 text-xs text-muted">{ride.meeting_point}</p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-secondary tabular-nums">
-                    {formatRideDate(ride.starts_at)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={statusTone[ride.status]}>{ride.status}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/rides/${ride.id}/edit`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold transition-colors hover:border-accent/50 hover:text-accent"
-                      >
-                        <Pencil className="size-3" aria-hidden /> Edit
-                      </Link>
-                      <DeleteRideButton rideId={ride.id} />
-                    </div>
-                  </td>
-                </tr>
+                <RideRow key={ride.id} ride={ride} />
               ))}
             </tbody>
           </table>

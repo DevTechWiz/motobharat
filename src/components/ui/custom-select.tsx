@@ -21,6 +21,7 @@ export interface CustomSelectProps {
   groups?: Record<string, readonly (string | CustomSelectOption)[]>;
   searchable?: boolean;
   required?: boolean;
+  disabled?: boolean;
   onChange?: (value: string) => void;
   className?: string;
 }
@@ -35,6 +36,7 @@ export function CustomSelect({
   groups,
   searchable = false,
   required = false,
+  disabled = false,
   onChange,
   className,
 }: CustomSelectProps) {
@@ -158,7 +160,9 @@ export function CustomSelect({
       <button
         type="button"
         id={id ? `${id}-trigger` : undefined}
+        disabled={disabled}
         onClick={() => {
+          if (disabled) return;
           setIsOpen((prev) => {
             if (prev) setSearch("");
             return !prev;
@@ -170,7 +174,8 @@ export function CustomSelect({
           "flex w-full items-center justify-between rounded-lg border border-border bg-surface px-3.5 py-3 text-left text-sm text-text transition-all scroll-mt-28",
           "hover:border-border-strong hover:bg-surface-2",
           "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/40",
-          isOpen && "border-accent ring-1 ring-accent/40 bg-surface-2"
+          isOpen && "border-accent ring-1 ring-accent/40 bg-surface-2",
+          disabled && "cursor-not-allowed opacity-50 hover:border-border hover:bg-surface"
         )}
       >
         <div className="flex flex-col min-w-0 pr-2">

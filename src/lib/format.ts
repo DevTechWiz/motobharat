@@ -58,3 +58,17 @@ export function toDatetimeLocalIST(iso: string): string {
 export function isPast(iso: string): boolean {
   return new Date(iso) < new Date();
 }
+
+// Whole-year age from a YYYY-MM-DD date of birth. Null when unparseable —
+// callers validate the 18–90 range themselves. Single home for the DOB→age
+// math (setup + admin actions and forms); age is never typed by hand.
+export function ageFromDob(dob: string, today = new Date()): number | null {
+  const birthDate = new Date(dob);
+  if (!dob || isNaN(birthDate.getTime())) return null;
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}

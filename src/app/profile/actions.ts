@@ -3,13 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ageFromDob } from "@/lib/format";
 import { RATE_LIMITS, rateLimit } from "@/lib/rateLimit";
 import { validateIndianPhone } from "@/lib/phone";
-import { processImage, sniffImageBuffer } from "@/lib/media";
-import { deleteR2Object, putR2Object, r2Configured, r2KeyFromUrl, r2PublicUrl } from "@/lib/r2";
+import { processImage, sniffImageBuffer, validateImageFile } from "@/lib/media";
+import {
+  deleteR2Object,
+  putR2Object,
+  r2Configured,
+  r2KeyFromUrl,
+  r2PublicUrl,
+} from "@/lib/r2";
 import { validateExternalImageUrl } from "@/lib/url-image";
 
-export type ProfileFormState = { error?: string };
+export type ProfileFormState = { error?: string; ok?: boolean; next?: string };
 
 const GENDERS = ["male", "female", "other", "prefer_not_to_say"];
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
@@ -34,35 +41,45 @@ export async function saveBasicProfile(
     return { error: "Too many attempts — try again later." };
   }
 
-  const displayName = String(formData.get("display_name") ?? "").trim();
+  const displayNameInput = String(formData.get("display_name") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
-  const dobRaw = String(formData.get("dob") ?? "").trim();
-  const ageRaw = String(formData.get("age") ?? "").trim();
+  const dobRawInput = String(formData.get("dob") ?? "").trim();
   const gender = String(formData.get("gender") ?? "");
   const phone = String(formData.get("phone") ?? "").trim();
   const whatsappNumberRaw = String(formData.get("whatsapp_number") ?? "").trim();
   const occupation = String(formData.get("occupation") ?? "").trim() || null;
   const isEdit = String(formData.get("edit") ?? "") === "true";
 
+  // Locked identity: approved riders can't change name/age/dob here (or via
+  // raw API) — submitted values are ignored in favour of stored ones.
+  const { data: stored } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .single();
+  const { data: storedDetails } = await supabase
+    .from("rider_details")
+    .select("registered, age, dob, kyc_submitted_at, kyc_rejected")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const locked = Boolean(storedDetails?.registered);
+
+  // Filed applications are read-only until the admin verdict (raw-API bypass
+  // around the frozen UI is rejected here, not just hidden there).
+  if (storedDetails && !storedDetails.registered && !storedDetails.kyc_rejected && storedDetails.kyc_submitted_at) {
+    return { error: "Application under review — wait for the admin verdict." };
+  }
+
+  const displayName = locked ? (stored?.display_name ?? displayNameInput) : displayNameInput;  // Age is derived from the date of birth, never typed: locked rows reuse the
+  // stored age, everyone else must supply a DOB.
+  const dobRaw = locked ? (storedDetails?.dob ?? "") : dobRawInput;
+  const age = locked && storedDetails?.age != null ? storedDetails.age : ageFromDob(dobRaw);
+
   if (!displayName) return { error: "Name is required." };
   if (displayName.length > 50) return { error: "Name must be 50 characters or fewer." };
 
-  let age = Number(ageRaw);
-  if (dobRaw) {
-    const birthDate = new Date(dobRaw);
-    if (!isNaN(birthDate.getTime())) {
-      const today = new Date();
-      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        calculatedAge--;
-      }
-      age = calculatedAge;
-    }
-  }
-
-  if (!age || !Number.isInteger(age) || age < 18 || age > 90) {
-    return { error: "You must be 18 or older to join MotoBharat (18–90 years)." };
+  if (age == null || !Number.isInteger(age) || age < 18 || age > 90) {
+    return { error: "Enter your date of birth — you must be 18 or older to join MotoBharat (18–90 years)." };
   }
   if (!GENDERS.includes(gender)) return { error: "Pick a valid gender option." };
 
@@ -71,14 +88,14 @@ export async function saveBasicProfile(
     return { error: phoneValidation.error ?? "Enter a valid Indian mobile number." };
   }
 
-  let formattedWhatsapp = phoneValidation.formatted;
-  if (whatsappNumberRaw) {
-    const waValidation = validateIndianPhone(whatsappNumberRaw);
-    if (!waValidation.valid) {
-      return { error: `WhatsApp number: ${waValidation.error ?? "Enter a valid Indian mobile number."}` };
-    }
-    formattedWhatsapp = waValidation.formatted;
+  if (!whatsappNumberRaw) {
+    return { error: "WhatsApp number is required." };
   }
+  const waValidation = validateIndianPhone(whatsappNumberRaw);
+  if (!waValidation.valid) {
+    return { error: `WhatsApp number: ${waValidation.error ?? "Enter a valid Indian mobile number."}` };
+  }
+  const formattedWhatsapp = waValidation.formatted;
 
   const { error: pErr } = await supabase
     .from("profiles")
@@ -104,8 +121,10 @@ export async function saveBasicProfile(
   if (rErr) return { error: rErr.message };
 
   revalidatePath("/profile", "layout");
+  // Success is reported (not redirected) so the client can clear its draft
+  // and navigate: drafts die exactly on submit, never before.
   // Editing basic details returns to the profile; first-time setup continues to KYC.
-  redirect(isEdit ? "/profile" : "/profile/kyc");
+  return { ok: true, next: isEdit ? "/profile" : "/profile/kyc" };
 }
 
 // KYC: rider safety, bike, licensing, emergency & declaration fields; flips registered to true.
@@ -126,7 +145,7 @@ export async function saveRiderDetails(
   const customBikeModel = String(formData.get("custom_bike_model") ?? "").trim();
   const bikeModel = rawBikeModel === "other" ? customBikeModel : rawBikeModel;
   const bikeRegNo = String(formData.get("bike_reg_no") ?? "").trim().toUpperCase();
-  const drivingLicence = String(formData.get("driving_licence") ?? "").trim().toUpperCase();
+  let drivingLicence = String(formData.get("driving_licence") ?? "").trim().toUpperCase();
   const experienceLevel = String(formData.get("experience_level") ?? "");
   const gearLevel = String(formData.get("gear_level") ?? "");
   const vehicleInsuranceStatus = String(formData.get("vehicle_insurance_status") ?? "valid_insured");
@@ -134,7 +153,7 @@ export async function saveRiderDetails(
   const ridesWithPillion = formData.get("rides_with_pillion") === "true" || formData.get("rides_with_pillion") === "on";
 
   // Emergency & Medical
-  const bloodGroup = String(formData.get("blood_group") ?? "");
+  let bloodGroup = String(formData.get("blood_group") ?? "");
   const ecName = String(formData.get("emergency_contact_name") ?? "").trim();
   const ecPhone = String(formData.get("emergency_contact_phone") ?? "").trim();
   const ecRelation = String(formData.get("emergency_contact_relation") ?? "").trim();
@@ -193,12 +212,60 @@ export async function saveRiderDetails(
   // Basic info must exist before KYC (enforced by the setup flow).
   const { data: existing } = await supabase
     .from("rider_details")
-    .select("age, gender, phone, dob, whatsapp_number, occupation")
+    .select("registered, age, gender, phone, dob, whatsapp_number, occupation, dl_image_url, blood_group, driving_licence, kyc_submitted_at, kyc_rejected")
     .eq("user_id", user.id)
     .maybeSingle();
   if (!existing?.age || !existing?.gender || !existing?.phone) {
     console.warn("[saveRiderDetails] Basic info missing in rider_details for user:", user.id);
     redirect("/profile/setup");
+  }
+
+  // Filed applications are read-only until the admin verdict.
+  if (!existing.registered && !existing.kyc_rejected && existing.kyc_submitted_at) {
+    return { error: "Application under review — wait for the admin verdict." };
+  }
+
+  // Locked identity: approved riders keep a stored blood group / DL number —
+  // submitted values are ignored while one exists. A field that was never set
+  // (legacy rows) still accepts its first value, so old accounts can't get
+  // stuck behind a disabled input.
+  const locked = existing.registered ?? false;
+  if (locked && existing.blood_group) bloodGroup = existing.blood_group;
+  if (locked && existing.driving_licence) drivingLicence = existing.driving_licence;
+
+  // DL photo: mandatory KYC data until approval, purged at approval. Locked
+  // rows ignore uploads entirely (approved accounts hold no photo); everyone
+  // else must have a stored photo or attach one now.
+  const dlFile = formData.get("dl_document") as File | null;
+  const picked = dlFile && dlFile.size > 0 ? dlFile : null;
+  const dlUpload = locked ? null : picked;
+  if (!locked && !existing.dl_image_url && !dlUpload) {
+    if (!r2Configured()) {
+      return { error: "Licence photo uploads need R2 keys — ask an admin to finish storage setup first." };
+    }
+    return { error: "Driving licence photo is required — upload a clear JPEG or WebP (max 10 MB)." };
+  }
+
+  let nextDlUrl: string | null = existing.dl_image_url ?? null;
+
+  if (dlUpload) {
+    if (!r2Configured()) {
+      return { error: "Licence photo uploads need R2 keys — ask an admin to finish storage setup first." };
+    }
+    const invalid = await validateImageFile(dlUpload);
+    if (invalid) return { error: `Licence photo: ${invalid}` };
+    const image = await processImage(dlUpload, 1600, 80);
+    const key = `rider-docs/${user.id}/dl_${crypto.randomUUID()}.webp`;
+    await putR2Object(key, image.data, "image/webp");
+    const oldKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
+    if (oldKey) {
+      try {
+        await deleteR2Object(oldKey);
+      } catch (e) {
+        console.warn(`[saveRiderDetails] failed to delete old DL ${oldKey}:`, e);
+      }
+    }
+    nextDlUrl = r2PublicUrl(key);
   }
 
   console.log("[saveRiderDetails] Performing upsert on rider_details for user:", user.id);
@@ -234,7 +301,12 @@ export async function saveRiderDetails(
         suggestions: suggestions,
         declaration_confirmed: true,
         digital_signature: digitalSignature,
-        registered: true,
+        // Filing for review, not self-approving: registered stays false until
+        // an admin approves (already-approved riders keep their status on edit).
+        registered: existing.registered ?? false,
+        kyc_submitted_at: new Date().toISOString(),
+        kyc_rejected: false,
+        dl_image_url: nextDlUrl,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },
@@ -244,9 +316,9 @@ export async function saveRiderDetails(
     return { error: error.message };
   }
 
-  console.log("[saveRiderDetails] SUCCESS! Revalidating and redirecting to /profile...");
+  console.log("[saveRiderDetails] SUCCESS! Revalidating and reporting ok...");
   revalidatePath("/profile", "layout");
-  redirect("/profile");
+  return { ok: true };
 }
 
 export type AvatarFormState = {

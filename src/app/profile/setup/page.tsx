@@ -30,11 +30,12 @@ export default async function ProfileSetupPage({
 
   const { data: rd } = await supabase
     .from("rider_details")
-    .select("age, dob, gender, phone, whatsapp_number, occupation")
+    .select("registered, age, dob, gender, phone, whatsapp_number, occupation, kyc_submitted_at, kyc_rejected")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const isEdit = params.edit === "true";
+  const basicComplete = Boolean(rd?.age && rd?.gender && rd?.phone);
 
   // If basic info is already filled and user isn't intentionally editing it, redirect to KYC immediately on the server with zero client jump!
   if (rd?.age && rd?.gender && rd?.phone && !isEdit) {
@@ -42,9 +43,9 @@ export default async function ProfileSetupPage({
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center px-4 py-12">
+    <div className="flex min-h-[70vh] items-center px-4 py-8">
       <div className="mx-auto w-full max-w-xl space-y-6 animate-fade-in-up">
-        <RegSteps current={1} />
+        <RegSteps current={1} nextHref={basicComplete ? "/profile/kyc" : undefined} />
         <div className="space-y-2">
           <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
             {isEdit ? "Rider Profile" : "Rider Registration · Step 1 of 2"}
@@ -62,6 +63,8 @@ export default async function ProfileSetupPage({
           initialData={rd as Partial<RiderDetails> | null}
           profile={profile}
           isEdit={isEdit}
+          locked={rd?.registered ?? false}
+          frozen={Boolean(rd?.kyc_submitted_at && !rd?.registered && !rd?.kyc_rejected)}
         />
       </div>
     </div>

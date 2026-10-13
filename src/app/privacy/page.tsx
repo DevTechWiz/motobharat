@@ -7,7 +7,7 @@ const sections: LegalSection[] = [
   {
     title: "Who we are",
     body: [
-      "MotoBharat is a riding community based in Warangal, Telangana, run by volunteer admins. This policy covers motobharat.in — the site where we publish rides, announcements and ride photos. The quickest way to reach us is Instagram: @motobharat_warangal.",
+      "MotoBharat is a riding community based in Warangal, Telangana, run by volunteer admins. This policy covers motobharat.co — the site where we publish rides, announcements and ride photos. The quickest way to reach us is Instagram: @motobharat_warangal.",
     ],
   },
   {
@@ -24,6 +24,7 @@ const sections: LegalSection[] = [
     title: "What's public and what isn't",
     body: [
       "Public to anyone: display name, profile photo, city, and which rides you've joined. Private — visible only to you and community admins: everything in Rider KYC, including your phone number and emergency contact. We never publish blood groups or emergency contacts; admins see them only to respond to an incident on a ride.",
+      "Member card verification: registered riders get a digital ID card with a QR code. Anyone who scans it sees a public check page with your photo, name, city, member ID and whether your membership is active — nothing else. No phone numbers, licence numbers, blood groups or emergency contacts are ever on that page.",
     ],
   },
   {

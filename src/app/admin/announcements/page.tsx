@@ -49,21 +49,20 @@ export default async function AdminAnnouncementsPage() {
           {list.map((a) => (
             <li
               key={a.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-all duration-200 hover:border-accent/40 hover:bg-surface-2"
+              className="relative flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-all duration-200 hover:border-accent/40 hover:bg-surface-2"
             >
               <div>
-                <p className="font-semibold">{a.title}</p>
+                <p className="font-semibold">
+                  <Link
+                    href={`/admin/announcements/${a.id}/edit`}
+                    className="transition-colors after:absolute after:inset-0 hover:text-accent focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-accent focus-visible:after:ring-inset focus-visible:after:rounded-xl"
+                  >
+                    {a.title}
+                  </Link>
+                </p>
                 <p className="text-xs text-muted">{formatDate(a.created_at)}</p>
               </div>
-              <div className="flex items-center gap-2">
-                {a.slug && (
-                  <Link
-                    href={`/announcements/${a.slug}`}
-                    className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-bold tracking-wider uppercase transition-colors hover:bg-surface-2"
-                  >
-                    View
-                  </Link>
-                )}
+              <div className="relative flex items-center gap-2">
                 <Link
                   href={`/admin/announcements/${a.id}/edit`}
                   className="rounded-lg border border-border-strong px-3 py-1.5 text-xs font-bold tracking-wider uppercase transition-colors hover:bg-surface-2"
