@@ -37,13 +37,13 @@ function Group({
   children: React.ReactNode;
 }) {
   return (
-    <fieldset className="min-w-0 space-y-4 rounded-xl border border-border bg-bg/60 p-4 sm:p-5">
+    <fieldset className="min-w-0 space-y-3 sm:space-y-4 rounded-xl border border-border bg-bg/60 p-3 sm:p-4">
       <legend className="sr-only">{title}</legend>
-      <div className="flex items-center gap-2.5">
-        <span className="rounded-lg border border-border bg-surface-2 p-2 text-accent">
-          <Icon className="size-4" aria-hidden />
+      <div className="flex items-center gap-2">
+        <span className="rounded-md sm:rounded-lg border border-border bg-surface-2 p-1.5 sm:p-2 text-accent">
+          <Icon className="size-3.5 sm:size-4" aria-hidden />
         </span>
-        <span className="text-sm font-bold">{title}</span>
+        <span className="text-xs sm:text-sm font-bold">{title}</span>
       </div>
       {children}
     </fieldset>
@@ -117,12 +117,12 @@ export function SetupForm({
         startTransition(() => formAction(new FormData(e.currentTarget)));
       }}
       onInvalidCapture={handleInvalid}
-      className="rounded-2xl border border-border bg-surface p-4 sm:p-6"
+      className="rounded-xl sm:rounded-2xl border border-border bg-surface p-3 sm:p-5"
     >
       <input type="hidden" name="edit" value={isEdit ? "true" : "false"} />
-      <fieldset disabled={frozen || isPending} className="min-w-0 space-y-4 border-0 m-0 p-0">
+      <fieldset disabled={frozen || isPending} className="min-w-0 space-y-3 sm:space-y-4 border-0 m-0 p-0">
       {frozen && (
-        <div className="flex items-start gap-3 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-text">
+        <div className="flex items-start gap-3 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-text">
           <p className="leading-relaxed">
             Submitted — under admin review. The form is locked until the verdict; what you see is
             exactly what&apos;s filed.
@@ -142,7 +142,7 @@ export function SetupForm({
           />
         </Field>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 sm:gap-4 sm:grid-cols-2">
           <Field label="City / Location" htmlFor="city" hint="Your current base">
             <Input
               id="city"
@@ -163,7 +163,7 @@ export function SetupForm({
       </Group>
 
       <Group icon={CalendarDays} title="Date of Birth & Gender">
-        <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2.5 sm:gap-4 min-[420px]:grid-cols-5">
           <Field
             label="Date of Birth"
             htmlFor="dob"
@@ -181,7 +181,7 @@ export function SetupForm({
               defaultValue={initialData?.dob ?? ""}
               onChange={(e) => setDobShown(e.target.value)}
             />
-            <p className="text-xs whitespace-nowrap text-muted" aria-live="polite">
+            <p className="text-[11px] sm:text-xs whitespace-nowrap text-muted" aria-live="polite">
               {(() => {
                 const dobVal = locked ? (initialData?.dob ?? "") : (dobShown ?? initialData?.dob ?? "");
                 const shown = dobVal ? ageFromDob(String(dobVal)) : null;
@@ -210,7 +210,7 @@ export function SetupForm({
       </Group>
 
       <Group icon={Phone} title="Contact">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 sm:gap-4 sm:grid-cols-2">
           <Field label="Primary Phone" htmlFor="phone" required>
             <PhoneInput
               id="phone"

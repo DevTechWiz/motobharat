@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 
 const base =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 sm:px-3.5 sm:py-3 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50 scroll-mt-28";
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 sm:px-3.5 sm:py-2.5 text-xs sm:text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50 scroll-mt-28";
 
 export function Input({
   className,
@@ -14,7 +14,7 @@ export function Textarea({
   className,
   ...props
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={cn(base, "min-h-28", className)} {...props} />;
+  return <textarea className={cn(base, "min-h-24 sm:min-h-28", className)} {...props} />;
 }
 
 export function Select({
@@ -71,21 +71,21 @@ export function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn("space-y-1.5 scroll-mt-28", className)}>
-      <label htmlFor={htmlFor} className="flex items-center justify-between text-xs font-bold tracking-wider text-secondary uppercase">
+    <div className={cn("space-y-1 sm:space-y-1.5 scroll-mt-28", className)}>
+      <label htmlFor={htmlFor} className="flex items-center justify-between text-[11px] sm:text-xs font-bold tracking-wider text-secondary uppercase">
         <span>
           {label}
           {required && <span className="ml-1 text-accent font-black" title="Compulsory">*</span>}
         </span>
         {!required && (
-          <span className="font-normal font-mono text-[10px] text-muted normal-case tracking-normal">
+          <span className="font-normal font-mono text-[9px] sm:text-[10px] text-muted normal-case tracking-normal">
             optional
           </span>
         )}
       </label>
       {children}
-      {hint && !error && <p className="text-xs text-muted">{hint}</p>}
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {hint && !error && <p className="text-[11px] sm:text-xs text-muted leading-tight">{hint}</p>}
+      {error && <p className="text-[11px] sm:text-xs text-danger leading-tight">{error}</p>}
     </div>
   );
 }

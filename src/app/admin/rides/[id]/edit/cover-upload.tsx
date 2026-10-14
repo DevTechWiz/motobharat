@@ -63,6 +63,17 @@ export function CoverUpload({
 
   const [isPreparingCrop, setIsPreparingCrop] = useState(false);
 
+function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
+  const [header, base64] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)?.[1] || "image/jpeg";
+  const binary = atob(base64);
+  const u8arr = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    u8arr[i] = binary.charCodeAt(i);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
+
   const handleReadjustCover = async () => {
     if (rawFile) {
       setIsCropperOpen(true);
@@ -72,18 +83,20 @@ export function CoverUpload({
 
     setIsPreparingCrop(true);
     try {
-      if (currentCoverUrl.startsWith("blob:") || currentCoverUrl.startsWith("data:")) {
+      if (currentCoverUrl.startsWith("blob:")) {
         const res = await fetch(currentCoverUrl);
         const blob = await res.blob();
         const f = new File([blob], "cover-readjust.jpg", { type: blob.type || "image/jpeg" });
         setRawFile(f);
         setIsCropperOpen(true);
+      } else if (currentCoverUrl.startsWith("data:")) {
+        const f = dataUrlToFile(currentCoverUrl);
+        setRawFile(f);
+        setIsCropperOpen(true);
       } else {
         const { dataUrl, error } = await fetchRemoteImageDataUrl(currentCoverUrl);
         if (dataUrl) {
-          const res = await fetch(dataUrl);
-          const blob = await res.blob();
-          const f = new File([blob], "cover-readjust.jpg", { type: blob.type || "image/jpeg" });
+          const f = dataUrlToFile(dataUrl);
           setRawFile(f);
           setIsCropperOpen(true);
         } else {

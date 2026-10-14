@@ -67,7 +67,7 @@ const HEALTH_INSURANCE_OPTIONS = [
 
 function SubmitButton({ done, pending }: { done: boolean; pending: boolean }) {
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
       {pending ? "Saving Registration..." : done ? "Update KYC Details" : "Submit & Complete Registration"}
     </Button>
   );
@@ -85,14 +85,14 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div data-section-card className="rounded-xl border border-border bg-surface p-6 space-y-5 scroll-mt-28">
-      <div className="flex items-start gap-3 border-b border-border pb-4">
-        <div className="rounded-lg bg-surface-2 p-2.5 text-accent border border-border">
-          <Icon className="size-5" />
+    <div data-section-card className="rounded-xl sm:rounded-2xl border border-border bg-surface p-3 sm:p-5 space-y-3 sm:space-y-4 scroll-mt-28">
+      <div className="flex items-start gap-2 sm:gap-2.5 border-b border-border pb-2.5 sm:pb-3.5">
+        <div className="rounded-lg bg-surface-2 p-1.5 sm:p-2 text-accent border border-border shrink-0">
+          <Icon className="size-4 sm:size-4.5" />
         </div>
         <div>
-          <h2 className="text-base font-bold text-text">{title}</h2>
-          <p className="text-xs text-muted mt-0.5">{subtitle}</p>
+          <h2 className="text-xs sm:text-sm md:text-base font-bold text-text">{title}</h2>
+          <p className="text-[10px] sm:text-xs text-muted mt-0.5">{subtitle}</p>
         </div>
       </div>
       {children}
@@ -187,9 +187,9 @@ function KycForm() {
       }}
       onInvalidCapture={handleInvalid}
     >
-      <fieldset disabled={frozen || isPending} className="min-w-0 space-y-8 border-0 m-0 p-0">
+      <fieldset disabled={frozen || isPending} className="min-w-0 space-y-3.5 sm:space-y-6 border-0 m-0 p-0">
       {prefill?.kyc_rejected && !prefill?.registered && (
-        <div className="flex items-start gap-3 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-text">
+        <div className="flex items-start gap-2.5 sm:gap-3 rounded-lg border border-danger/40 bg-danger/10 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-text">
           <ShieldAlert className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
           <p className="leading-relaxed">
             An admin reviewed your KYC and sent it back — most often the profile photo, DL photo
@@ -198,7 +198,7 @@ function KycForm() {
         </div>
       )}
       {frozen && (
-        <div className="flex items-start gap-3 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-text">
+        <div className="flex items-start gap-2.5 sm:gap-3 rounded-lg border border-accent/40 bg-accent/10 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-text">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
           <p className="leading-relaxed">
             Submitted — under admin review. The form is locked until the verdict; what you see is
@@ -212,7 +212,7 @@ function KycForm() {
         title="1. Motorcycle & Riding Profile"
         subtitle="Your machine, registration plate, and riding experience"
       >
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
           <Field label="Motorcycle Brand & Model" htmlFor="bike_model" required>
             <CustomSelect
               id="bike_model"
@@ -261,7 +261,7 @@ function KycForm() {
           </Field>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
           <Field
             label="Driving Licence Number"
             htmlFor="driving_licence"
@@ -366,7 +366,7 @@ function KycForm() {
           />
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
           <Field label="24x7 Roadside Assistance (RSA) Active?" htmlFor="has_rsa">
             <CustomSelect
               id="has_rsa"
@@ -392,7 +392,7 @@ function KycForm() {
         title="2. Emergency Safety & Medical Info"
         subtitle="Used strictly by ride marshals and medical teams in case of an incident"
       >
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
           <Field
             label="Blood Group"
             htmlFor="blood_group"
@@ -430,7 +430,7 @@ function KycForm() {
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-3">
           <Field label="Primary Emergency Contact Name" htmlFor="emergency_contact_name" required>
             <Input
               id="emergency_contact_name"
@@ -460,7 +460,7 @@ function KycForm() {
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
           <Field label="Secondary Emergency Contact Phone" htmlFor="emergency_contact_2_phone" hint="Optional backup">
             <PhoneInput
               id="emergency_contact_2_phone"
@@ -496,7 +496,7 @@ function KycForm() {
             />
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
           <Field label="Instagram Handle" htmlFor="instagram_handle" hint="Without @ symbol">
             <Input
               id="instagram_handle"
@@ -531,9 +531,9 @@ function KycForm() {
         title="4. Safety Code & Risk Waiver"
         subtitle="Mandatory confirmation before riding with the column"
       >
-        <div className="rounded-lg border border-accent/40 bg-accent/5 p-4 text-xs leading-relaxed text-secondary space-y-2">
-          <p className="font-semibold text-text uppercase tracking-wide flex items-center gap-1.5">
-            <CheckCircle2 className="size-4 text-accent" />
+        <div className="rounded-lg border border-accent/40 bg-accent/5 p-3 sm:p-4 text-[11px] sm:text-xs leading-relaxed text-secondary space-y-1.5 sm:space-y-2">
+          <p className="font-semibold text-text uppercase tracking-wide flex items-center gap-1.5 text-[11px] sm:text-xs">
+            <CheckCircle2 className="size-3.5 sm:size-4 text-accent" />
             Declaration & Undertaking
           </p>
           <p>
@@ -545,17 +545,17 @@ function KycForm() {
           </p>
         </div>
 
-        <div className="pt-2">
-          <label className="flex items-start gap-3 cursor-pointer">
+        <div className="pt-1 sm:pt-2">
+          <label className="flex items-start gap-2.5 sm:gap-3 cursor-pointer">
             <input
               type="checkbox"
               id="declaration_confirmed"
               name="declaration_confirmed"
               required
               defaultChecked={prefill?.declaration_confirmed ?? false}
-              className="mt-1 size-4 rounded border-border text-accent focus:ring-accent"
+              className="mt-0.5 size-4 rounded border-border text-accent focus:ring-accent"
             />
-            <span className="text-xs text-text font-medium leading-normal">
+            <span className="text-[11px] sm:text-xs text-text font-medium leading-snug">
               I have read, understood, and accept the MotoBharat Warangal Safety Code, traffic discipline rules, and voluntary participation risk waiver.
             </span>
           </label>
@@ -604,7 +604,7 @@ function KycForm() {
         </div>
       )}
 
-      <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-2">
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-4 pt-2">
         <Link
           href={done ? "/profile" : "/profile/setup"}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition-colors hover:text-accent"
@@ -615,7 +615,7 @@ function KycForm() {
         <SubmitButton done={done} pending={isPending} />
       </div>
 
-      <p className="border-t border-border pt-4 text-xs text-muted text-center sm:text-left">
+      <p className="border-t border-border pt-3 sm:pt-4 text-[11px] sm:text-xs text-muted text-center sm:text-left">
         Your safety & emergency data is private and accessible only to verified club administrators and organizers in case of road incidents.
       </p>
       </fieldset>
@@ -625,15 +625,15 @@ function KycForm() {
 
 export default function ProfileKycPage() {
   return (
-    <div className="min-h-[80vh] px-4 py-12">
-      <div className="mx-auto w-full max-w-3xl space-y-6">
+    <div className="min-h-[80vh] px-3 sm:px-4 py-4 sm:py-8">
+      <div className="mx-auto w-full max-w-3xl space-y-3.5 sm:space-y-6">
         <RegSteps current={2} />
-        <div className="space-y-2">
-          <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
+        <div className="space-y-1 sm:space-y-2">
+          <p className="text-[10px] sm:text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
             Rider Registration · Step 2
           </p>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Rider Safety & KYC</h1>
-          <p className="text-sm text-secondary leading-relaxed">
+          <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight">Rider Safety & KYC</h1>
+          <p className="text-xs sm:text-sm text-secondary leading-relaxed">
             Complete your vehicle details, emergency contacts, and sign the safety waiver.
             Once submitted, an admin reviews your application — approval marks you{" "}
             <span className="text-accent font-semibold">Registered</span> and unlocks joining any community ride.

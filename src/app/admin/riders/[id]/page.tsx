@@ -42,7 +42,7 @@ export default async function RiderReviewPage({
   ];
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-4 sm:space-y-6">
       <Link
         href="/admin/riders"
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition-colors hover:text-accent"
@@ -51,11 +51,11 @@ export default async function RiderReviewPage({
         Back to riders
       </Link>
 
-      <div className="flex items-center gap-4">
-        <Avatar name={profile.display_name} src={profile.avatar_url} size="lg" />
+      <div className="flex items-center gap-3 sm:gap-4">
+        <Avatar name={profile.display_name} src={profile.avatar_url} size="md" />
         <div>
-          <h2 className="text-xl font-extrabold">{profile.display_name}</h2>
-          <div className="mt-1.5 flex flex-wrap gap-2">
+          <h2 className="text-lg sm:text-xl font-extrabold">{profile.display_name}</h2>
+          <div className="mt-1 flex flex-wrap gap-1.5 sm:gap-2">
             <Badge tone={rd.registered ? "easy" : "moderate"}>
               {rd.registered ? "Registered" : "Incomplete"}
             </Badge>
@@ -71,16 +71,16 @@ export default async function RiderReviewPage({
 
       {(rd.dl_image_url || !rd.registered) &&
         (rd.dl_image_url ? (
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface-2">
+          <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-surface-2">
             <Image
               src={rd.dl_image_url}
               alt={`Driving licence of ${profile.display_name}`}
               width={1200}
               height={800}
               sizes="(min-width:768px) 720px, 100vw"
-              className="h-auto w-full object-contain"
+              className="max-h-52 sm:max-h-80 h-auto w-full object-contain"
             />
-            <p className="border-t border-border px-4 py-2 font-mono text-[10px] tracking-wider text-muted uppercase">
+            <p className="border-t border-border px-3 sm:px-4 py-1.5 sm:py-2 font-mono text-[10px] tracking-wider text-muted uppercase">
               Licence photo on file
             </p>
           </div>
@@ -93,9 +93,9 @@ export default async function RiderReviewPage({
 
       <dl className="divide-y divide-border rounded-xl border border-border bg-surface">
         {rows.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between gap-4 px-4 py-3">
-            <dt className="text-xs text-muted">{label}</dt>
-            <dd className="text-right text-sm font-semibold">{value}</dd>
+          <div key={label} className="flex items-center justify-between gap-4 px-3 sm:px-4 py-2 sm:py-2.5">
+            <dt className="text-[11px] sm:text-xs text-muted">{label}</dt>
+            <dd className="text-right text-xs sm:text-sm font-semibold">{value}</dd>
           </div>
         ))}
       </dl>

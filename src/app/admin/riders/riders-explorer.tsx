@@ -54,11 +54,11 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
   }, [riders, query, status]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold">
+    <div className="space-y-3.5 sm:space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
+        <h2 className="text-base sm:text-lg font-bold">
           Riders{" "}
-          <span className="font-mono text-sm font-semibold text-muted tabular-nums">
+          <span className="font-mono text-xs sm:text-sm font-semibold text-muted tabular-nums">
             ({filtered.length}/{riders.length})
           </span>
         </h2>
@@ -66,30 +66,30 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
           <button
             type="button"
             onClick={() => setStatus("pending")}
-            className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 font-mono text-[11px] font-bold tracking-wider text-accent uppercase transition-colors hover:bg-accent/20"
+            className="rounded-full border border-accent/40 bg-accent/10 px-2.5 sm:px-3 py-1 font-mono text-[10px] sm:text-[11px] font-bold tracking-wider text-accent uppercase transition-colors hover:bg-accent/20"
           >
             {pendingCount} pending review
           </button>
         ) : (
-          <p className="font-mono text-[11px] tracking-wider text-muted uppercase">
+          <p className="font-mono text-[10px] sm:text-[11px] tracking-wider text-muted uppercase">
             Queue clear
           </p>
         )}
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-2.5 sm:gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted" aria-hidden />
+          <Search className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted" aria-hidden />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name or city…"
             aria-label="Search riders"
-            className="w-full rounded-lg border border-border bg-surface py-2.5 pr-3.5 pl-10 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
+            className="w-full rounded-lg border border-border bg-surface py-2 sm:py-2.5 pr-3 pl-9 text-xs sm:text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
           />
         </div>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by review status">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2" role="group" aria-label="Filter by review status">
           {FILTERS.map((f) => (
             <button
               key={f.value}
@@ -97,7 +97,7 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
               onClick={() => setStatus(f.value)}
               aria-pressed={status === f.value}
               className={cn(
-                "rounded-full border px-3 py-1.5 font-mono text-[11px] font-bold tracking-wider uppercase transition-colors",
+                "rounded-full border px-2.5 py-1 sm:px-3 sm:py-1.5 font-mono text-[10px] sm:text-[11px] font-bold tracking-wider uppercase transition-colors",
                 status === f.value
                   ? "border-accent bg-accent/15 text-accent"
                   : "border-border-strong text-muted hover:border-accent/50 hover:text-text"
@@ -120,14 +120,14 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs sm:text-sm">
             <thead>
-              <tr className="border-b border-border bg-surface text-left text-xs text-muted">
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Rider</th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">City</th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Role</th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">KYC Status</th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Licence</th>
+              <tr className="border-b border-border bg-surface text-left text-[11px] sm:text-xs text-muted">
+                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Rider</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">City</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Role</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">KYC Status</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Licence</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-surface">
@@ -149,17 +149,17 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
                     }}
                     className="cursor-pointer transition-colors outline-none hover:bg-surface-2/70 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
                   >
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
-                      <span className="flex items-center gap-3">
+                    <td className="px-3 sm:px-4 py-2 sm:py-2.5">
+                      <span className="flex items-center gap-2.5 sm:gap-3">
                         <Avatar name={r.display_name} src={r.avatar_url} size="sm" />
                         <span className="font-semibold">{r.display_name}</span>
                       </span>
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-secondary">{r.city ?? "—"}</td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
+                    <td className="px-3 sm:px-4 py-2 sm:py-2.5 text-secondary">{r.city ?? "—"}</td>
+                    <td className="px-3 sm:px-4 py-2 sm:py-2.5">
                       <Badge tone={r.role === "admin" ? "hard" : "neutral"}>{r.role}</Badge>
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
+                    <td className="px-3 sm:px-4 py-2 sm:py-2.5">
                       <Badge
                         tone={
                           s === "registered" ? "easy" : s === "rejected" ? "danger" : s === "pending" ? "moderate" : "neutral"
@@ -174,7 +174,7 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
                               : "Incomplete"}
                       </Badge>
                     </td>
-                    <td className="px-3 sm:px-4 py-2.5 sm:py-3">
+                    <td className="px-3 sm:px-4 py-2 sm:py-2.5">
                       <Badge tone="neutral">{r.hasDoc ? "Doc on file" : "No doc"}</Badge>
                     </td>
                   </tr>

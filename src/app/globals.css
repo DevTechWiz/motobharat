@@ -230,6 +230,30 @@
   position: relative;
 }
 
+/* Itinerary timeline rail: accent dashes (matches the stop-number color). */
+.itinerary-rail {
+  position: relative;
+}
+
+.itinerary-rail::before {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  left: 9px;
+  width: 2px;
+  background-image: linear-gradient(to bottom, var(--accent) 6px, transparent 6px);
+  background-size: 2px 12px;
+  background-repeat: repeat-y;
+  opacity: 0.1;
+}
+
+@media (min-width: 640px) {
+  .itinerary-rail::before {
+    left: 11px;
+  }
+}
+
 .mask-fade-x {
   mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
 }

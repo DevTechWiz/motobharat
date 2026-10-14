@@ -43,17 +43,17 @@ export default async function ProfileSetupPage({
   }
 
   return (
-    <div className="flex min-h-[70vh] items-center px-4 py-8">
-      <div className="mx-auto w-full max-w-xl space-y-6 animate-fade-in-up">
+    <div className="flex min-h-[70vh] items-center px-3 sm:px-4 py-4 sm:py-8">
+      <div className="mx-auto w-full max-w-xl space-y-3.5 sm:space-y-6 animate-fade-in-up">
         <RegSteps current={1} nextHref={basicComplete ? "/profile/kyc" : undefined} />
-        <div className="space-y-2">
-          <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
+        <div className="space-y-1 sm:space-y-2">
+          <p className="text-[10px] sm:text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
             {isEdit ? "Rider Profile" : "Rider Registration · Step 1 of 2"}
           </p>
-          <h1 className="text-3xl font-extrabold tracking-tight">
+          <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight">
             {isEdit ? "Edit basic details" : "Tell us about yourself"}
           </h1>
-          <p className="text-sm text-secondary">
+          <p className="text-xs sm:text-sm text-secondary">
             {isEdit
               ? "Update your personal info — saving returns you to your profile."
               : "Basic details for the rider column. Under a minute — then one quick safety step."}

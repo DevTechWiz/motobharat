@@ -16,6 +16,7 @@ import {
   HeartPulse,
   Phone,
   Scissors,
+  MapPin,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ import { formatDate } from "@/lib/format";
 interface MemberCardViewerProps {
   memberId: string;
   fullName: string;
+  role?: string | null;
   city: string;
   avatarUrl: string | null;
   createdAt: string;
@@ -43,6 +45,7 @@ interface MemberCardViewerProps {
 export function MemberCardViewer({
   memberId,
   fullName,
+  role,
   city,
   avatarUrl,
   createdAt,
@@ -245,25 +248,33 @@ export function MemberCardViewer({
                       <p className="truncate text-xs sm:text-lg md:text-xl font-black tracking-tight text-white print:text-[10pt] print:leading-tight">
                         {fullName}
                       </p>
-                      <p className="text-[9.5px] sm:text-xs print:text-[6.5pt] text-gray-300 mt-0.5 print:leading-tight truncate">
-                        {city || "Warangal"} · Member since {formatDate(createdAt)}
-                      </p>
-                      <div className="mt-1 sm:mt-1.5 print:mt-[1mm] flex items-center gap-1.5 sm:gap-2">
+                      <div className="mt-1 sm:mt-1.5 print:mt-[1mm] flex flex-wrap items-center gap-1 sm:gap-1.5">
+                        {role === "admin" && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-accent/20 border border-accent/40 px-1.5 sm:px-2 py-0.5 print:px-1.5 print:py-0 text-[7.5px] sm:text-[9.5px] print:text-[5.5pt] font-bold text-accent uppercase">
+                            Admin
+                          </span>
+                        )}
                         {isRegistered ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-1.5 sm:px-2 py-0.5 print:px-1.5 print:py-0 text-[8px] sm:text-[10px] print:text-[6pt] font-bold text-emerald-400">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-1.5 sm:px-2 py-0.5 print:px-1.5 print:py-0 text-[7.5px] sm:text-[9.5px] print:text-[5.5pt] font-bold text-emerald-400">
                             <ShieldCheck className="size-2 sm:size-2.5" aria-hidden /> Registered Rider
                           </span>
                         ) : (
                           <>
-                            <Badge tone={isRejected ? "danger" : "moderate"} className="text-[8px] sm:text-xs">
+                            <Badge tone={isRejected ? "danger" : "moderate"} className="text-[7.5px] sm:text-xs">
                               {isRejected ? "KYC Rejected" : isPending ? "Review Pending" : "KYC Pending"}
                             </Badge>
-                            <Badge tone="danger" className="text-[8px] sm:text-xs">
-                              <Lock className="size-2.5 sm:size-3" aria-hidden /> Card Locked
+                            <Badge tone="danger" className="text-[7.5px] sm:text-xs">
+                              <Lock className="size-2 sm:size-2.5" aria-hidden /> Card Locked
                             </Badge>
                           </>
                         )}
                       </div>
+                      <p className="text-[9px] sm:text-xs print:text-[6.5pt] text-gray-300 mt-1 print:mt-[0.5mm] print:leading-tight truncate flex items-center gap-1">
+                        <MapPin className="size-2.5 sm:size-3 text-accent shrink-0 inline print:hidden" aria-hidden />
+                        <span>{city || "Warangal"}</span>
+                        <span className="text-gray-500">·</span>
+                        <span>Member since {formatDate(createdAt)}</span>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -421,25 +432,33 @@ export function MemberCardViewer({
                       <p className="truncate text-xs sm:text-xl font-black tracking-tight text-white print:text-[10pt] print:leading-tight">
                         {fullName}
                       </p>
-                      <p className="mt-0.5 text-[9.5px] sm:text-sm text-gray-300 print:text-[6.5pt] print:leading-tight truncate">
-                        {city || "Warangal"} · Member since {formatDate(createdAt)}
-                      </p>
-                      <div className="mt-1 sm:mt-1.5 print:mt-[1mm] flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <div className="mt-1 sm:mt-1.5 print:mt-[1mm] flex flex-wrap items-center gap-1 sm:gap-1.5">
+                        {role === "admin" && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-accent/20 border border-accent/40 px-1.5 sm:px-2 py-0.5 print:px-1.5 print:py-0 text-[7.5px] sm:text-[9.5px] print:text-[5.5pt] font-bold text-accent uppercase">
+                            Admin
+                          </span>
+                        )}
                         {isRegistered ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-1.5 sm:px-2 py-0.5 print:px-1.5 print:py-0 text-[8px] sm:text-[10px] print:text-[6pt] font-bold text-emerald-400">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-1.5 sm:px-2 py-0.5 print:px-1.5 print:py-0 text-[7.5px] sm:text-[9.5px] print:text-[5.5pt] font-bold text-emerald-400">
                             <ShieldCheck className="size-2 sm:size-2.5" aria-hidden /> Registered Rider
                           </span>
                         ) : (
                           <>
-                            <Badge tone={isRejected ? "danger" : "moderate"} className="text-[8px] sm:text-xs">
+                            <Badge tone={isRejected ? "danger" : "moderate"} className="text-[7.5px] sm:text-xs">
                               {isRejected ? "KYC Rejected" : isPending ? "Approval Pending" : "KYC Pending"}
                             </Badge>
-                            <Badge tone="danger" className="text-[8px] sm:text-xs">
-                              <Lock className="size-2.5 sm:size-3" aria-hidden /> Card Locked
+                            <Badge tone="danger" className="text-[7.5px] sm:text-xs">
+                              <Lock className="size-2 sm:size-2.5" aria-hidden /> Card Locked
                             </Badge>
                           </>
                         )}
                       </div>
+                      <p className="mt-1 print:mt-[0.5mm] text-[9px] sm:text-sm text-gray-300 print:text-[6.5pt] print:leading-tight truncate flex items-center gap-1">
+                        <MapPin className="size-2.5 sm:size-3 text-accent shrink-0 inline print:hidden" aria-hidden />
+                        <span>{city || "Warangal"}</span>
+                        <span className="text-gray-500">·</span>
+                        <span>Member since {formatDate(createdAt)}</span>
+                      </p>
                     </div>
                   </div>
 

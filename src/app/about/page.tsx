@@ -202,7 +202,7 @@ export default async function AboutPage() {
       />
 
       {/* Banner */}
-      <Container className="pt-6 sm:pt-8">
+      <Container className="pt-4 sm:pt-8">
         <Reveal>
           <div className="group relative aspect-16/10 overflow-hidden rounded-2xl border border-border bg-surface-2 sm:aspect-21/9">
             <Image
@@ -217,7 +217,7 @@ export default async function AboutPage() {
               className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent"
               aria-hidden
             />
-            <span className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-black/55 px-3 py-1.5 font-mono text-[10px] font-bold tracking-[0.18em] text-white/85 uppercase backdrop-blur-md">
+            <span className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 rounded-lg border border-white/10 bg-black/55 px-2.5 py-1 sm:px-3 sm:py-1.5 font-mono text-[9px] sm:text-[10px] font-bold tracking-[0.16em] sm:tracking-[0.18em] text-white/85 uppercase backdrop-blur-md">
               Different Roads · One Community
             </span>
           </div>
@@ -228,7 +228,7 @@ export default async function AboutPage() {
       <Section spacing="compact">
         <Container size="narrow">
           <Reveal>
-            <p className="text-sm leading-relaxed text-secondary sm:text-base">
+            <p className="text-xs leading-relaxed text-secondary sm:text-base">
               MotoBharat brings together doctors, engineers, students and explorers who
               share one rule: show up on time, gear up, respect the road and the villages
               it passes through, and return home safe. Organisers plan every departure —
@@ -241,15 +241,15 @@ export default async function AboutPage() {
       {/* Live stats band */}
       <Section bg="surface" border="both" spacing="compact">
         <Container>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-6 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4 sm:gap-x-6 sm:gap-y-6 lg:grid-cols-4">
             {stats.map((s) => (
-              <div key={s.label} className="flex items-center gap-3 sm:gap-3.5">
-                <s.icon className="size-7 shrink-0 text-accent" strokeWidth={1.5} aria-hidden />
+              <div key={s.label} className="flex items-center gap-2.5 sm:gap-3.5">
+                <s.icon className="size-5 sm:size-7 shrink-0 text-accent" strokeWidth={1.5} aria-hidden />
                 <span>
-                  <span className="block font-mono text-xl leading-none font-bold text-white tabular-nums sm:text-2xl">
+                  <span className="block font-mono text-lg leading-none font-bold text-white tabular-nums sm:text-2xl">
                     <CountUp to={s.value} />
                   </span>
-                  <span className="mt-1 block text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
+                  <span className="mt-1 block text-[9px] sm:text-[10px] font-semibold tracking-[0.12em] sm:tracking-[0.14em] text-muted uppercase">
                     {s.label}
                   </span>
                 </span>
@@ -257,7 +257,7 @@ export default async function AboutPage() {
             ))}
           </div>
           {upcoming.length > 0 && (
-            <p className="mt-6 font-mono text-[11px] tracking-wider text-muted uppercase tabular-nums">
+            <p className="mt-4 sm:mt-6 font-mono text-[10px] sm:text-[11px] tracking-wider text-muted uppercase tabular-nums">
               {upcoming.length} upcoming {upcoming.length === 1 ? "ride" : "rides"} —{" "}
               <Link href="/rides" className="text-accent hover:underline">
                 join the next departure
@@ -275,12 +275,12 @@ export default async function AboutPage() {
             title="How Membership Works"
             cta={{ href: "/profile/kyc", label: "Start KYC" }}
           />
-          <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5" gap={0.08}>
+          <Stagger className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-5" gap={0.08}>
             {MEMBERSHIP_STEPS.map((s) => (
               <StaggerItem key={s.num}>
                 <Link
                   href={s.href}
-                  className="group flex h-full flex-col rounded-xl border border-border bg-surface p-5 transition-all duration-200 hover:-translate-y-1 hover:border-accent/40 hover:bg-surface-2 active:scale-[0.97]"
+                  className="group flex h-full flex-col rounded-xl border border-border bg-surface p-4 sm:p-5 transition-all duration-200 hover:-translate-y-1 hover:border-accent/40 hover:bg-surface-2 active:scale-[0.97]"
                 >
                   <span className="font-mono text-xs font-bold text-accent">{s.num}</span>
                   <span className="mt-2 mb-3 block h-px w-8 bg-border-strong transition-colors duration-150 group-hover:bg-accent/60" aria-hidden />
@@ -307,14 +307,14 @@ export default async function AboutPage() {
             title="How Rides Work"
             cta={{ href: "/rides", label: "All Rides" }}
           />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
             {RIDE_FACTS.map((f) => (
               <div
                 key={f.title}
-                className="flex gap-4 rounded-xl border border-border bg-bg p-5 transition-colors duration-200 hover:border-accent/40"
+                className="flex gap-3 sm:gap-4 rounded-xl border border-border bg-bg p-3.5 sm:p-5 transition-colors duration-200 hover:border-accent/40"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-                  <f.icon className="size-5 text-accent" aria-hidden />
+                <span className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                  <f.icon className="size-4.5 sm:size-5 text-accent" aria-hidden />
                 </span>
                 <span>
                   <h3 className="text-sm font-bold">{f.title}</h3>
@@ -328,7 +328,7 @@ export default async function AboutPage() {
 
       {/* Photo strip */}
       <Container>
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {[
             {
               src: "https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=800&q=80",
@@ -367,21 +367,21 @@ export default async function AboutPage() {
             title="What We Do"
             cta={{ href: "/rides", label: "See It Live" }}
           />
-          <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" gap={0.1}>
+          <Stagger className="grid grid-cols-1 gap-3.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3" gap={0.1}>
             {PILLARS.map((p) => (
               <StaggerItem key={p.title}>
                 <Link
                   href={p.href}
-                  className="group flex h-full flex-col rounded-xl border border-border bg-surface p-6 transition-all duration-200 hover:-translate-y-1 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.35)] active:scale-[0.97]"
+                  className="group flex h-full flex-col rounded-xl border border-border bg-surface p-4 sm:p-6 transition-all duration-200 hover:-translate-y-1 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.35)] active:scale-[0.97]"
                 >
-                  <span className="flex size-10 items-center justify-center rounded-lg bg-accent/10 transition-colors duration-200 group-hover:bg-accent/20">
-                    <p.icon className="size-5 text-accent" aria-hidden />
+                  <span className="flex size-9 sm:size-10 items-center justify-center rounded-lg bg-accent/10 transition-colors duration-200 group-hover:bg-accent/20">
+                    <p.icon className="size-4.5 sm:size-5 text-accent" aria-hidden />
                   </span>
-                  <h3 className="mt-4 text-base font-bold transition-colors group-hover:text-accent">
+                  <h3 className="mt-3 sm:mt-4 text-sm sm:text-base font-bold transition-colors group-hover:text-accent">
                     {p.title}
                   </h3>
-                  <p className="mt-2 flex-1 text-xs leading-relaxed text-secondary">{p.body}</p>
-                  <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase text-secondary transition-colors group-hover:text-accent">
+                  <p className="mt-1.5 sm:mt-2 flex-1 text-xs leading-relaxed text-secondary">{p.body}</p>
+                  <span className="mt-3 sm:mt-4 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase text-secondary transition-colors group-hover:text-accent">
                     {p.cta}
                     <ArrowRight className="size-3.5 text-accent transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
                   </span>
@@ -398,7 +398,7 @@ export default async function AboutPage() {
           <SectionHeader eyebrow="Before you ask" title="Good to Know" />
           <ul className="divide-y divide-border rounded-xl border border-border bg-bg">
             {GOOD_TO_KNOW.map((g) => (
-              <li key={g.lead} className="flex items-start gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
+              <li key={g.lead} className="flex items-start gap-2.5 sm:gap-3 px-3.5 py-3 sm:px-5 sm:py-4">
                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent/12">
                   <Check className="size-3 text-accent" aria-hidden />
                 </span>
@@ -408,7 +408,7 @@ export default async function AboutPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-center text-xs text-muted">
+          <p className="mt-3 sm:mt-4 text-center text-xs text-muted">
             The full riding rules live in our{" "}
             <Link href="/safety" className="font-semibold text-accent hover:underline">
               Safety Code
@@ -422,16 +422,16 @@ export default async function AboutPage() {
       <Section spacing="compact">
         <Container size="narrow">
           <Reveal>
-            <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-6 text-center sm:p-10">
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-4 sm:p-10 text-center">
               <div
                 className="pointer-events-none absolute -top-24 left-1/2 h-48 w-96 -translate-x-1/2 rounded-full bg-accent/10 blur-[90px]"
                 aria-hidden
               />
-              <div className="relative space-y-4">
-                <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
+              <div className="relative space-y-3 sm:space-y-4">
+                <p className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
                   Membership
                 </p>
-                <h2 className="text-2xl font-black tracking-tight text-balance sm:text-4xl">
+                <h2 className="text-xl sm:text-4xl font-black tracking-tight text-balance">
                   Ready to ride with us?
                 </h2>
                 <p className="mx-auto max-w-md text-xs leading-relaxed text-secondary sm:text-sm">
@@ -439,7 +439,12 @@ export default async function AboutPage() {
                   Warangal, Telangana.
                 </p>
                 <div className="pt-1">
-                  <ButtonLink href={joinCta.href}>{joinCta.label}</ButtonLink>
+                  <ButtonLink
+                    href={joinCta.href}
+                    className="!min-h-[38px] sm:!min-h-[44px] px-4 sm:px-6 py-2 sm:py-3.5 text-xs font-bold"
+                  >
+                    {joinCta.label}
+                  </ButtonLink>
                 </div>
               </div>
             </div>

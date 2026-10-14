@@ -51,7 +51,7 @@ export function PhotoPicker({
   return (
     <div
       className={cn(
-        "relative flex aspect-[1.586] w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border-2 border-dashed bg-surface-2 p-4 text-center transition-colors",
+        "relative flex h-28 sm:h-40 w-full flex-col items-center justify-center gap-1 sm:gap-2 overflow-hidden rounded-xl border-2 border-dashed bg-surface-2 p-2.5 sm:p-4 text-center transition-colors",
         dragging ? "border-accent bg-accent/5" : "border-border-strong hover:border-accent/60",
         disabled && "cursor-not-allowed opacity-50",
         !disabled && "cursor-pointer",
@@ -119,9 +119,9 @@ export function PhotoPicker({
         </>
       ) : (
         <>
-          <IdCard className="size-8 text-accent" aria-hidden />
-          <span className="text-sm font-bold text-text">{caption}</span>
-          <span className="font-mono text-[10px] tracking-wider text-muted uppercase">{hint}</span>
+          <IdCard className="size-6 sm:size-8 text-accent" aria-hidden />
+          <span className="text-xs sm:text-sm font-bold text-text">{caption}</span>
+          <span className="font-mono text-[9px] sm:text-[10px] tracking-wider text-muted uppercase">{hint}</span>
         </>
       )}
     </div>

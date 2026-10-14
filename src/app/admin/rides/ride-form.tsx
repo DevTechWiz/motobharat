@@ -120,6 +120,17 @@ export function RideForm({
     }
   };
 
+function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
+  const [header, base64] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)?.[1] || "image/jpeg";
+  const binary = atob(base64);
+  const u8arr = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    u8arr[i] = binary.charCodeAt(i);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
+
   const handleReadjustCover = async () => {
     if (rawCoverFile) {
       setIsCropperOpen(true);
@@ -129,18 +140,20 @@ export function RideForm({
 
     setIsPreparingCrop(true);
     try {
-      if (currentCoverUrl.startsWith("blob:") || currentCoverUrl.startsWith("data:")) {
+      if (currentCoverUrl.startsWith("blob:")) {
         const res = await fetch(currentCoverUrl);
         const blob = await res.blob();
         const f = new File([blob], "cover-readjust.jpg", { type: blob.type || "image/jpeg" });
         setRawCoverFile(f);
         setIsCropperOpen(true);
+      } else if (currentCoverUrl.startsWith("data:")) {
+        const f = dataUrlToFile(currentCoverUrl);
+        setRawCoverFile(f);
+        setIsCropperOpen(true);
       } else {
         const { dataUrl, error } = await fetchRemoteImageDataUrl(currentCoverUrl);
         if (dataUrl) {
-          const res = await fetch(dataUrl);
-          const blob = await res.blob();
-          const f = new File([blob], "cover-readjust.jpg", { type: blob.type || "image/jpeg" });
+          const f = dataUrlToFile(dataUrl);
           setRawCoverFile(f);
           setIsCropperOpen(true);
         } else {
@@ -238,9 +251,9 @@ export function RideForm({
         }
         startTransition(() => formAction(fd));
       }}
-      className="max-w-xl space-y-5"
+      className="max-w-xl space-y-3.5 sm:space-y-5"
     >
-      <fieldset disabled={isPending} className="min-w-0 space-y-5 border-0 m-0 p-0">
+      <fieldset disabled={isPending} className="min-w-0 space-y-3.5 sm:space-y-5 border-0 m-0 p-0">
         <Field label="Title" htmlFor="title" required>
           <Input
             id="title"
@@ -270,7 +283,7 @@ export function RideForm({
           />
         </Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
           <Field
             label="Assembly / Start Point"
             htmlFor="meeting_point"
@@ -299,7 +312,7 @@ export function RideForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
           <Field label="Distance (km)" htmlFor="distance_km" required>
             <Input
               id="distance_km"
@@ -629,18 +642,18 @@ export function RideForm({
 
         {/* Errors & success alerts displayed directly above submit button */}
         {state.error && (
-          <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+          <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-danger">
             {state.error}
           </div>
         )}
 
         {state.ok && (
-          <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-semibold text-success">
+          <div className="rounded-lg border border-success/30 bg-success/10 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-success">
             {ride?.id ? "Ride details updated successfully." : "Ride created successfully."}
           </div>
         )}
 
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending ? "Saving..." : ride?.id ? "Update Ride" : "Create Ride"}
         </Button>
       </fieldset>

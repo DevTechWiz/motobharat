@@ -42,7 +42,7 @@ function ColumnHeading({ children }: { children: React.ReactNode }) {
   return (
     <div>
       <span className="block h-px w-6 bg-accent/70" aria-hidden />
-      <p className="mt-3 font-mono text-[10px] font-semibold tracking-[0.2em] text-muted uppercase">
+      <p className="mt-2 font-mono text-[10px] font-semibold tracking-[0.2em] text-muted uppercase">
         {children}
       </p>
     </div>
@@ -55,37 +55,9 @@ export function Footer() {
 
   return (
     <footer className="relative overflow-hidden border-t border-border bg-bg">
-      <svg
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-auto w-full select-none"
-        viewBox="0 0 1000 150"
-        preserveAspectRatio="xMidYMax meet"
-        aria-hidden
-      >
-        <defs>
-          <linearGradient id="footer-watermark-fade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-            <stop offset="55%" stopColor="#ffffff" stopOpacity="0.02" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.07" />
-          </linearGradient>
-        </defs>
-        <text
-          x="500"
-          y="132"
-          textAnchor="middle"
-          textLength="980"
-          lengthAdjust="spacingAndGlyphs"
-          fill="url(#footer-watermark-fade)"
-          className="font-display"
-          fontSize="150"
-          fontWeight="900"
-          letterSpacing="-2"
-        >
-          MOTOBHARAT
-        </text>
-      </svg>
-      <div className="relative mx-auto max-w-7xl px-4 py-7 sm:py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr_1.2fr]">
-          <div className="max-w-sm space-y-3.5 sm:space-y-4">
+      <div className="relative mx-auto max-w-7xl px-4 py-5 sm:py-8 sm:px-6 lg:px-8">
+        <div className="grid gap-5 sm:gap-8 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr_1.2fr]">
+          <div className="max-w-sm space-y-3">
             <Link
               href="/"
               onClick={(e) => {
@@ -124,7 +96,7 @@ export function Footer() {
             {columns.map((col) => (
               <nav key={col.heading} aria-label={col.heading}>
                 <ColumnHeading>{col.heading}</ColumnHeading>
-                <ul className="mt-3 sm:mt-4 flex flex-col gap-0.5 sm:gap-2.5">
+                <ul className="mt-2 sm:mt-3 flex flex-col gap-0.5 sm:gap-2.5">
                   {col.links.map((l) => (
                     <li key={l.href}>
                       <Link
@@ -135,7 +107,7 @@ export function Footer() {
                             scrollToTop();
                           }
                         }}
-                        className="inline-flex min-h-[36px] sm:min-h-[44px] items-center text-xs sm:text-sm text-secondary transition-colors hover:text-accent"
+                        className="inline-flex items-center py-1.5 text-xs sm:text-sm text-secondary transition-colors hover:text-accent"
                       >
                         {l.label}
                       </Link>
@@ -148,7 +120,7 @@ export function Footer() {
 
           <div>
             <ColumnHeading>Follow</ColumnHeading>
-            <div className="mt-3 sm:mt-4">
+            <div className="mt-2 sm:mt-3">
               <a
                 href="https://instagram.com/motobharat_warangal"
                 target="_blank"
@@ -164,9 +136,37 @@ export function Footer() {
       </div>
 
       <div className="relative border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col gap-1.5 sm:gap-2 px-4 py-3 sm:py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <svg
+          className="pointer-events-none absolute inset-x-0 bottom-full h-auto w-full select-none"
+          viewBox="0 0 1000 150"
+          preserveAspectRatio="xMidYMax meet"
+          aria-hidden
+        >
+          <defs>
+            <linearGradient id="footer-watermark-fade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+              <stop offset="55%" stopColor="#ffffff" stopOpacity="0.02" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.07" />
+            </linearGradient>
+          </defs>
+          <text
+            x="500"
+            y="150"
+            textAnchor="middle"
+            textLength="980"
+            lengthAdjust="spacingAndGlyphs"
+            fill="url(#footer-watermark-fade)"
+            className="font-display"
+            fontSize="150"
+            fontWeight="900"
+            letterSpacing="-2"
+          >
+            MOTOBHARAT
+          </text>
+        </svg>
+        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2.5 sm:py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p className="font-mono text-[10px] tracking-wider text-muted uppercase">
-            © {YEAR} MotoBharat (Warangal Chapter) · All rights reserved
+            © {YEAR} MotoBharat - Warangal · All rights reserved
           </p>
           <p className="font-mono text-[10px] tracking-wider text-muted uppercase">
             Ride with discipline. Arrive with respect.

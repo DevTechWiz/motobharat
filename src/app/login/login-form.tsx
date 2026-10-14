@@ -36,7 +36,7 @@ export function LoginForm({ stats }: { stats: LoginStats }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-[55fr_45fr]">
       {/* Visual panel */}
-      <div className="relative flex min-h-[46vh] flex-col justify-between overflow-hidden p-6 sm:p-10 lg:min-h-0 lg:p-12">
+      <div className="relative flex min-h-[38vh] sm:min-h-[46vh] flex-col justify-between overflow-hidden p-4 sm:p-10 lg:min-h-0 lg:p-12">
         <Image
           src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1600&q=75"
           alt="Mountain highway winding into the hills at golden hour"
@@ -49,28 +49,28 @@ export function LoginForm({ stats }: { stats: LoginStats }) {
 
         <Link
           href="/"
-          className="relative flex w-fit items-center gap-2 text-sm font-medium text-secondary transition-colors hover:text-white"
+          className="relative flex w-fit items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-secondary transition-colors hover:text-white"
         >
-          <ArrowLeft className="size-4" aria-hidden />
+          <ArrowLeft className="size-3.5 sm:size-4" aria-hidden />
           Back home
         </Link>
 
         <div className="relative max-w-xl">
-          <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
             Member Portal
           </p>
-          <h1 className="animate-fade-in-up mt-3 text-4xl leading-[1.05] font-black tracking-tight sm:text-5xl">
+          <h1 className="animate-fade-in-up mt-2 sm:mt-3 text-2xl sm:text-5xl leading-[1.08] sm:leading-[1.05] font-black tracking-tight">
             Different Roads.
             <br />
             <span className="text-accent drop-shadow-[0_0_30px_rgba(245,158,11,0.35)]">One Community.</span>
           </h1>
-          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1.5 sm:gap-y-2">
             {ticker.map((s) => (
               <span
                 key={s.label}
-                className="flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] text-white/75 uppercase"
+                className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] tracking-[0.14em] sm:tracking-[0.16em] text-white/75 uppercase"
               >
-                <span className="text-sm font-bold text-accent tabular-nums">{s.value}</span>
+                <span className="text-xs sm:text-sm font-bold text-accent tabular-nums">{s.value}</span>
                 {s.label}
               </span>
             ))}
@@ -79,27 +79,27 @@ export function LoginForm({ stats }: { stats: LoginStats }) {
       </div>
 
       {/* Form panel — frameless */}
-      <div className="relative flex items-center justify-center overflow-hidden border-t border-border bg-bg px-6 py-14 lg:border-t-0 lg:border-l">
+      <div className="relative flex items-center justify-center overflow-hidden border-t border-border bg-bg px-4 py-8 sm:px-6 sm:py-14 lg:border-t-0 lg:border-l">
         <div
           className="absolute -top-32 -right-32 size-80 rounded-full bg-accent/12 blur-[120px]"
           aria-hidden
         />
 
-        <div className="relative w-full max-w-sm space-y-7 text-center">
+        <div className="relative w-full max-w-sm space-y-5 sm:space-y-7 text-center">
           <Link href="/" className="inline-block">
             {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
-            <img src="/brand/logo-512.png" alt="MotoBharat" className="mx-auto size-16" />
+            <img src="/brand/logo-512.png" alt="MotoBharat" className="mx-auto size-12 sm:size-16" />
           </Link>
 
-          <div className="space-y-3">
-            <h2 className="text-3xl font-extrabold tracking-tight">Join the Community</h2>
-            <p className="text-sm text-secondary">
+          <div className="space-y-2 sm:space-y-3">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Join the Community</h2>
+            <p className="text-xs sm:text-sm text-secondary">
               Sign in with Google to join rides, track your trips, and connect with fellow riders.
             </p>
           </div>
 
           {error && (
-            <div className="rounded-lg border border-danger bg-danger/10 px-4 py-3 text-sm text-danger">
+            <div className="rounded-lg border border-danger bg-danger/10 px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-danger">
               Sign-in failed. Please try again.
             </div>
           )}
@@ -107,7 +107,7 @@ export function LoginForm({ stats }: { stats: LoginStats }) {
           <button
             type="button"
             onClick={signInWithGoogle}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-border-strong bg-surface px-6 py-4 text-sm font-bold tracking-wider uppercase transition-all duration-200 hover:-translate-y-px hover:border-accent/50 hover:bg-surface-2 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.4)] active:scale-[0.98]"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2.5 sm:gap-3 rounded-lg border border-border-strong bg-surface px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all duration-200 hover:-translate-y-px hover:border-accent/50 hover:bg-surface-2 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.4)] active:scale-[0.98]"
           >
             <svg className="size-5" viewBox="0 0 24 24" aria-hidden>
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />

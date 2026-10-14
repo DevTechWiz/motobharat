@@ -21,7 +21,7 @@ export default async function MemberCardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, avatar_url, city, created_at")
+    .select("display_name, avatar_url, city, created_at, role")
     .eq("id", user.id)
     .single();
 
@@ -114,6 +114,7 @@ export default async function MemberCardPage() {
           <MemberCardViewer
             memberId={memberId}
             fullName={fullName}
+            role={profile.role}
             city={profile.city ?? "Warangal"}
             avatarUrl={profile.avatar_url}
             createdAt={profile.created_at}

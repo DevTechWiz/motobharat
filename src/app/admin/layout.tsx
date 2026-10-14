@@ -15,11 +15,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </span>
           <p className="text-[11px] font-bold tracking-[0.18em] text-accent uppercase">Organizer</p>
         </div>
-        <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Admin</h1>
-        <div className="mt-5">
+        <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight">Admin</h1>
+        <div className="mt-3.5 sm:mt-5">
           <AdminTabs />
         </div>
-        <div className="mt-8">{children}</div>
+        <div className="mt-5 sm:mt-8">{children}</div>
       </Container>
     </Section>
   );

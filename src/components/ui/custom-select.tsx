@@ -171,7 +171,7 @@ export function CustomSelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
-          "flex w-full items-center justify-between rounded-lg border border-border bg-surface px-3.5 py-3 text-left text-sm text-text transition-all scroll-mt-28",
+          "flex w-full items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 sm:px-3.5 sm:py-2.5 text-left text-xs sm:text-sm text-text transition-all scroll-mt-28",
           "hover:border-border-strong hover:bg-surface-2",
           "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/40",
           isOpen && "border-accent ring-1 ring-accent/40 bg-surface-2",

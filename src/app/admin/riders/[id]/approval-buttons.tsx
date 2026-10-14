@@ -28,11 +28,12 @@ export function ApprovalButtons({ userId, approved }: { userId: string; approved
 
   return (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-2.5 sm:flex-row">
         {!approved && (
           <Button
             type="button"
             disabled={pending}
+            className="w-full sm:w-auto"
             onClick={() => run(() => approveRider(userId), "Rider approved — joins and ID card unlocked.")}
           >
             <ShieldCheck className="size-4" aria-hidden />
@@ -43,6 +44,7 @@ export function ApprovalButtons({ userId, approved }: { userId: string; approved
           type="button"
           variant={approved ? "secondary" : "danger"}
           disabled={pending}
+          className="w-full sm:w-auto"
           onClick={() => (approved ? run(() => rejectRider(userId), "Approval revoked.") : setConfirming(true))}
         >
           <ShieldX className="size-4" aria-hidden />

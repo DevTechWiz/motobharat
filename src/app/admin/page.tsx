@@ -21,29 +21,29 @@ export default async function AdminOverviewPage() {
   ];
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="space-y-5 sm:space-y-8">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-3">
         {cards.map((c) => {
           const body = (
             <>
               <span className="flex items-center justify-between">
-                <c.icon className="size-5 text-accent" aria-hidden />
+                <c.icon className="size-4 sm:size-5 text-accent" aria-hidden />
                 {c.href && (
                   <ArrowUpRight
-                    className="size-4 text-muted transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent"
+                    className="size-3.5 sm:size-4 text-muted transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent"
                     aria-hidden
                   />
                 )}
               </span>
-              <p className="mt-4 font-mono text-3xl font-bold text-white tabular-nums">
+              <p className="mt-2.5 sm:mt-4 font-mono text-2xl sm:text-3xl font-bold text-white tabular-nums">
                 <CountUp to={c.value} />
               </p>
-              <span className="mt-2 block h-px w-6 bg-accent/70" aria-hidden />
-              <p className="mt-2 text-sm text-secondary">{c.label}</p>
+              <span className="mt-1.5 sm:mt-2 block h-px w-5 sm:w-6 bg-accent/70" aria-hidden />
+              <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-secondary">{c.label}</p>
             </>
           );
           const cls =
-            "group rounded-xl border border-border bg-surface p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_20px_50px_-24px_rgba(245,158,11,0.45)]";
+            "group rounded-xl border border-border bg-surface p-3.5 sm:p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface-2 hover:shadow-[0_20px_50px_-24px_rgba(245,158,11,0.45)]";
           return c.href ? (
             <Link key={c.label} href={c.href} className={cls}>
               {body}
@@ -56,12 +56,12 @@ export default async function AdminOverviewPage() {
         })}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <ButtonLink href="/admin/rides/new">
+      <div className="flex flex-col gap-2.5 sm:flex-row">
+        <ButtonLink href="/admin/rides/new" className="w-full sm:w-auto">
           <Plus className="size-4" aria-hidden />
           New Ride
         </ButtonLink>
-        <ButtonLink href="/admin/announcements/new" variant="secondary">
+        <ButtonLink href="/admin/announcements/new" variant="secondary" className="w-full sm:w-auto">
           <Plus className="size-4" aria-hidden />
           New Announcement
         </ButtonLink>

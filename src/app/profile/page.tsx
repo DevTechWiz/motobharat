@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Calendar, ShieldCheck, ShieldAlert, ArrowUpRight } from "lucide-react";
+import { Calendar, ShieldCheck, ShieldAlert, ArrowUpRight, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container, Section } from "@/components/layout/container";
 import { ProfileAvatar } from "./profile-avatar";
@@ -63,20 +63,20 @@ export default async function ProfilePage() {
     <>
       <Section spacing="compact" border="bottom">
         <Container>
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-6 sm:p-8">
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-4 sm:p-8">
             <div
               className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-accent/10 blur-[90px]"
               aria-hidden
             />
-            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4 sm:gap-5">
+            <div className="relative flex flex-col gap-4 sm:gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3.5 sm:gap-5">
                 <ProfileAvatar
                   displayName={profile.display_name}
                   avatarUrl={profile.avatar_url}
                 />
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">{profile.display_name}</h1>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
+                <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-white">{profile.display_name}</h1>
+                <div className="mt-1.5 sm:mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <Badge tone={profile.role === "admin" ? "hard" : "easy"}>
                     {profile.role}
                   </Badge>
@@ -91,32 +91,37 @@ export default async function ProfilePage() {
                   ) : (
                     <Badge tone="danger">Setup Incomplete</Badge>
                   )}
-                  {profile.city && <span className="font-mono text-xs text-muted">{profile.city}</span>}
                 </div>
+                {profile.city && (
+                  <p className="mt-1.5 flex items-center gap-1 font-mono text-[11px] sm:text-xs text-muted">
+                    <MapPin className="size-3 text-accent shrink-0" aria-hidden />
+                    <span>{profile.city}</span>
+                  </p>
+                )}
               </div>
             </div>
-            <div className="flex flex-col items-stretch gap-2 w-full sm:w-auto sm:items-end">
-              <p className="font-mono text-[10px] font-semibold tracking-[0.18em] text-muted uppercase sm:text-right">
+            <div className="flex flex-col items-start gap-1 sm:items-end">
+              <p className="font-mono text-[9px] sm:text-[10px] font-semibold tracking-[0.18em] text-muted uppercase sm:text-right">
                 Edit profile
               </p>
               <div
-                className="flex overflow-hidden rounded-lg border border-border-strong"
+                className="inline-flex overflow-hidden rounded-lg border border-border-strong bg-surface-2"
                 role="group"
                 aria-label="Edit profile sections"
               >
                 <Link
                   href="/profile/setup?edit=true"
-                  className="flex min-h-[44px] flex-1 items-center justify-center gap-2 bg-surface-2 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent sm:flex-none"
+                  className="inline-flex min-h-[34px] sm:min-h-[38px] items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent"
                 >
-                  <span className="font-mono text-[10px] text-accent">1</span>
+                  <span className="flex size-3.5 sm:size-4 items-center justify-center rounded-full bg-accent/20 font-mono text-[9px] font-bold text-accent">1</span>
                   Basic info
                 </Link>
                 <span className="w-px bg-border-strong" aria-hidden />
                 <Link
                   href="/profile/kyc"
-                  className="flex min-h-[44px] flex-1 items-center justify-center gap-2 bg-surface-2 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent sm:flex-none"
+                  className="inline-flex min-h-[34px] sm:min-h-[38px] items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent"
                 >
-                  <span className="font-mono text-[10px] text-accent">2</span>
+                  <span className="flex size-3.5 sm:size-4 items-center justify-center rounded-full bg-accent/20 font-mono text-[9px] font-bold text-accent">2</span>
                   Safety &amp; KYC
                 </Link>
               </div>
@@ -196,17 +201,17 @@ export default async function ProfilePage() {
             </div>
           )}
 
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-5 sm:mt-8 grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-4">
             {[
               { value: rides.length, label: "Rides Joined" },
               { value: upcoming.length, label: "Upcoming" },
               { value: past.length, label: "Completed" },
               { value: rd?.registered ? "Yes" : "No", label: "KYC Done" },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border border-border bg-surface px-4 py-3.5">
+              <div key={s.label} className="rounded-xl border border-border bg-surface p-3 sm:px-4 sm:py-3.5">
                 <span
                   className={cn(
-                    "block font-mono text-2xl font-bold tabular-nums",
+                    "block font-mono text-xl sm:text-2xl font-bold tabular-nums",
                     s.label === "KYC Done"
                       ? rd?.registered
                         ? "text-success"
@@ -218,12 +223,12 @@ export default async function ProfilePage() {
                 </span>
                 <span
                   className={cn(
-                    "mt-2 block h-px w-6",
+                    "mt-1.5 sm:mt-2 block h-px w-6",
                     s.label === "KYC Done" && rd?.registered ? "bg-success/70" : "bg-accent/70"
                   )}
                   aria-hidden
                 />
-                <span className="mt-2 block font-mono text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
+                <span className="mt-1.5 sm:mt-2 block font-mono text-[9px] sm:text-[10px] font-semibold tracking-[0.12em] sm:tracking-[0.14em] text-muted uppercase">
                   {s.label}
                 </span>
               </div>

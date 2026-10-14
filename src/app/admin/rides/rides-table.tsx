@@ -32,25 +32,25 @@ export function RidesTable({ rides }: { rides: Ride[] }) {
   }, [rides, query, status]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold">
+    <div className="space-y-3.5 sm:space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
+        <h2 className="text-base sm:text-lg font-bold">
           All Rides{" "}
-          <span className="font-mono text-sm font-semibold text-muted tabular-nums">
+          <span className="font-mono text-xs sm:text-sm font-semibold text-muted tabular-nums">
             ({filtered.length}/{rides.length})
           </span>
         </h2>
         <ButtonLink href="/admin/rides/new" size="sm">
-          <Plus className="size-4" aria-hidden />
+          <Plus className="size-3.5 sm:size-4" aria-hidden />
           New Ride
         </ButtonLink>
       </div>
 
       {rides.length > 0 && (
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="flex flex-col gap-2.5 sm:gap-3 lg:flex-row lg:items-center">
           <div className="relative flex-1">
             <Search
-              className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted"
+              className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted"
               aria-hidden
             />
             <input
@@ -59,10 +59,10 @@ export function RidesTable({ rides }: { rides: Ride[] }) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search title or meeting point…"
               aria-label="Search rides"
-              className="w-full rounded-lg border border-border bg-surface py-2.5 pr-3.5 pl-10 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
+              className="w-full rounded-lg border border-border bg-surface py-2 sm:py-2.5 pr-3 pl-9 text-xs sm:text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
             />
           </div>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2" role="group" aria-label="Filter by status">
             {FILTERS.map((f) => (
               <button
                 key={f.value}
@@ -70,7 +70,7 @@ export function RidesTable({ rides }: { rides: Ride[] }) {
                 onClick={() => setStatus(f.value)}
                 aria-pressed={status === f.value}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 font-mono text-[11px] font-bold tracking-wider uppercase transition-colors",
+                  "rounded-full border px-2.5 py-1 sm:px-3 sm:py-1.5 font-mono text-[10px] sm:text-[11px] font-bold tracking-wider uppercase transition-colors",
                   status === f.value
                     ? "border-accent bg-accent/15 text-accent"
                     : "border-border-strong text-muted hover:border-accent/50 hover:text-text"
@@ -102,13 +102,13 @@ export function RidesTable({ rides }: { rides: Ride[] }) {
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs sm:text-sm">
             <thead>
-              <tr className="border-b border-border bg-surface text-left text-xs text-muted">
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Title</th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Date</th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Status</th>
-                <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-semibold">Actions</th>
+              <tr className="border-b border-border bg-surface text-left text-[11px] sm:text-xs text-muted">
+                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Title</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Date</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Status</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-surface">

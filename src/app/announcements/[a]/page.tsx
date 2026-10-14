@@ -89,14 +89,14 @@ export default async function AnnouncementDetailPage({
             )}
           </div>
 
-          <p className="mt-8 inline-block rounded-lg border border-border bg-surface px-3 py-1.5 font-mono text-[11px] tracking-wider text-muted uppercase tabular-nums">
+          <p className="mt-5 sm:mt-8 inline-block rounded-lg border border-border bg-surface px-2.5 sm:px-3 py-1 sm:py-1.5 font-mono text-[10px] sm:text-[11px] tracking-wider text-muted uppercase tabular-nums">
             {formatDate(announcement.created_at)}
           </p>
-          <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl">{announcement.title}</h1>
+          <h1 className="mt-2.5 sm:mt-4 text-2xl font-extrabold sm:text-4xl tracking-tight leading-tight">{announcement.title}</h1>
 
-          <div className="mt-6 h-px bg-border" aria-hidden />
+          <div className="mt-4 sm:mt-6 h-px bg-border" aria-hidden />
 
-          <article className="mt-6 space-y-4 whitespace-pre-wrap text-[17px] leading-relaxed text-secondary">
+          <article className="mt-4 sm:mt-6 space-y-4 whitespace-pre-wrap text-sm sm:text-base leading-relaxed text-secondary">
             {announcement.body}
           </article>
         </Container>
@@ -105,15 +105,15 @@ export default async function AnnouncementDetailPage({
       {more.length > 0 && (
         <Section bg="surface" border="top">
           <Container className="max-w-3xl">
-            <p className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
+            <p className="text-[11px] sm:text-sm font-bold tracking-[0.18em] text-accent uppercase">
               More Notices
             </p>
-            <div className="mt-5 space-y-3">
+            <div className="mt-3.5 sm:mt-5 space-y-2.5 sm:space-y-3">
               {more.map((m) => (
                 <Link
                   key={m.id}
                   href={m.slug ? `/announcements/${m.slug}` : `/announcements/${m.id}`}
-                  className="group flex items-center justify-between gap-4 rounded-xl border border-border bg-bg px-5 py-4 transition-colors hover:border-accent/40"
+                  className="group flex items-center justify-between gap-3 sm:gap-4 rounded-xl border border-border bg-bg px-3.5 sm:px-5 py-3 sm:py-4 transition-colors hover:border-accent/40"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-semibold transition-colors group-hover:text-accent">

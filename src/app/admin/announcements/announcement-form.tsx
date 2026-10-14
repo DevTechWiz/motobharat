@@ -29,15 +29,15 @@ export function AnnouncementForm({
         e.preventDefault();
         startTransition(() => formAction(new FormData(e.currentTarget)));
       }}
-      className="max-w-xl space-y-5"
+      className="max-w-xl space-y-3.5 sm:space-y-5"
     >
       {state.error && (
-        <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-danger">
           {state.error}
         </div>
       )}
 
-      <fieldset disabled={isPending} className="min-w-0 space-y-5 border-0 m-0 p-0">
+      <fieldset disabled={isPending} className="min-w-0 space-y-3.5 sm:space-y-5 border-0 m-0 p-0">
         <Field label="Title" htmlFor="title">
           <Input
             id="title"
@@ -56,7 +56,7 @@ export function AnnouncementForm({
             placeholder="Details for the community..."
           />
         </Field>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending ? "Saving..." : announcement ? "Save Changes" : "Publish Announcement"}
         </Button>
       </fieldset>

@@ -19,15 +19,15 @@ const STEPS = [
 export function RegSteps({ current, nextHref }: { current: 1 | 2; nextHref?: string }) {
   const { registered } = useAuth();
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5 sm:space-y-4">
       <Link
         href="/profile"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition-colors hover:text-accent"
+        className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-muted transition-colors hover:text-accent"
       >
-        <ArrowLeft className="size-3.5" aria-hidden />
+        <ArrowLeft className="size-3 sm:size-3.5" aria-hidden />
         Back to profile
       </Link>
-      <ol className="flex items-center gap-2" aria-label="Registration progress">
+      <ol className="flex items-center gap-1.5 sm:gap-2" aria-label="Registration progress">
         {STEPS.map((s, i) => {
           const done = registered || s.n < current;
           const active = !registered && s.n === current;
@@ -36,7 +36,7 @@ export function RegSteps({ current, nextHref }: { current: 1 | 2; nextHref?: str
             <>
               <span
                 className={cn(
-                  "flex size-5 items-center justify-center rounded-full font-mono text-[10px] font-bold",
+                  "flex size-4 sm:size-5 items-center justify-center rounded-full font-mono text-[9px] sm:text-[10px] font-bold",
                   done
                     ? "bg-success/20 text-success"
                     : active
@@ -44,11 +44,11 @@ export function RegSteps({ current, nextHref }: { current: 1 | 2; nextHref?: str
                       : "bg-surface-2 text-muted"
                 )}
               >
-                {done ? <Check className="size-3" aria-hidden /> : s.n}
+                {done ? <Check className="size-2.5 sm:size-3" aria-hidden /> : s.n}
               </span>
               <span
                 className={cn(
-                  "text-xs font-semibold whitespace-nowrap",
+                  "text-[11px] sm:text-xs font-semibold whitespace-nowrap",
                   active ? "text-text" : "text-muted"
                 )}
               >
@@ -57,11 +57,11 @@ export function RegSteps({ current, nextHref }: { current: 1 | 2; nextHref?: str
             </>
           );
           return (
-            <li key={s.n} className="flex flex-1 items-center gap-2 last:flex-none">
+            <li key={s.n} className="flex flex-1 items-center gap-1.5 sm:gap-2 last:flex-none">
               {done || unlockedNext ? (
                 <Link
                   href={done ? s.href : (nextHref as string)}
-                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 transition-colors hover:border-accent/40"
+                  className="flex items-center gap-1.5 sm:gap-2 rounded-lg border border-border px-2.5 py-1.5 sm:px-3 sm:py-2 transition-colors hover:border-accent/40"
                 >
                   {pill}
                 </Link>
@@ -69,7 +69,7 @@ export function RegSteps({ current, nextHref }: { current: 1 | 2; nextHref?: str
                 <span
                   aria-current={active ? "step" : undefined}
                   className={cn(
-                    "flex items-center gap-2 rounded-lg border px-3 py-2",
+                    "flex items-center gap-1.5 sm:gap-2 rounded-lg border px-2.5 py-1.5 sm:px-3 sm:py-2",
                     active ? "border-accent/50 bg-accent/10" : "border-border/60 opacity-50"
                   )}
                 >

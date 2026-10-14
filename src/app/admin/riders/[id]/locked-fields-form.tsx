@@ -21,7 +21,7 @@ const GENDER_OPTIONS = [
 
 function SubmitButton({ pending }: { pending: boolean }) {
   return (
-    <Button type="submit" disabled={pending} size="sm">
+    <Button type="submit" disabled={pending} size="sm" className="w-full sm:w-auto">
       {pending ? "Saving…" : "Save corrections"}
     </Button>
   );
@@ -54,24 +54,24 @@ export function LockedFieldsForm({
         e.preventDefault();
         startTransition(() => formAction(new FormData(e.currentTarget)));
       }}
-      className="rounded-xl border border-border bg-surface p-4 sm:p-5"
+      className="rounded-xl border border-border bg-surface p-3 sm:p-5"
     >
       <input type="hidden" name="user_id" value={userId} />
-      <fieldset disabled={isPending} className="min-w-0 space-y-4 border-0 m-0 p-0">
-      <p className="font-mono text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
+      <fieldset disabled={isPending} className="min-w-0 space-y-3.5 sm:space-y-4 border-0 m-0 p-0">
+      <p className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
         Correct locked fields
       </p>
       {state.error && (
-        <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-danger">
           {state.error}
         </div>
       )}
       {state.ok && (
-        <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-semibold text-success">
+        <div className="rounded-lg border border-success/30 bg-success/10 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-success">
           Corrections saved.
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
         <Field label="Gender" htmlFor="lf-gender" required>
           <CustomSelect
             id="lf-gender"

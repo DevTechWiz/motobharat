@@ -33,25 +33,25 @@ export function MembersPanel({
   members: RideMember[];
 }) {
   return (
-    <section className="space-y-4">
-      <h3 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">
+    <section className="space-y-3 sm:space-y-4">
+      <h3 className="text-xs sm:text-sm font-bold tracking-[0.18em] text-accent uppercase">
         Joined Riders ({members.length})
       </h3>
       {members.length === 0 ? (
-        <p className="text-sm text-muted">No riders joined yet.</p>
+        <p className="text-xs sm:text-sm text-muted">No riders joined yet.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-1.5 sm:space-y-2">
           {members.map((m) => (
             <li
               key={m.user_id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 sm:px-4 py-2 sm:py-2.5"
             >
-              <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                 <Avatar name={m.profile?.display_name ?? "Rider"} src={m.profile?.avatar_url} size="sm" />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{m.profile?.display_name ?? "Rider"}</p>
+                  <p className="truncate text-xs sm:text-sm font-semibold">{m.profile?.display_name ?? "Rider"}</p>
                   {m.details ? (
-                    <p className="truncate text-[11px] text-muted">
+                    <p className="truncate text-[10px] sm:text-[11px] text-muted">
                       <span className="font-semibold text-danger">{m.details.blood_group}</span>
                       {" · EC: "}
                       {m.details.emergency_contact_name}
@@ -60,9 +60,9 @@ export function MembersPanel({
                       {m.details.bike_reg_no ? ` [${m.details.bike_reg_no}]` : ""}
                     </p>
                   ) : (
-                    <p className="font-mono text-[11px] text-danger">KYC incomplete</p>
+                    <p className="font-mono text-[10px] sm:text-[11px] text-danger">KYC incomplete</p>
                   )}
-                  <p className="font-mono text-[11px] text-muted">joined {formatDate(m.created_at)}</p>
+                  <p className="font-mono text-[10px] sm:text-[11px] text-muted">joined {formatDate(m.created_at)}</p>
                 </div>
               </div>
               <RemoveMemberButton rideId={rideId ?? ""} userId={m.user_id} />

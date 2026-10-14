@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import {
   MapPin,
@@ -199,15 +200,23 @@ export default async function RideDetailPage({
       {/* Body: details + sticky join card */}
       <Container className="grid gap-5 py-5 lg:grid-cols-[2fr_1fr] lg:gap-8 lg:py-8">
         <div className="min-w-0 space-y-5 sm:space-y-8">
-          {/* Cover Card - 16:9 native containment */}
+          {/* Cover Card - True 16:9 frame with zero-clip containment & ambient backdrop */}
           {ride.cover_url && (
-            <div className="relative flex w-full max-h-[420px] sm:max-h-[480px] items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-surface-2 shadow-lg">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div className="relative aspect-video w-full overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-surface-2 shadow-lg">
+              <Image
+                src={ride.cover_url}
+                alt=""
+                fill
+                aria-hidden="true"
+                className="scale-110 object-cover blur-2xl opacity-35 select-none pointer-events-none"
+              />
+              <Image
                 src={ride.cover_url}
                 alt={ride.title}
-                className="block h-auto max-h-[420px] sm:max-h-[480px] w-full object-contain"
-                loading="eager"
+                fill
+                sizes="(min-width: 1024px) 66vw, 100vw"
+                className="relative object-contain"
+                priority
               />
             </div>
           )}
@@ -323,10 +332,10 @@ export default async function RideDetailPage({
                   Route & Itinerary ({ride.itinerary.length} {ride.itinerary.length === 1 ? "Stop" : "Stops"})
                 </h2>
               </div>
-              <div className="relative pl-5 sm:pl-6 space-y-2.5 sm:space-y-4 before:absolute before:left-[9px] sm:before:left-[11px] before:top-3 before:bottom-3 before:w-[2px] before:bg-border">
+              <div className="relative pl-5 sm:pl-6 space-y-2.5 sm:space-y-4 itinerary-rail">
                 {ride.itinerary.map((item, idx) => (
                   <div key={idx} className="relative flex items-start gap-2.5 sm:gap-4">
-                    <div className="absolute -left-5 sm:-left-6 flex size-5 sm:size-6 items-center justify-center rounded-full border border-accent/50 bg-surface text-accent text-[9px] sm:text-[11px] font-mono font-bold shadow-sm">
+                    <div className="absolute -left-5 sm:-left-6 top-1/2 -translate-y-1/2 flex size-5 sm:size-6 items-center justify-center rounded-full border border-accent/50 bg-surface text-accent text-[9px] sm:text-[11px] font-mono font-bold shadow-sm">
                       {idx + 1}
                     </div>
                     <div className="flex-1 rounded-xl border border-border bg-surface p-2.5 sm:p-4 transition-colors hover:border-accent/40">
