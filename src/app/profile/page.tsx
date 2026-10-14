@@ -106,7 +106,7 @@ export default async function ProfilePage() {
               >
                 <Link
                   href="/profile/setup?edit=true"
-                  className="flex flex-1 items-center justify-center gap-2 bg-surface-2 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent sm:flex-none"
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-2 bg-surface-2 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent sm:flex-none"
                 >
                   <span className="font-mono text-[10px] text-accent">1</span>
                   Basic info
@@ -114,7 +114,7 @@ export default async function ProfilePage() {
                 <span className="w-px bg-border-strong" aria-hidden />
                 <Link
                   href="/profile/kyc"
-                  className="flex flex-1 items-center justify-center gap-2 bg-surface-2 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent sm:flex-none"
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-2 bg-surface-2 px-4 py-2.5 text-xs font-bold transition-colors hover:bg-surface-3 hover:text-accent sm:flex-none"
                 >
                   <span className="font-mono text-[10px] text-accent">2</span>
                   Safety &amp; KYC

@@ -99,7 +99,7 @@ export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
             type="button"
             onClick={close}
             aria-label="Close"
-            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+            className="absolute top-4 right-4 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
           >
             <X className="size-5" aria-hidden />
           </button>
@@ -110,7 +110,7 @@ export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
                 type="button"
                 onClick={prev}
                 aria-label="Previous photo"
-                className="absolute left-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+                className="absolute left-4 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
               >
                 <ChevronLeft className="size-6" aria-hidden />
               </button>
@@ -118,7 +118,7 @@ export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
                 type="button"
                 onClick={next}
                 aria-label="Next photo"
-                className="absolute right-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+                className="absolute right-4 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
               >
                 <ChevronRight className="size-6" aria-hidden />
               </button>

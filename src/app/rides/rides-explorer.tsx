@@ -91,7 +91,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-2.5">
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2.5">
           <span className="mr-1 font-mono text-[10px] tracking-wider text-muted uppercase">
             Difficulty
           </span>
@@ -101,7 +101,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
               type="button"
               onClick={() => setDifficulty(d)}
               className={cn(
-                "min-h-[36px] rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.97]",
+                "min-h-[44px] rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.97]",
                 difficulty === d
                   ? "bg-surface-3 text-white"
                   : "text-secondary hover:text-white",
@@ -132,7 +132,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
           </div>
         </div>
       ) : (
-        <motion.div layout className="grid grid-cols-1 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div layout className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filtered.map((ride) => (
               <motion.div

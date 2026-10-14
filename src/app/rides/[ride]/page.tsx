@@ -266,7 +266,7 @@ export default async function RideDetailPage({
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+                    className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-3 py-2 text-[10px] sm:text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
                   >
                     Maps
                     <ArrowUpRight className="size-3 text-accent" aria-hidden />
@@ -286,7 +286,7 @@ export default async function RideDetailPage({
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
+                    className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-md border border-border bg-surface-2 px-3 py-2 text-[10px] sm:text-[11px] font-semibold text-secondary hover:text-accent hover:border-accent/40 transition-colors"
                   >
                     Maps
                     <ArrowUpRight className="size-3 text-accent" aria-hidden />
@@ -416,7 +416,7 @@ export default async function RideDetailPage({
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-3 text-xs font-bold tracking-wider text-secondary uppercase transition-[color,border-color,background-color,transform] duration-150 ease-out hover:border-[#25D366]/60 hover:bg-surface-3 hover:text-[#25D366] active:scale-[0.97]"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-3 text-xs font-bold tracking-wider text-secondary uppercase transition-[color,border-color,background-color,transform] duration-150 ease-out hover:border-[#25D366]/60 hover:bg-surface-3 hover:text-[#25D366] active:scale-[0.97]"
                 >
                   <Share2 className="size-3.5" aria-hidden />
                   Share on WhatsApp

@@ -353,7 +353,7 @@ export default async function HomePage() {
                   </span>
                 </div>
 
-                <div className="relative space-y-6 p-8 sm:p-12">
+                <div className="relative space-y-6 p-6 sm:p-12">
                   <div
                     className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-accent/10 blur-[100px]"
                     aria-hidden

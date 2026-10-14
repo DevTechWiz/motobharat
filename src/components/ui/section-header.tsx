@@ -31,7 +31,7 @@ export function SectionHeader({
       {cta && (
         <Link
           href={cta.href}
-          className="group inline-flex shrink-0 items-center gap-1.5 text-xs font-bold tracking-wider uppercase transition-colors hover:text-accent"
+          className="group inline-flex min-h-[44px] shrink-0 items-center gap-1.5 text-xs font-bold tracking-wider uppercase transition-colors hover:text-accent"
         >
           <span>{cta.label}</span>
           <ArrowRight className="size-3.5 text-accent transition-transform duration-200 group-hover:translate-x-1" />

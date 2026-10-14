@@ -147,7 +147,7 @@ export function Topbar() {
                 href={l.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "border-l-2 px-3 py-2.5 text-sm font-semibold transition-colors",
+                  "flex min-h-[44px] items-center border-l-2 px-3 py-2.5 text-sm font-semibold transition-colors",
                   isActive(l.href)
                     ? "border-accent bg-surface text-accent"
                     : "border-transparent text-secondary hover:text-white hover:bg-surface/50",
@@ -297,7 +297,7 @@ export function Topbar() {
 
                 <button
                   type="button"
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-danger/20 bg-danger/10 py-2.5 text-xs font-bold uppercase tracking-wider text-danger transition-colors hover:bg-danger/20"
+                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-danger/20 bg-danger/10 py-2.5 text-xs font-bold uppercase tracking-wider text-danger transition-colors hover:bg-danger/20"
                   onClick={() => {
                     signOut();
                     setOpen(false);
@@ -325,14 +325,14 @@ export function Topbar() {
                 <Link
                   href="/login"
                   onClick={() => setOpen(false)}
-                  className="rounded-full border border-border-strong py-2.5 text-center text-xs font-semibold tracking-wider uppercase hover:bg-surface"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-border-strong py-2.5 text-center text-xs font-semibold tracking-wider uppercase hover:bg-surface"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/login"
                   onClick={() => setOpen(false)}
-                  className="rounded-full border border-accent bg-accent/15 text-accent py-2.5 text-center text-xs font-semibold tracking-wider uppercase hover:bg-accent hover:text-black transition-colors"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-accent bg-accent/15 text-accent py-2.5 text-center text-xs font-semibold tracking-wider uppercase hover:bg-accent hover:text-black transition-colors"
                 >
                   Join Us
                 </Link>
