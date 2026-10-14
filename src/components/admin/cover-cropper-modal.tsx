@@ -74,7 +74,7 @@ export function CoverCropperModal({
   const cW = containerSize.width || 480;
   const cH = containerSize.height || 300;
 
-  // Base scale to cover the 16:10 container
+  // Base scale to cover the 16:9 container
   const baseScale = Math.max(cW / imgW, cH / imgH);
   const currentScale = baseScale * zoom;
   const displayedW = imgW * currentScale;
@@ -129,9 +129,9 @@ export function CoverCropperModal({
   const handleApply = () => {
     if (!naturalSize) return;
 
-    // Output target resolution: 1600x1000 (16:10)
-    const outW = 1600;
-    const outH = 1000;
+    // Output target resolution: 1920x1080 (16:9)
+    const outW = 1920;
+    const outH = 1080;
     const canvas = document.createElement("canvas");
     canvas.width = outW;
     canvas.height = outH;
@@ -194,7 +194,7 @@ export function CoverCropperModal({
               Adjust Cover Photo
             </h3>
             <p className="text-xs text-muted">
-              Drag to reposition · Zoom to frame for the 16:10 cover banner
+              Drag to reposition · Zoom to frame for the 16:9 cover banner
             </p>
           </div>
           <button
@@ -207,7 +207,7 @@ export function CoverCropperModal({
           </button>
         </div>
 
-        {/* Viewport Frame (16:10) */}
+        {/* Viewport Frame (16:9) */}
         <div
           ref={containerRef}
           onWheel={handleWheel}
@@ -215,7 +215,7 @@ export function CoverCropperModal({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className="relative aspect-16/10 w-full select-none overflow-hidden rounded-xl border-2 border-accent/40 bg-black cursor-grab active:cursor-grabbing touch-none"
+          className="relative aspect-video w-full select-none overflow-hidden rounded-xl border-2 border-accent/40 bg-black cursor-grab active:cursor-grabbing touch-none"
         >
           {/* Draggable image */}
           {/* eslint-disable-next-line @next/next/no-img-element */}

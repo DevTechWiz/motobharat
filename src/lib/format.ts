@@ -72,3 +72,17 @@ export function ageFromDob(dob: string, today = new Date()): number | null {
   }
   return age;
 }
+
+// Human tenure from a join date ("8 mo", "1 yr 2 mo"). Null when unparseable.
+export function tenureSince(iso: string, today = new Date()): string | null {
+  const start = new Date(iso);
+  if (!iso || isNaN(start.getTime()) || start > today) return null;
+  let months =
+    (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
+  if (today.getDate() < start.getDate()) months--;
+  if (months < 1) return "new member";
+  if (months < 12) return `${months} mo`;
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  return rest === 0 ? `${years} yr` : `${years} yr ${rest} mo`;
+}

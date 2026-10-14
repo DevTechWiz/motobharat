@@ -248,10 +248,15 @@
   }
 }
 
-/* Member ID card printing: isolate the card, hide chrome and actions. */
+/* Member ID card printing: exact CR80 physical card rules (85.6mm x 54mm) */
 @media print {
+  @page {
+    margin: 10mm;
+    size: auto;
+  }
   body {
-    background: #fff;
+    background: #ffffff !important;
+    color: #111827 !important;
   }
   header,
   footer,
@@ -259,9 +264,50 @@
     display: none !important;
   }
   .card-print-area {
-    border-color: #999 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     box-shadow: none !important;
     break-inside: avoid;
+    margin: 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 85.6mm !important;
+    max-width: 85.6mm !important;
+  }
+  .id-card-cr80 {
+    width: 85.6mm !important;
+    height: 54mm !important;
+    min-height: 54mm !important;
+    max-height: 54mm !important;
+    max-width: 85.6mm !important;
+    box-sizing: border-box !important;
+    background: #181a20 !important;
+    color: #ffffff !important;
+    border: 0.8pt solid #383b45 !important;
+    border-radius: 3.18mm !important;
+    overflow: hidden !important;
+    padding: 3mm 3.5mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .id-card-cr80 * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .id-card-cr80 .print-text-white {
+    color: #ffffff !important;
+  }
+  .id-card-cr80 .print-text-muted {
+    color: #9ca3af !important;
+  }
+  .id-card-cr80 .print-text-accent {
+    color: #f59e0b !important;
   }
 }
 

@@ -13,6 +13,7 @@ export interface VerifiedMember {
   city: string | null;
   member_since: string;
   registered: boolean;
+  bike_model: string | null;
 }
 
 // First 6 hex chars of the uuid (dashes stripped), uppercased: MB-XXXXXX.

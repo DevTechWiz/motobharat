@@ -48,10 +48,10 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
   };
 
   return (
-    <div className="space-y-5 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-8">
       {/* Filter strip */}
-      <div className="space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="space-y-2.5 sm:space-y-3 rounded-xl border border-border bg-surface p-2.5 sm:p-4">
+        <div className="flex flex-col gap-2.5 sm:gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-1 rounded-xl bg-bg p-1">
             {TABS.map((t) => (
               <button
@@ -59,7 +59,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
                 type="button"
                 onClick={() => setTab(t.key)}
                 className={cn(
-                  "relative min-h-[44px] flex-1 rounded-lg px-3 py-2 text-xs font-bold tracking-wider whitespace-nowrap uppercase transition-[color,transform] duration-150 ease-out active:scale-[0.97] sm:flex-none sm:px-4 md:flex-none",
+                  "relative min-h-[36px] sm:min-h-[44px] flex-1 rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold tracking-normal sm:tracking-wider whitespace-nowrap uppercase transition-[color,transform] duration-150 ease-out active:scale-[0.97] sm:flex-none md:flex-none",
                   tab === t.key ? "text-accent-fg" : "text-secondary hover:text-white"
                 )}
               >
@@ -77,7 +77,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
 
           <div className="relative w-full md:w-72">
             <Search
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted"
+              className="pointer-events-none absolute top-1/2 left-3 size-3.5 sm:size-4 -translate-y-1/2 text-muted"
               aria-hidden
             />
             <input
@@ -86,13 +86,13 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Filter by title or meeting point…"
               aria-label="Search rides"
-              className="min-h-[44px] w-full rounded-lg border border-border bg-bg py-2.5 pr-3 pl-9 text-sm text-white placeholder-muted focus:border-accent focus:outline-none"
+              className="min-h-[38px] sm:min-h-[44px] w-full rounded-lg border border-border bg-bg py-2 pr-3 pl-8.5 sm:pl-9 text-xs sm:text-sm text-white placeholder-muted focus:border-accent focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-2.5">
-          <span className="mr-1 font-mono text-[10px] tracking-wider text-muted uppercase">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 border-t border-border pt-2 sm:pt-2.5">
+          <span className="mr-1 font-mono text-[9px] sm:text-[10px] tracking-wider text-muted uppercase">
             Difficulty
           </span>
           {DIFFICULTIES.map((d) => (
@@ -101,7 +101,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
               type="button"
               onClick={() => setDifficulty(d)}
               className={cn(
-                "min-h-[44px] rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.97]",
+                "min-h-[30px] sm:min-h-[36px] rounded-lg px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.97]",
                 difficulty === d
                   ? "bg-surface-3 text-white"
                   : "text-secondary hover:text-white",

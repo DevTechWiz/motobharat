@@ -116,7 +116,7 @@ export function CoverUpload({
       <div className="flex flex-wrap items-start gap-4 sm:gap-6">
         {/* Current cover display */}
         <div className="w-full sm:w-56 space-y-2">
-          <div className="relative aspect-16/10 w-full overflow-hidden rounded-xl border border-border bg-surface-2">
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2">
             {currentCoverUrl ? (
               <Image src={currentCoverUrl} alt="Current ride cover" fill sizes="(max-width: 640px) 100vw, 224px" className="object-cover" />
             ) : (
@@ -165,7 +165,7 @@ export function CoverUpload({
                 label="Cover photo"
                 htmlFor="cover"
                 required
-                hint="JPEG, WebP or PNG, max 10 MB · Adjust and fit in 16:10 directly before upload"
+                hint="JPEG, WebP or PNG, max 10 MB · Adjust and fit in 16:9 directly before upload"
               >
                 <div className="relative">
                   <input

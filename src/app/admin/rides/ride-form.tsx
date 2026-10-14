@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea, Select, Field } from "@/components/ui/field";
 import { CoverCropperModal } from "@/components/admin/cover-cropper-modal";
 import { toDatetimeLocalIST } from "@/lib/format";
+import type { RideImport } from "@/lib/ride-import";
 import { uploadRideCover, removeRideCover, fetchRemoteImageDataUrl, type RideFormState, type MediaFormState } from "../actions";
 
 const POPULAR_ACTIVITIES = [
@@ -23,6 +24,7 @@ const POPULAR_ACTIVITIES = [
 
 export function RideForm({
   ride,
+  imported,
   action,
   onCreated,
 }: {
@@ -42,6 +44,9 @@ export function RideForm({
   };
   action: (prev: RideFormState, formData: FormData) => Promise<RideFormState>;
   onCreated?: (id: string) => void;
+  /** Values pasted via the Add-JSON dialog (new-ride mode only). Applied as
+      initial values — the admin reviews and saves normally. */
+  imported?: RideImport | null;
 }) {
   const [state, formAction] = useActionState(action, {} as RideFormState);
   const [isPending, startTransition] = useTransition();
@@ -57,12 +62,12 @@ export function RideForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activities, setActivities] = useState<string[]>(
-    ride?.activities && Array.isArray(ride.activities) ? ride.activities : []
+    ride?.activities && Array.isArray(ride.activities) ? ride.activities : (imported?.activities ?? [])
   );
   const [customActivity, setCustomActivity] = useState("");
 
   const [itinerary, setItinerary] = useState<{ title: string; description?: string; activity?: string }[]>(
-    ride?.itinerary && Array.isArray(ride.itinerary) ? ride.itinerary : []
+    ride?.itinerary && Array.isArray(ride.itinerary) ? ride.itinerary : (imported?.itinerary ?? [])
   );
 
   const [prevCoverUrl, setPrevCoverUrl] = useState(ride?.cover_url);
@@ -219,7 +224,7 @@ export function RideForm({
     }
   }, [state?.ok, state?.id, onCreated]);
 
-  const datetimeLocal = ride?.starts_at ? toDatetimeLocalIST(ride.starts_at) : "";
+  const datetimeLocal = ride?.starts_at ? toDatetimeLocalIST(ride.starts_at) : (imported?.starts_at ?? "");
 
   return (
     <form
@@ -241,7 +246,7 @@ export function RideForm({
             id="title"
             name="title"
             required
-            defaultValue={ride?.title ?? ""}
+            defaultValue={ride?.title ?? imported?.title ?? ""}
             placeholder="Sunday Morning Ride"
           />
         </Field>
@@ -251,7 +256,7 @@ export function RideForm({
             id="description"
             name="description"
             rows={4}
-            defaultValue={ride?.description ?? ""}
+            defaultValue={ride?.description ?? imported?.description ?? ""}
             placeholder="Route highlights, pace, stops..."
           />
         </Field>
@@ -275,7 +280,7 @@ export function RideForm({
             <Input
               id="meeting_point"
               name="meeting_point"
-              defaultValue={ride?.meeting_point ?? ""}
+              defaultValue={ride?.meeting_point ?? imported?.meeting_point ?? ""}
               placeholder="e.g. Hanamkonda Fuel Station"
             />
           </Field>
@@ -288,7 +293,7 @@ export function RideForm({
             <Input
               id="destination"
               name="destination"
-              defaultValue={ride?.destination ?? ""}
+              defaultValue={ride?.destination ?? imported?.destination ?? ""}
               placeholder="e.g. Laknavaram Lake or Ladakh"
             />
           </Field>
@@ -302,12 +307,12 @@ export function RideForm({
               type="number"
               min={1}
               step="any"
-              defaultValue={ride?.distance_km != null ? String(ride.distance_km) : ""}
+              defaultValue={ride?.distance_km != null ? String(ride.distance_km) : (imported?.distance_km != null ? String(imported.distance_km) : "")}
               placeholder="45"
             />
           </Field>
           <Field label="Difficulty" htmlFor="difficulty" required>
-            <Select id="difficulty" name="difficulty" defaultValue={ride?.difficulty ?? ""}>
+            <Select id="difficulty" name="difficulty" defaultValue={ride?.difficulty ?? imported?.difficulty ?? ""}>
               <option value="">Select…</option>
               <option value="easy">Easy</option>
               <option value="moderate">Moderate</option>
@@ -333,7 +338,7 @@ export function RideForm({
           <div className="flex flex-wrap items-start gap-4 sm:gap-6 pt-1">
             {/* Current cover display */}
             <div className="w-full sm:w-56 space-y-2">
-              <div className="relative aspect-16/10 w-full overflow-hidden rounded-xl border border-border bg-surface-2">
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-surface-2">
                 {currentCoverUrl ? (
                   <Image
                     src={currentCoverUrl}
@@ -388,7 +393,7 @@ export function RideForm({
                     label="Choose image file"
                     htmlFor="cover"
                     required
-                    hint="JPEG, WebP or PNG, max 10 MB · Adjust and fit in 16:10 directly before upload"
+                    hint="JPEG, WebP or PNG, max 10 MB · Adjust and fit in 16:9 directly before upload"
                   >
                     <div className="relative">
                       <input
@@ -609,7 +614,7 @@ export function RideForm({
           <Select
             id="status"
             name="status"
-            defaultValue={ride?.status ?? "draft"}
+            defaultValue={ride?.status ?? imported?.status ?? "draft"}
           >
             <option value="draft">Draft (hidden)</option>
             <option value="published">Upcoming</option>

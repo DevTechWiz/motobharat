@@ -97,7 +97,7 @@ export function Footer() {
               className="inline-flex items-center gap-1"
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
-              <img src="/brand/logo-512.png" alt="" className="size-11 sm:size-14" />
+              <img src="/brand/logo-512.png" alt="" className="size-9 sm:size-14" />
               <Wordmark size="lg" />
             </Link>
             <p className="text-xs sm:text-sm text-secondary leading-relaxed">
@@ -120,38 +120,40 @@ export function Footer() {
             </p>
           </div>
 
-          {columns.map((col) => (
-            <nav key={col.heading} aria-label={col.heading}>
-              <ColumnHeading>{col.heading}</ColumnHeading>
-              <ul className="mt-3 sm:mt-4 flex flex-col gap-1 sm:gap-2.5">
-                {col.links.map((l) => (
-                  <li key={l.href}>
-                    <Link
-                      href={l.href}
-                      onClick={(e) => {
-                        if (l.href === pathname) {
-                          e.preventDefault();
-                          scrollToTop();
-                        }
-                      }}
-                      className="inline-flex min-h-[44px] items-center text-xs sm:text-sm text-secondary transition-colors hover:text-accent"
-                    >
-                      {l.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
+          <div className="grid grid-cols-2 gap-6 sm:contents">
+            {columns.map((col) => (
+              <nav key={col.heading} aria-label={col.heading}>
+                <ColumnHeading>{col.heading}</ColumnHeading>
+                <ul className="mt-3 sm:mt-4 flex flex-col gap-0.5 sm:gap-2.5">
+                  {col.links.map((l) => (
+                    <li key={l.href}>
+                      <Link
+                        href={l.href}
+                        onClick={(e) => {
+                          if (l.href === pathname) {
+                            e.preventDefault();
+                            scrollToTop();
+                          }
+                        }}
+                        className="inline-flex min-h-[36px] sm:min-h-[44px] items-center text-xs sm:text-sm text-secondary transition-colors hover:text-accent"
+                      >
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+          </div>
 
           <div>
             <ColumnHeading>Follow</ColumnHeading>
-            <div className="mt-4">
+            <div className="mt-3 sm:mt-4">
               <a
                 href="https://instagram.com/motobharat_warangal"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-[44px] items-center gap-2 px-3 py-2 rounded-lg bg-surface-2 border border-border hover:border-accent text-xs font-semibold text-text transition-colors"
+                className="inline-flex min-h-[38px] sm:min-h-[44px] items-center gap-2 px-3 py-2 rounded-lg bg-surface-2 border border-border hover:border-accent text-xs font-semibold text-text transition-colors"
               >
                 <InstagramIcon className="size-4 text-accent" />
                 <span className="text-accent">@motobharat_warangal</span>
