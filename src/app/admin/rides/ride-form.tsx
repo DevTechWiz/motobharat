@@ -1,11 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
-import { X, Plus, Trash2, Sparkles } from "lucide-react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import Image from "next/image";
+import { X, Sparkles, Trash2, Loader2, Camera, Plus, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Select, Field } from "@/components/ui/field";
+import { CoverCropperModal } from "@/components/admin/cover-cropper-modal";
 import { toDatetimeLocalIST } from "@/lib/format";
-import type { RideFormState } from "../actions";
+import { uploadRideCover, removeRideCover, fetchRemoteImageDataUrl, type RideFormState, type MediaFormState } from "../actions";
 
 const POPULAR_ACTIVITIES = [
   "Breakfast / Chai",
@@ -36,6 +38,7 @@ export function RideForm({
     distance_km?: number | null;
     difficulty?: string | null;
     status?: string;
+    cover_url?: string | null;
   };
   action: (prev: RideFormState, formData: FormData) => Promise<RideFormState>;
   onCreated?: (id: string) => void;
@@ -43,25 +46,151 @@ export function RideForm({
   const [state, formAction] = useActionState(action, {} as RideFormState);
   const [isPending, startTransition] = useTransition();
 
-  const [itinerary, setItinerary] = useState<{ title: string; description?: string; activity?: string }[]>(
-    ride?.itinerary && Array.isArray(ride.itinerary) ? ride.itinerary : []
-  );
+  // Cover photo state
+  const [currentCoverUrl, setCurrentCoverUrl] = useState<string | null>(ride?.cover_url ?? null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverState, setCoverState] = useState<MediaFormState>({});
+  const [isUploadingCover, startCoverTransition] = useTransition();
+  const [isRemovingCover, startRemoveCoverTransition] = useTransition();
+  const [rawCoverFile, setRawCoverFile] = useState<File | null>(null);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [activities, setActivities] = useState<string[]>(
     ride?.activities && Array.isArray(ride.activities) ? ride.activities : []
   );
   const [customActivity, setCustomActivity] = useState("");
 
+  const [itinerary, setItinerary] = useState<{ title: string; description?: string; activity?: string }[]>(
+    ride?.itinerary && Array.isArray(ride.itinerary) ? ride.itinerary : []
+  );
+
+  const [prevCoverUrl, setPrevCoverUrl] = useState(ride?.cover_url);
+  if (ride?.cover_url !== prevCoverUrl) {
+    setPrevCoverUrl(ride?.cover_url);
+    if (ride?.cover_url) {
+      setCurrentCoverUrl(ride.cover_url);
+    }
+  }
+
+  const [prevItinerary, setPrevItinerary] = useState(ride?.itinerary);
+  if (ride?.itinerary !== prevItinerary) {
+    setPrevItinerary(ride?.itinerary);
+    if (ride?.itinerary && Array.isArray(ride.itinerary)) {
+      setItinerary(ride.itinerary);
+    }
+  }
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) {
+      setRawCoverFile(f);
+      setIsCropperOpen(true);
+      setCoverState({});
+    }
+  };
+
+  const [isPreparingCrop, setIsPreparingCrop] = useState(false);
+
+  const handleCroppedCoverUpload = (file: File) => {
+    setIsCropperOpen(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    const preview = URL.createObjectURL(file);
+    setCurrentCoverUrl(preview);
+    setCoverFile(file);
+
+    if (ride?.id) {
+      const fd = new FormData();
+      fd.append("cover", file);
+      startCoverTransition(async () => {
+        const res = await uploadRideCover(ride.id, {}, fd);
+        setCoverState(res);
+        if (res.ok) {
+          setCurrentCoverUrl(preview);
+        }
+      });
+    } else {
+      setCoverState({});
+    }
+  };
+
+  const handleReadjustCover = async () => {
+    if (rawCoverFile) {
+      setIsCropperOpen(true);
+      return;
+    }
+    if (!currentCoverUrl) return;
+
+    setIsPreparingCrop(true);
+    try {
+      if (currentCoverUrl.startsWith("blob:") || currentCoverUrl.startsWith("data:")) {
+        const res = await fetch(currentCoverUrl);
+        const blob = await res.blob();
+        const f = new File([blob], "cover-readjust.jpg", { type: blob.type || "image/jpeg" });
+        setRawCoverFile(f);
+        setIsCropperOpen(true);
+      } else {
+        const { dataUrl, error } = await fetchRemoteImageDataUrl(currentCoverUrl);
+        if (dataUrl) {
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          const f = new File([blob], "cover-readjust.jpg", { type: blob.type || "image/jpeg" });
+          setRawCoverFile(f);
+          setIsCropperOpen(true);
+        } else {
+          setCoverState({ error: error || "Could not load image for readjusting. You can upload a new photo." });
+        }
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to load image for readjusting.";
+      setCoverState({ error: message });
+    } finally {
+      setIsPreparingCrop(false);
+    }
+  };
+
+  const handleRemoveCurrentCover = () => {
+    if (ride?.id) {
+      if (!window.confirm("Remove this ride's cover photo?")) return;
+      startRemoveCoverTransition(async () => {
+        const res = await removeRideCover(ride.id);
+        setCoverState(res);
+        if (res.ok) {
+          setCurrentCoverUrl(null);
+          setCoverFile(null);
+          setRawCoverFile(null);
+        }
+      });
+    } else {
+      setCurrentCoverUrl(null);
+      setCoverFile(null);
+      setRawCoverFile(null);
+      setCoverState({});
+    }
+  };
+
   const toggleActivity = (act: string) => {
-    setActivities((prev) =>
-      prev.includes(act) ? prev.filter((a) => a !== act) : [...prev, act]
-    );
+    setActivities((prev) => {
+      if (prev.includes(act)) {
+        return prev.filter((a) => a !== act);
+      }
+      if (prev.length >= 5) {
+        return prev;
+      }
+      return [...prev, act];
+    });
   };
 
   const handleAddCustomActivity = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = customActivity.trim();
     if (trimmed && !activities.includes(trimmed)) {
-      setActivities((prev) => [...prev, trimmed]);
+      if (activities.length >= 5) return;
+      setActivities((prev) => {
+        if (prev.length >= 5) return prev;
+        return [...prev, trimmed];
+      });
       setCustomActivity("");
     }
   };
@@ -99,6 +228,9 @@ export function RideForm({
         const fd = new FormData(e.currentTarget);
         fd.set("itinerary", JSON.stringify(itinerary.filter((s) => s.title.trim())));
         fd.set("activities", JSON.stringify(activities));
+        if (coverFile) {
+          fd.set("cover_file", coverFile);
+        }
         startTransition(() => formAction(fd));
       }}
       className="max-w-xl space-y-5"
@@ -184,25 +316,134 @@ export function RideForm({
           </Field>
         </div>
 
-        <Field label="Status" htmlFor="status" required>
-          <Select id="status" name="status" defaultValue={ride?.status ?? "draft"}>
-            <option value="draft">Draft (hidden)</option>
-            <option value="published">Upcoming</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </Select>
-        </Field>
+        {/* Cover photo wrapped like Ride Highlights & Activities */}
+        <div className="space-y-2.5 sm:space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">
+          <div className="flex items-center gap-2">
+            <Camera className="size-4 text-accent" />
+            <div>
+              <p className="text-xs font-bold tracking-wider text-accent uppercase">
+                Cover Photo
+              </p>
+              <p className="text-[10px] sm:text-[11px] text-muted">
+                The face of this ride across the site (16:10 landscape)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-start gap-4 sm:gap-6 pt-1">
+            {/* Current cover display */}
+            <div className="w-full sm:w-56 space-y-2">
+              <div className="relative aspect-16/10 w-full overflow-hidden rounded-xl border border-border bg-surface-2">
+                {currentCoverUrl ? (
+                  <Image
+                    src={currentCoverUrl}
+                    alt="Current ride cover"
+                    fill
+                    sizes="(max-width: 640px) 100vw, 224px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <p className="flex size-full items-center justify-center text-xs text-muted">No cover</p>
+                )}
+              </div>
+              {currentCoverUrl && (
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleReadjustCover}
+                    disabled={isPreparingCrop || isRemovingCover || isPending}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-hover disabled:opacity-50 transition-colors"
+                  >
+                    {isPreparingCrop ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Crop className="size-3.5" />
+                    )}
+                    <span>{isPreparingCrop ? "Loading..." : "Readjust Crop"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleRemoveCurrentCover}
+                    disabled={isRemovingCover || isPending || isPreparingCrop}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-danger hover:text-danger-hover disabled:opacity-50 transition-colors"
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>{isRemovingCover ? "Removing..." : "Remove Cover"}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Upload form */}
+            <div className="flex-1 max-w-md space-y-4">
+              {isUploadingCover ? (
+                <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-semibold text-accent">
+                  <Loader2 className="size-4 animate-spin" />
+                  Uploading cover photo...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Field
+                    label="Choose image file"
+                    htmlFor="cover"
+                    required
+                    hint="JPEG, WebP or PNG, max 10 MB · Adjust and fit in 16:10 directly before upload"
+                  >
+                    <div className="relative">
+                      <input
+                        ref={fileInputRef}
+                        id="cover"
+                        name="cover"
+                        type="file"
+                        accept="image/jpeg,image/webp,image/png"
+                        disabled={isPending || isUploadingCover}
+                        onChange={handleCoverFileChange}
+                        className="block w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-surface-3 file:text-text hover:file:bg-surface-3/80 cursor-pointer disabled:opacity-50"
+                      />
+                    </div>
+                  </Field>
+
+                  {/* Status alerts below input */}
+                  {coverState.error && (
+                    <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+                      {coverState.error}
+                    </p>
+                  )}
+                  {coverState.ok && <p className="text-sm font-semibold text-success">Cover updated successfully.</p>}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <CoverCropperModal
+          isOpen={isCropperOpen}
+          file={rawCoverFile}
+          applyLabel={ride?.id ? "Upload Cover" : "Apply Cover"}
+          onApply={handleCroppedCoverUpload}
+          onCancel={() => {
+            setIsCropperOpen(false);
+            setRawCoverFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+          }}
+        />
 
         {/* Ride Activities & Highlights */}
         <div className="space-y-2.5 sm:space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-accent" />
             <div>
-              <p className="text-xs font-bold tracking-wider text-accent uppercase">
-                Ride Highlights & Activities
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-bold tracking-wider text-accent uppercase">
+                  Ride Highlights & Activities
+                </p>
+                <span className="text-[10px] font-mono text-muted">
+                  ({activities.length}/5)
+                </span>
+              </div>
               <p className="text-[10px] sm:text-[11px] text-muted">
-                Pick or add activities riders will experience (e.g. Campfire, Off-roading, Photography)
+                Pick up to 5 activities riders will experience (e.g. Campfire, Off-roading, Photography)
               </p>
             </div>
           </div>
@@ -235,15 +476,19 @@ export function RideForm({
             <div className="flex flex-wrap gap-1 sm:gap-1.5">
               {POPULAR_ACTIVITIES.map((act) => {
                 const isSelected = activities.includes(act);
+                const isLimitReached = !isSelected && activities.length >= 5;
                 return (
                   <button
                     key={act}
                     type="button"
+                    disabled={isLimitReached}
                     onClick={() => toggleActivity(act)}
                     className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-[11px] font-medium transition-all ${
                       isSelected
                         ? "border-accent bg-accent text-accent-fg font-semibold"
-                        : "border-border bg-surface-2 text-secondary hover:border-accent/40 hover:text-white"
+                        : isLimitReached
+                          ? "border-border/40 bg-surface-2 text-muted/50 cursor-not-allowed opacity-50"
+                          : "border-border bg-surface-2 text-secondary hover:border-accent/40 hover:text-white"
                     }`}
                   >
                     <span>{isSelected ? "✓" : "+"}</span>
@@ -257,8 +502,13 @@ export function RideForm({
           {/* Custom tag input */}
           <div className="flex items-center gap-2 pt-1">
             <Input
-              placeholder="Add custom activity tag (e.g. River Crossing)..."
+              placeholder={
+                activities.length >= 5
+                  ? "Maximum 5 activities reached"
+                  : "Add custom activity tag (e.g. River Crossing)..."
+              }
               value={customActivity}
+              disabled={activities.length >= 5}
               onChange={(e) => setCustomActivity(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -272,6 +522,7 @@ export function RideForm({
               type="button"
               variant="secondary"
               size="sm"
+              disabled={activities.length >= 5 || !customActivity.trim()}
               onClick={() => handleAddCustomActivity()}
             >
               Add
@@ -284,22 +535,12 @@ export function RideForm({
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-xs font-bold tracking-wider text-accent uppercase">
-                Route Itinerary & Stops (Optional)
+                Route Itinerary & Stops
               </p>
               <p className="text-[10px] sm:text-[11px] text-muted">
                 Add route stops, scenic viewpoints, or day-by-day plan with specific activities
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addItineraryStop}
-              className="shrink-0"
-            >
-              <Plus className="size-3.5" />
-              <span>Add Stop</span>
-            </Button>
           </div>
 
           {itinerary.length === 0 ? (
@@ -348,10 +589,37 @@ export function RideForm({
               ))}
             </div>
           )}
+
+          {/* Add Stop button at bottom */}
+          <div className="pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addItineraryStop}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="size-3.5" />
+              <span>Add Stop</span>
+            </Button>
+          </div>
         </div>
 
+        <Field label="Status" htmlFor="status" required>
+          <Select
+            id="status"
+            name="status"
+            defaultValue={ride?.status ?? "draft"}
+          >
+            <option value="draft">Draft (hidden)</option>
+            <option value="published">Upcoming</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </Select>
+        </Field>
+
         <p className="text-xs text-muted">
-          Cover photo, gallery, and members are managed in sections 02–04 below.
+          Gallery and members are managed in sections 02–03 below after the ride creation.
         </p>
 
         {/* Errors & success alerts displayed directly above submit button */}

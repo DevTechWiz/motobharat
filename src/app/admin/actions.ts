@@ -220,7 +220,6 @@ export async function updateRide(
   const startsAt = String(formData.get("starts_at") ?? "");
   const meetingPoint = String(formData.get("meeting_point") ?? "").trim();
   const destination = String(formData.get("destination") ?? "").trim() || null;
-  const itinerary = parseItinerary(String(formData.get("itinerary") ?? "[]"));
   const activities = parseActivities(String(formData.get("activities") ?? "[]"));
   const distanceKm = String(formData.get("distance_km") ?? "").trim();
   const difficulty = String(formData.get("difficulty") ?? "");
@@ -229,6 +228,28 @@ export async function updateRide(
   const fieldError = validateRideFields({ title, description, startsAt, meetingPoint, distanceKm, difficulty }, status === "draft");
   if (fieldError) return { error: fieldError };
 
+  const coverFile = formData.get("cover_file") as File | null;
+  const coverPick = coverFile && coverFile.size > 0 ? coverFile : null;
+
+  let newCoverUrl: string | null = null;
+  if (coverPick) {
+    if (!r2Configured()) {
+      return { error: "Cover photo uploads need R2 keys — add the R2_* env vars (.env.example)." };
+    }
+    const invalid = await validateImageFile(coverPick);
+    if (invalid) return { error: `Cover photo: ${invalid}` };
+    const image = await processImage(coverPick, 2000, 80);
+    const key = `events/${id}/cover_${crypto.randomUUID()}.webp`;
+    await putR2Object(key, image.data, "image/webp");
+    newCoverUrl = r2PublicUrl(key);
+  }
+
+  const { data: current } = await supabase
+    .from("events")
+    .select("cover_url, starts_at, slug")
+    .eq("id", id)
+    .maybeSingle();
+
   // Drafts keep the stored date when the field is cleared; publishing needs one.
   let startsAtIso: string;
   if (startsAt) {
@@ -236,37 +257,31 @@ export async function updateRide(
   } else if (status !== "draft") {
     return { error: "Start date and time are required." };
   } else {
-    const { data: current } = await supabase
-      .from("events")
-      .select("starts_at")
-      .eq("id", id)
-      .maybeSingle();
     startsAtIso = current?.starts_at ?? new Date().toISOString();
   }
 
-  // Publishing needs a stored cover (upload-only — section 02); drafts don't.
-  if (status !== "draft") {
-    const { data: current } = await supabase
-      .from("events")
-      .select("cover_url")
-      .eq("id", id)
-      .maybeSingle();
-    if (!current?.cover_url) {
-      return { error: "Upload a cover photo in section 02 before publishing." };
-    }
+  const effectiveCover = newCoverUrl ?? current?.cover_url ?? null;
+
+  // Publishing needs a stored cover; drafts don't.
+  if (status !== "draft" && !effectiveCover) {
+    return { error: "Cover photo is required — upload one to publish." };
   }
 
-  const updatePayload = {
+  const hasItinerary = formData.has("itinerary");
+  const itinerary = hasItinerary ? parseItinerary(String(formData.get("itinerary"))) : undefined;
+
+  const updatePayload: Record<string, unknown> = {
     title,
     description,
     starts_at: startsAtIso,
     meeting_point: meetingPoint,
     destination,
-    itinerary,
     activities,
     distance_km: cleanDistance(distanceKm),
     difficulty: cleanDifficulty(difficulty),
     status,
+    ...(hasItinerary ? { itinerary } : {}),
+    ...(newCoverUrl ? { cover_url: newCoverUrl } : {}),
   };
 
   // slug is intentionally NOT updated — published links must stay stable.
@@ -293,7 +308,53 @@ export async function updateRide(
 
   if (error) return { error: error.message };
 
-  revalidateRidePaths(id, updated?.slug ?? null);
+  if (newCoverUrl && current?.cover_url) {
+    const oldKey = r2KeyFromUrl(current.cover_url);
+    if (oldKey) {
+      try {
+        await deleteR2Object(oldKey);
+      } catch (e) {
+        console.warn(`[admin] failed to delete old cover ${oldKey}:`, e);
+      }
+    }
+  }
+
+  revalidateRidePaths(id, updated?.slug ?? current?.slug ?? null);
+  return { ok: true };
+}
+
+export async function updateRideItinerary(
+  rideId: string,
+  itinerary: { title: string; description?: string; activity?: string }[]
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if ("error" in admin) return { ok: false, error: admin.error };
+  const { supabase } = admin;
+
+  const validStops = itinerary
+    .filter((s) => s.title.trim())
+    .map((s) => ({
+      title: s.title.trim(),
+      description: s.description?.trim() || "",
+      activity: s.activity?.trim() || "",
+    }));
+
+  const { data: ride } = await supabase
+    .from("events")
+    .select("slug")
+    .eq("id", rideId)
+    .maybeSingle();
+
+  if (!ride) return { ok: false, error: "Ride not found." };
+
+  const { error } = await supabase
+    .from("events")
+    .update({ itinerary: validStops })
+    .eq("id", rideId);
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidateRidePaths(rideId, ride.slug);
   return { ok: true };
 }
 
@@ -558,8 +619,8 @@ export async function createAnnouncement(
     slug: slugify(title),
     created_by: user.id,
   })
-  .select("id")
-  .single();
+    .select("id")
+    .single();
 
   if (error) {
     if (uniqueConstraint(error)) return { error: "An announcement with that title already exists." };
@@ -757,3 +818,18 @@ function revalidateRidePaths(rideId: string, slug: string | null | undefined) {
   revalidatePath(`/rides/${slug ?? rideId}`);
   revalidatePath(`/admin/rides/${rideId}/edit`);
 }
+
+export async function fetchRemoteImageDataUrl(url: string): Promise<{ dataUrl?: string; error?: string }> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return { error: "Failed to download image." };
+    const buf = await res.arrayBuffer();
+    const contentType = res.headers.get("content-type") || "image/jpeg";
+    const b64 = Buffer.from(buf).toString("base64");
+    return { dataUrl: `data:${contentType};base64,${b64}` };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Could not fetch image.";
+    return { error: message };
+  }
+}
+

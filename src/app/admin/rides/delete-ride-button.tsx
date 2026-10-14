@@ -28,7 +28,7 @@ export function DeleteRideButton({ rideId }: { rideId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-lg border border-danger/30 px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/10"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-danger/30 px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/10"
       >
         <Trash2 className="size-3" aria-hidden /> Delete
       </button>

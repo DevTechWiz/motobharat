@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2, Crop } from "lucide-react";
 import { Field } from "@/components/ui/field";
 import { CoverCropperModal } from "@/components/admin/cover-cropper-modal";
-import { uploadRideCover, removeRideCover, type MediaFormState } from "../../../actions";
+import { uploadRideCover, removeRideCover, fetchRemoteImageDataUrl, type MediaFormState } from "../../../actions";
 
 export function CoverUpload({
   rideId,
@@ -24,9 +24,11 @@ export function CoverUpload({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const [prevCoverUrl, setPrevCoverUrl] = useState(coverUrl);
+  if (coverUrl !== prevCoverUrl) {
+    setPrevCoverUrl(coverUrl);
     setCurrentCoverUrl(coverUrl);
-  }, [coverUrl]);
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -56,8 +58,44 @@ export function CoverUpload({
       if (res.ok) {
         setCurrentCoverUrl(preview);
       }
-      setRawFile(null);
     });
+  };
+
+  const [isPreparingCrop, setIsPreparingCrop] = useState(false);
+
+  const handleReadjustCover = async () => {
+    if (rawFile) {
+      setIsCropperOpen(true);
+      return;
+    }
+    if (!currentCoverUrl) return;
+
+    setIsPreparingCrop(true);
+    try {
+      if (currentCoverUrl.startsWith("blob:") || currentCoverUrl.startsWith("data:")) {
+        const res = await fetch(currentCoverUrl);
+        const blob = await res.blob();
+        const f = new File([blob], "cover-readjust.jpg", { type: blob.type || "image/jpeg" });
+        setRawFile(f);
+        setIsCropperOpen(true);
+      } else {
+        const { dataUrl, error } = await fetchRemoteImageDataUrl(currentCoverUrl);
+        if (dataUrl) {
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          const f = new File([blob], "cover-readjust.jpg", { type: blob.type || "image/jpeg" });
+          setRawFile(f);
+          setIsCropperOpen(true);
+        } else {
+          setState({ error: error || "Could not load image for readjusting. You can upload a new photo." });
+        }
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to load image for readjusting.";
+      setState({ error: message });
+    } finally {
+      setIsPreparingCrop(false);
+    }
   };
 
   const handleRemoveCurrentCover = () => {
@@ -68,6 +106,7 @@ export function CoverUpload({
       setState(res);
       if (res.ok) {
         setCurrentCoverUrl(null);
+        setRawFile(null);
       }
     });
   };
@@ -85,15 +124,31 @@ export function CoverUpload({
             )}
           </div>
           {currentCoverUrl && (
-            <button
-              type="button"
-              onClick={handleRemoveCurrentCover}
-              disabled={isRemoving || isPending}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-danger hover:text-danger-hover disabled:opacity-50 transition-colors"
-            >
-              <Trash2 className="size-3.5" />
-              {isRemoving ? "Removing..." : "Remove Cover"}
-            </button>
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={handleReadjustCover}
+                disabled={isPreparingCrop || isRemoving || isPending}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-hover disabled:opacity-50 transition-colors"
+              >
+                {isPreparingCrop ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Crop className="size-3.5" />
+                )}
+                <span>{isPreparingCrop ? "Loading..." : "Readjust Crop"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRemoveCurrentCover}
+                disabled={isRemoving || isPending || isPreparingCrop}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-danger hover:text-danger-hover disabled:opacity-50 transition-colors"
+              >
+                <Trash2 className="size-3.5" />
+                <span>{isRemoving ? "Removing..." : "Remove Cover"}</span>
+              </button>
+            </div>
           )}
         </div>
 

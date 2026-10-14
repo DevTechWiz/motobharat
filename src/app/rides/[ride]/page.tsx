@@ -12,7 +12,6 @@ import {
   ArrowUpRight,
   Share2,
   Flag,
-  ArrowRight,
   Route,
   Sparkles,
 } from "lucide-react";
@@ -124,7 +123,7 @@ export default async function RideDetailPage({
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border">
+      <section className="relative overflow-hidden border-b border-border min-h-[260px] sm:min-h-[320px] lg:min-h-[360px] flex flex-col justify-between">
         <div className="absolute inset-0 bg-surface-2">
           {ride.cover_url && (
             <Image
@@ -132,15 +131,18 @@ export default async function RideDetailPage({
               alt={ride.title}
               fill
               sizes="100vw"
-              className="animate-ken-burns object-cover opacity-65"
+              className="animate-ken-burns object-cover opacity-80 sm:opacity-85"
               priority
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/65 to-bg/20" />
+          {/* Subtle top shade for breadcrumbs + localized bottom gradient leaving upper half clear */}
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/80 via-45% to-transparent" />
         </div>
-        <Container className="relative py-5 sm:py-10">
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-xs text-secondary" aria-label="Breadcrumb">
+
+        {/* Top bar with Breadcrumbs */}
+        <Container className="relative pt-4 sm:pt-6 w-full">
+          <nav className="flex items-center gap-2 text-xs text-secondary/90" aria-label="Breadcrumb">
             <Link href="/" className="transition-colors hover:text-white">
               Home
             </Link>
@@ -156,8 +158,11 @@ export default async function RideDetailPage({
               </span>
             )}
           </nav>
+        </Container>
 
-          <div className="mt-4 flex flex-wrap items-center gap-1.5 sm:mt-6 sm:gap-2">
+        {/* Bottom Hero Content: Badges, compact title, and route */}
+        <Container className="relative pb-5 sm:pb-7 pt-10 sm:pt-14 w-full">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {ride.difficulty && (
               <Badge tone={difficultyTone[ride.difficulty]}>{ride.difficulty}</Badge>
             )}
@@ -167,37 +172,27 @@ export default async function RideDetailPage({
               <Badge tone="easy">Open for joining</Badge>
             )}
           </div>
-          <h1 className="animate-fade-in-up mt-2 max-w-3xl text-2xl font-extrabold tracking-tight sm:mt-4 sm:text-4xl lg:text-5xl">{ride.title}</h1>
+
+          <h1 className="animate-fade-in-up mt-1.5 max-w-2xl text-lg font-bold tracking-tight text-white leading-snug sm:mt-2.5 sm:text-2xl lg:text-3xl">
+            {ride.title}
+          </h1>
 
           {(ride.meeting_point || ride.destination) && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-medium text-secondary sm:mt-3 sm:gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/80 px-2.5 py-0.5 sm:px-3 sm:py-1">
+            <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-secondary">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-surface/90 px-2.5 py-0.5 sm:px-3 sm:py-1 backdrop-blur-md">
                 <MapPin className="size-3 text-accent shrink-0" aria-hidden />
-                <span>Start: <strong className="text-white">{ride.meeting_point ?? "Warangal"}</strong></span>
-              </span>
-              {ride.destination && (
-                <>
-                  <ArrowRight className="size-3 text-muted shrink-0" aria-hidden />
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 sm:px-3 sm:py-1 text-accent font-semibold">
-                    <Flag className="size-3 shrink-0" aria-hidden />
-                    <span>Destination: <strong className="text-white">{ride.destination}</strong></span>
-                  </span>
-                </>
-              )}
-            </div>
-          )}
-
-          {Array.isArray(ride.activities) && ride.activities.length > 0 && (
-            <div className="mt-2 flex flex-wrap items-center gap-1 sm:mt-3 sm:gap-1.5">
-              {ride.activities.map((act) => (
-                <span
-                  key={act}
-                  className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-accent"
-                >
-                  <Sparkles className="size-2.5" aria-hidden />
-                  {act}
+                <span>
+                  {ride.meeting_point && ride.destination && ride.meeting_point !== ride.destination ? (
+                    <>
+                      <strong className="text-white">{ride.meeting_point}</strong>
+                      <span className="mx-1 text-muted">→</span>
+                      <strong className="text-white">{ride.destination}</strong>
+                    </>
+                  ) : (
+                    <strong className="text-white">{ride.destination || ride.meeting_point}</strong>
+                  )}
                 </span>
-              ))}
+              </span>
             </div>
           )}
         </Container>
@@ -225,6 +220,28 @@ export default async function RideDetailPage({
       {/* Body: details + sticky join card */}
       <Container className="grid gap-6 py-6 lg:grid-cols-[2fr_1fr] lg:gap-8 lg:py-8">
         <div className="min-w-0 space-y-6 sm:space-y-8">
+          {/* Activities & Highlights moved into content area */}
+          {Array.isArray(ride.activities) && ride.activities.length > 0 && (
+            <div className="space-y-2.5 rounded-xl border border-border bg-surface p-3.5 sm:p-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-3.5 text-accent" />
+                <p className="text-[10px] sm:text-[11px] font-bold tracking-wider text-accent uppercase">
+                  Ride Highlights & Activities
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {ride.activities.map((act) => (
+                  <span
+                    key={act}
+                    className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[11px] sm:text-xs font-semibold text-accent"
+                  >
+                    {act}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {ride.description && (
             <div className="space-y-3">
               <h2 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">

@@ -13,6 +13,7 @@ import { UserMenu } from "./user-menu";
 
 const links = [
   { href: "/rides", label: "Rides" },
+  { href: "/about", label: "About" },
   { href: "/announcements", label: "Announcements" },
   { href: "/safety", label: "Safety" },
 ];

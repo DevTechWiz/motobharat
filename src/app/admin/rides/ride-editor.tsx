@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { RideForm } from "./ride-form";
 import { AdminSection } from "./admin-section";
-import { CoverUpload } from "./[id]/edit/cover-upload";
 import { GalleryManager } from "./[id]/edit/gallery-manager";
 import { MembersPanel } from "./[id]/edit/members-panel";
 import { createRide, updateRide } from "../actions";
@@ -36,7 +35,6 @@ export function RideEditor({
   initialMembers = [],
 }: RideEditorProps) {
   const [createdRideId, setCreatedRideId] = useState<string | null>(initialRide?.id ?? null);
-  const [coverUrl, setCoverUrl] = useState<string | null>(initialRide?.cover_url ?? null);
 
   const rideId = createdRideId;
 
@@ -57,23 +55,19 @@ export function RideEditor({
         Back to rides
       </Link>
 
-      <AdminSection num="01" title="Ride details" hint="Title, schedule, meeting point and status">
+      <AdminSection num="01" title="Ride details" hint="Title, schedule, itinerary, cover photo and status">
         <RideForm
-          ride={initialRide ?? (rideId ? { id: rideId } as any : undefined)}
+          ride={initialRide ?? (rideId ? { id: rideId, cover_url: null } : undefined)}
           action={rideId ? updateRide.bind(null, rideId) : createRide}
           onCreated={handleCreated}
         />
       </AdminSection>
 
-      <AdminSection num="02" title="Cover photo" hint="The face of this ride across the site" required>
-        <CoverUpload rideId={rideId} coverUrl={coverUrl} />
-      </AdminSection>
-
-      <AdminSection num="03" title="Gallery" hint="Memories from the road">
+      <AdminSection num="02" title="Gallery" hint="Memories from the road">
         <GalleryManager rideId={rideId} photos={initialPhotos} />
       </AdminSection>
 
-      <AdminSection num="04" title="Members" hint="Who is on this column">
+      <AdminSection num="03" title="Members" hint="Who is on this column">
         <MembersPanel rideId={rideId} members={initialMembers} />
       </AdminSection>
     </div>
