@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { Trash2, Loader2 } from "lucide-react";
 import { Field } from "@/components/ui/field";
@@ -11,9 +11,10 @@ export function CoverUpload({
   rideId,
   coverUrl,
 }: {
-  rideId: string;
+  rideId: string | null;
   coverUrl: string | null;
 }) {
+  const [currentCoverUrl, setCurrentCoverUrl] = useState<string | null>(coverUrl);
   const [state, setState] = useState<MediaFormState>({});
   const [isPending, startTransition] = useTransition();
   const [isRemoving, startRemoveTransition] = useTransition();
@@ -23,11 +24,16 @@ export function CoverUpload({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    setCurrentCoverUrl(coverUrl);
+  }, [coverUrl]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) {
       setRawFile(f);
       setIsCropperOpen(true);
+      setState({});
     }
   };
 
@@ -35,39 +41,50 @@ export function CoverUpload({
     setIsCropperOpen(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
 
+    if (!rideId) {
+      setState({ error: "Please save ride details in Section 01 first before uploading cover photo." });
+      return;
+    }
+
+    const preview = URL.createObjectURL(file);
     const fd = new FormData();
     fd.append("cover", file);
 
     startTransition(async () => {
       const res = await uploadRideCover(rideId, {}, fd);
       setState(res);
+      if (res.ok) {
+        setCurrentCoverUrl(preview);
+      }
       setRawFile(null);
     });
   };
 
   const handleRemoveCurrentCover = () => {
+    if (!rideId) return;
     if (!window.confirm("Remove this ride's cover photo?")) return;
     startRemoveTransition(async () => {
       const res = await removeRideCover(rideId);
       setState(res);
+      if (res.ok) {
+        setCurrentCoverUrl(null);
+      }
     });
   };
 
   return (
     <section className="space-y-4">
-      <h3 className="text-sm font-bold tracking-[0.18em] text-accent uppercase">Cover Photo</h3>
-
       <div className="flex flex-wrap items-start gap-4 sm:gap-6">
         {/* Current cover display */}
         <div className="w-full sm:w-56 space-y-2">
           <div className="relative aspect-16/10 w-full overflow-hidden rounded-xl border border-border bg-surface-2">
-            {coverUrl ? (
-              <Image src={coverUrl} alt="Current ride cover" fill sizes="(max-width: 640px) 100vw, 224px" className="object-cover" />
+            {currentCoverUrl ? (
+              <Image src={currentCoverUrl} alt="Current ride cover" fill sizes="(max-width: 640px) 100vw, 224px" className="object-cover" />
             ) : (
               <p className="flex size-full items-center justify-center text-xs text-muted">No cover</p>
             )}
           </div>
-          {coverUrl && (
+          {currentCoverUrl && (
             <button
               type="button"
               onClick={handleRemoveCurrentCover}
@@ -82,13 +99,6 @@ export function CoverUpload({
 
         {/* Upload form */}
         <div className="flex-1 max-w-md space-y-4">
-          {state.error && (
-            <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
-              {state.error}
-            </p>
-          )}
-          {state.ok && <p className="text-sm text-success">Cover updated.</p>}
-
           {isPending ? (
             <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-semibold text-accent">
               <Loader2 className="size-4 animate-spin" />
@@ -97,8 +107,9 @@ export function CoverUpload({
           ) : (
             <form className="space-y-3">
               <Field
-                label="Upload new cover photo"
+                label="Cover photo"
                 htmlFor="cover"
+                required
                 hint="JPEG, WebP or PNG, max 10 MB · Adjust and fit in 16:10 directly before upload"
               >
                 <div className="relative">
@@ -114,6 +125,14 @@ export function CoverUpload({
                   />
                 </div>
               </Field>
+
+              {/* Status alerts below input */}
+              {state.error && (
+                <p className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+                  {state.error}
+                </p>
+              )}
+              {state.ok && <p className="text-sm font-semibold text-success">Cover updated successfully.</p>}
             </form>
           )}
         </div>

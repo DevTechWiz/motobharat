@@ -29,7 +29,7 @@ export function MembersPanel({
   rideId,
   members,
 }: {
-  rideId: string;
+  rideId: string | null;
   members: RideMember[];
 }) {
   return (
@@ -65,7 +65,7 @@ export function MembersPanel({
                   <p className="font-mono text-[11px] text-muted">joined {formatDate(m.created_at)}</p>
                 </div>
               </div>
-              <RemoveMemberButton rideId={rideId} userId={m.user_id} />
+              <RemoveMemberButton rideId={rideId ?? ""} userId={m.user_id} />
             </li>
           ))}
         </ul>

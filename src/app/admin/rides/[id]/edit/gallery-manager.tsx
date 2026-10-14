@@ -53,7 +53,7 @@ export function GalleryManager({
   rideId,
   photos,
 }: {
-  rideId: string;
+  rideId: string | null;
   photos: { id: string; url: string; alt: string }[];
 }) {
   const router = useRouter();
@@ -86,6 +86,14 @@ export function GalleryManager({
 
   const handleSubmit = () => {
     setStatus(null);
+
+    if (!rideId) {
+      setStatus({
+        type: "error",
+        text: "Please save ride details in Section 01 first before adding photos.",
+      });
+      return;
+    }
 
     // Option 1: File upload (sequential upload to stay well under request body limits)
     if (selectedFiles.length > 0) {
@@ -181,18 +189,6 @@ export function GalleryManager({
         </span>
       </div>
 
-      {/* Status alerts */}
-      {status?.type === "error" && (
-        <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
-          {status.text}
-        </div>
-      )}
-      {status?.type === "success" && (
-        <div className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs font-semibold text-success">
-          {status.text}
-        </div>
-      )}
-
       {/* Windows FileOpen-style Unified Field */}
       <div className="rounded-lg border border-border bg-surface-2 p-2.5">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -285,6 +281,18 @@ export function GalleryManager({
           </Button>
         </div>
       </div>
+
+      {/* Status alerts below action button */}
+      {status?.type === "error" && (
+        <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
+          {status.text}
+        </div>
+      )}
+      {status?.type === "success" && (
+        <div className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs font-semibold text-success">
+          {status.text}
+        </div>
+      )}
 
       {/* Photos Grid */}
       {photos.length === 0 ? (

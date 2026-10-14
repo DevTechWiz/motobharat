@@ -1,11 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { SlidersHorizontal, X, Plus, Trash2, Sparkles } from "lucide-react";
+import { useActionState, useEffect, useState, useTransition } from "react";
+import { X, Plus, Trash2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Select, Field } from "@/components/ui/field";
-import { CoverCropperModal } from "@/components/admin/cover-cropper-modal";
 import { toDatetimeLocalIST } from "@/lib/format";
 import type { RideFormState } from "../actions";
 
@@ -28,29 +26,23 @@ export function RideForm({
 }: {
   ride?: {
     id: string;
-    title: string;
-    description: string;
-    starts_at: string;
-    meeting_point: string;
+    title?: string;
+    description?: string;
+    starts_at?: string;
+    meeting_point?: string;
     destination?: string | null;
     itinerary?: { title: string; description?: string; activity?: string }[] | null;
     activities?: string[] | null;
-    distance_km: number | null;
-    difficulty: string | null;
-    status: string;
+    distance_km?: number | null;
+    difficulty?: string | null;
+    status?: string;
   };
   action: (prev: RideFormState, formData: FormData) => Promise<RideFormState>;
   onCreated?: (id: string) => void;
 }) {
-  const router = useRouter();
   const [state, formAction] = useActionState(action, {} as RideFormState);
   const [isPending, startTransition] = useTransition();
 
-  const [rawFile, setRawFile] = useState<File | null>(null);
-  const [croppedFile, setCroppedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isCropperOpen, setIsCropperOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [itinerary, setItinerary] = useState<{ title: string; description?: string; activity?: string }[]>(
     ride?.itinerary && Array.isArray(ride.itinerary) ? ride.itinerary : []
   );
@@ -93,73 +85,24 @@ export function RideForm({
   };
 
   useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) {
-      setRawFile(f);
-      setIsCropperOpen(true);
+    if (state?.ok && state?.id && onCreated) {
+      onCreated(state.id);
     }
-  };
+  }, [state?.ok, state?.id, onCreated]);
 
-  const handleCroppedApply = (file: File, url: string) => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setCroppedFile(file);
-    setPreviewUrl(url);
-    setIsCropperOpen(false);
-  };
-
-  const handleClearSelection = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setRawFile(null);
-    setCroppedFile(null);
-    setPreviewUrl(null);
-    setIsCropperOpen(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  useEffect(() => {
-    if (state?.ok) {
-      // New-page flow stays on screen for phase 2; everywhere else navigates only when next is set.
-      if (state?.id && onCreated) onCreated(state.id);
-      else if (state?.next) router.push(state.next);
-    }
-  }, [state?.ok, state?.next, state?.id, onCreated, router]);
-
-  const datetimeLocal = ride ? toDatetimeLocalIST(ride.starts_at) : "";
+  const datetimeLocal = ride?.starts_at ? toDatetimeLocalIST(ride.starts_at) : "";
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
-        if (croppedFile) {
-          fd.set("cover_file", croppedFile);
-        } else {
-          fd.delete("cover_file");
-        }
         fd.set("itinerary", JSON.stringify(itinerary.filter((s) => s.title.trim())));
         fd.set("activities", JSON.stringify(activities));
         startTransition(() => formAction(fd));
       }}
       className="max-w-xl space-y-5"
     >
-      {state.error && (
-        <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
-          {state.error}
-        </div>
-      )}
-
-      {state.ok && !state.next && (
-        <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-semibold text-success">
-          Ride details updated successfully.
-        </div>
-      )}
-
       <fieldset disabled={isPending} className="min-w-0 space-y-5 border-0 m-0 p-0">
         <Field label="Title" htmlFor="title" required>
           <Input
@@ -244,7 +187,7 @@ export function RideForm({
         <Field label="Status" htmlFor="status" required>
           <Select id="status" name="status" defaultValue={ride?.status ?? "draft"}>
             <option value="draft">Draft (hidden)</option>
-            <option value="published">Upcoming (public)</option>
+            <option value="published">Upcoming</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </Select>
@@ -407,89 +350,25 @@ export function RideForm({
           )}
         </div>
 
+        <p className="text-xs text-muted">
+          Cover photo, gallery, and members are managed in sections 02–04 below.
+        </p>
 
-        {!ride && (
-          <div className="space-y-3">
-            <Field
-              label="Cover photo"
-              htmlFor="cover_file"
-              hint="JPEG or WebP, max 10 MB · Interactive 16:10 adjustment tool opens automatically"
-            >
-              {!croppedFile ? (
-                <input
-                  ref={fileInputRef}
-                  id="cover_file"
-                  name="cover_file"
-                  type="file"
-                  accept="image/jpeg,image/webp"
-                  onChange={handleFileChange}
-                  disabled={isPending}
-                  className="block w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-surface-3 file:text-text hover:file:bg-surface-3/80 cursor-pointer disabled:opacity-50"
-                />
-              ) : (
-                <div className="space-y-2">
-                  <div className="relative aspect-16/10 w-full max-w-sm overflow-hidden rounded-xl border-2 border-accent/60 bg-black">
-                    {previewUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={previewUrl} alt="Adjusted cover preview" className="size-full object-cover" />
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleClearSelection}
-                      className="absolute top-2 right-2 rounded-full bg-black/70 p-1 text-white hover:bg-black transition-colors"
-                      aria-label="Clear selection"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setIsCropperOpen(true)}
-                      disabled={isPending}
-                    >
-                      <SlidersHorizontal className="size-3.5" />
-                      Re-adjust
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearSelection}
-                      disabled={isPending}
-                      className="text-muted hover:text-danger hover:border-danger/40"
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </Field>
-
-            <CoverCropperModal
-              isOpen={isCropperOpen}
-              file={rawFile}
-              onApply={handleCroppedApply}
-              onCancel={() => {
-                setIsCropperOpen(false);
-                if (!croppedFile) {
-                  handleClearSelection();
-                }
-              }}
-            />
+        {/* Errors & success alerts displayed directly above submit button */}
+        {state.error && (
+          <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+            {state.error}
           </div>
         )}
 
-        <p className="text-xs text-muted">
-          {ride
-            ? "Cover photo and gallery are managed in sections 02–03 below."
-            : "Gallery photos can be added after the ride is created."}
-        </p>
+        {state.ok && (
+          <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-semibold text-success">
+            {ride?.id ? "Ride details updated successfully." : "Ride created successfully."}
+          </div>
+        )}
 
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Saving..." : ride ? "Update Ride" : "Create Ride"}
+          {isPending ? "Saving..." : ride?.id ? "Update Ride" : "Create Ride"}
         </Button>
       </fieldset>
     </form>

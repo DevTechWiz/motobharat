@@ -1,13 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { RideForm } from "../../ride-form";
-import { updateRide } from "../../../actions";
-import { AdminSection } from "../../admin-section";
-import { CoverUpload } from "./cover-upload";
-import { GalleryManager } from "./gallery-manager";
-import { MembersPanel } from "./members-panel";
+import { RideEditor } from "../../ride-editor";
 import type { GalleryItem, RideMember } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -73,26 +66,10 @@ export default async function EditRidePage({
   }));
 
   return (
-    <div className="space-y-10">
-      <Link
-        href="/admin/rides"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition-colors hover:text-accent"
-      >
-        <ArrowLeft className="size-3.5" aria-hidden />
-        Back to rides
-      </Link>
-      <AdminSection num="01" title="Ride details" hint="Title, schedule, meeting point and status">
-        <RideForm ride={ride} action={updateRide.bind(null, ride.id)} />
-      </AdminSection>
-      <AdminSection num="02" title="Cover photo" hint="The face of this ride across the site">
-        <CoverUpload rideId={ride.id} coverUrl={ride.cover_url} />
-      </AdminSection>
-      <AdminSection num="03" title="Gallery" hint="Memories from the road">
-        <GalleryManager rideId={ride.id} photos={photos} />
-      </AdminSection>
-      <AdminSection num="04" title="Members" hint="Who is on this column">
-        <MembersPanel rideId={ride.id} members={membersWithDetails as RideMember[]} />
-      </AdminSection>
-    </div>
+    <RideEditor
+      initialRide={ride}
+      initialPhotos={photos}
+      initialMembers={membersWithDetails as RideMember[]}
+    />
   );
 }
