@@ -13,17 +13,19 @@ if (r2Base) {
 
 // docs/07_SECURITY.md § Launch hardening checklist — CSP + headers.
 // script-src needs 'unsafe-inline': App Router ships the RSC payload as inline <script> tags.
+// static.cloudflareinsights.com / cloudflareinsights.com: Cloudflare Web Analytics
+// beacon (auto-injected RUM) — analytics-only, allowlisted so it loads and reports.
 // connect-src allows the browser Supabase client; frame-src covers the Google OAuth flow.
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' https: data: blob:",
       "font-src 'self'",
-      "connect-src 'self' https://*.supabase.co https://*.supabase.in",
+      "connect-src 'self' https://*.supabase.co https://*.supabase.in https://cloudflareinsights.com",
       "frame-src https://accounts.google.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
