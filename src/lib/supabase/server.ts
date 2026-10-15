@@ -1,48 +1,28 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 function getSupabaseEnv() {
-  let url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  let key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    try {
-      const globalContext = (
-        globalThis as unknown as Record<symbol, { env?: Record<string, string> }>
-      )[Symbol.for("__cloudflare-context__")];
-      const cfEnv = globalContext?.env;
-      if (cfEnv) {
-        url = url || cfEnv.NEXT_PUBLIC_SUPABASE_URL;
-        key =
-          key ||
-          cfEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-          cfEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      }
-    } catch {
-      // ignore
-    }
-
-    if (!url || !key) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { getCloudflareContext } = require("@opennextjs/cloudflare");
-        const ctx = getCloudflareContext();
-        if (ctx?.env) {
-          url = url || ctx.env.NEXT_PUBLIC_SUPABASE_URL;
-          key =
-            key ||
-            ctx.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-            ctx.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-        }
-      } catch {
-        // not in Cloudflare runtime or context not initialized
-      }
-    }
+  let cfEnv: Record<string, string | undefined> | undefined;
+  try {
+    const ctx = getCloudflareContext();
+    cfEnv = ctx?.env as unknown as Record<string, string | undefined>;
+  } catch {
+    // not in Cloudflare Worker context (e.g. local dev or test environment)
   }
 
-  return { url: url ?? "", key: key ?? "" };
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    cfEnv?.NEXT_PUBLIC_SUPABASE_URL ||
+    "";
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    cfEnv?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    cfEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    "";
+
+  return { url, key };
 }
 
 export async function createClient() {

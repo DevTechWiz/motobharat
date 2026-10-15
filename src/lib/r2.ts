@@ -1,46 +1,21 @@
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 function env() {
-  let accountId = process.env.R2_ACCOUNT_ID;
-  let accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  let secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  let bucket = process.env.R2_BUCKET;
-  let publicBaseUrl = process.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
-
-  if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicBaseUrl) {
-    try {
-      const globalContext = (
-        globalThis as unknown as Record<symbol, { env?: Record<string, string> }>
-      )[Symbol.for("__cloudflare-context__")];
-      const cfEnv = globalContext?.env;
-      if (cfEnv) {
-        accountId = accountId || cfEnv.R2_ACCOUNT_ID;
-        accessKeyId = accessKeyId || cfEnv.R2_ACCESS_KEY_ID;
-        secretAccessKey = secretAccessKey || cfEnv.R2_SECRET_ACCESS_KEY;
-        bucket = bucket || cfEnv.R2_BUCKET;
-        publicBaseUrl = publicBaseUrl || cfEnv.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
-      }
-    } catch {
-      // ignore
-    }
-
-    if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicBaseUrl) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { getCloudflareContext } = require("@opennextjs/cloudflare");
-        const ctx = getCloudflareContext();
-        if (ctx?.env) {
-          accountId = accountId || ctx.env.R2_ACCOUNT_ID;
-          accessKeyId = accessKeyId || ctx.env.R2_ACCESS_KEY_ID;
-          secretAccessKey = secretAccessKey || ctx.env.R2_SECRET_ACCESS_KEY;
-          bucket = bucket || ctx.env.R2_BUCKET;
-          publicBaseUrl = publicBaseUrl || ctx.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
-        }
-      } catch {
-        // ignore
-      }
-    }
+  let cfEnv: Record<string, string | undefined> | undefined;
+  try {
+    const ctx = getCloudflareContext();
+    cfEnv = ctx?.env as unknown as Record<string, string | undefined>;
+  } catch {
+    // not in Cloudflare Worker context (e.g. local dev or test environment)
   }
+
+  const accountId = process.env.R2_ACCOUNT_ID || cfEnv?.R2_ACCOUNT_ID;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID || cfEnv?.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || cfEnv?.R2_SECRET_ACCESS_KEY;
+  const bucket = process.env.R2_BUCKET || cfEnv?.R2_BUCKET;
+  const rawPublicUrl = process.env.R2_PUBLIC_BASE_URL || cfEnv?.R2_PUBLIC_BASE_URL;
+  const publicBaseUrl = rawPublicUrl?.replace(/\/$/, "");
 
   return { accountId, accessKeyId, secretAccessKey, bucket, publicBaseUrl };
 }
@@ -50,9 +25,7 @@ export function r2Configured(): boolean {
   return !!(e.accountId && e.accessKeyId && e.secretAccessKey && e.bucket && e.publicBaseUrl);
 }
 
-// Names-only diagnostic: safe to surface to admins (never values). Lets a
-// production "not configured" error say exactly which var is missing instead
-// of sending anyone back to re-check all five.
+// Names-only diagnostic: logged on the server, not dumped into UI text.
 export function missingR2Vars(): string[] {
   const e = env();
   const missing: string[] = [];
@@ -66,8 +39,10 @@ export function missingR2Vars(): string[] {
 
 export function r2NotConfiguredError(context: string): string {
   const missing = missingR2Vars();
-  const detail = missing.length > 0 ? ` Setup detail — missing: ${missing.join(",")}.` : "";
-  return `${context} right now.${detail} Set them on the Worker under Settings → Variables and Secrets, not just .env.local.`;
+  if (missing.length > 0) {
+    console.error(`[R2] Storage not configured. Missing variables: ${missing.join(", ")}`);
+  }
+  return `${context} right now. Please try again in a moment.`;
 }
 
 let client: S3Client | null = null;
