@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
+      allowedOrigins: ["motobharat.co", "www.motobharat.co"],
     },
   },
   images: { remotePatterns },
