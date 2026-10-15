@@ -6,7 +6,7 @@ import { Trash2, Loader2, Crop } from "lucide-react";
 import { Field } from "@/components/ui/field";
 import { CoverCropperModal } from "@/components/admin/cover-cropper-modal";
 import { uploadRideCover, removeRideCover, fetchRemoteImageDataUrl, type MediaFormState } from "../../../actions";
-import { friendlyUploadError } from "@/lib/client-image";
+import { friendlyUploadError, ACCEPTED_IMAGE_TYPES, IMAGE_UPLOAD_HINT } from "@/lib/client-image";
 
 export function CoverUpload({
   rideId,
@@ -187,7 +187,7 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
                 label="Cover photo"
                 htmlFor="cover"
                 required
-                hint="JPEG or WebP, max 10 MB · Adjust and fit in 16:9 directly before upload"
+                hint={`${IMAGE_UPLOAD_HINT} · Adjust and fit in 16:9 directly before upload`}
               >
                 <div className="relative">
                   <input
@@ -195,7 +195,7 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
                     id="cover"
                     name="cover"
                     type="file"
-                    accept="image/jpeg,image/webp"
+                    accept={ACCEPTED_IMAGE_TYPES}
                     disabled={isPending}
                     onChange={handleFileChange}
                     className="block w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-surface-3 file:text-text hover:file:bg-surface-3/80 cursor-pointer disabled:opacity-50"

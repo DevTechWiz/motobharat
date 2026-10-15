@@ -5,6 +5,7 @@ import {
   parsePngDimensions,
   parseWebpDimensions,
   sniffImageBuffer,
+  validateImageFile,
 } from "./media";
 
 describe("parseJpegDimensions", () => {
@@ -100,3 +101,35 @@ describe("parseWebpDimensions", () => {
     expect(parseImageDimensions(buf)).toEqual({ width: 1600, height: 900 });
   });
 });
+
+describe("validateImageFile", () => {
+  it("accepts valid JPEG, PNG, and WebP files", async () => {
+    const jpegFile = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])], "test.jpg", { type: "image/jpeg" });
+    const pngFile = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "test.png", { type: "image/png" });
+    const webpFile = new File(
+      [new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50])],
+      "test.webp",
+      { type: "image/webp" }
+    );
+
+    expect(await validateImageFile(jpegFile)).toBeNull();
+    expect(await validateImageFile(pngFile)).toBeNull();
+    expect(await validateImageFile(webpFile)).toBeNull();
+  });
+
+  it("rejects empty files", async () => {
+    const emptyFile = new File([], "empty.jpg", { type: "image/jpeg" });
+    expect(await validateImageFile(emptyFile)).toBe("The selected file is empty.");
+  });
+
+  it("rejects files over 10 MB", async () => {
+    const largeFile = new File([new Uint8Array(11 * 1024 * 1024)], "large.jpg", { type: "image/jpeg" });
+    expect(await validateImageFile(largeFile)).toBe("Image is over 10 MB — please upload a smaller file.");
+  });
+
+  it("rejects non-whitelisted image formats such as SVG", async () => {
+    const svgFile = new File([Buffer.from("<svg></svg>")], "image.svg", { type: "image/svg+xml" });
+    expect(await validateImageFile(svgFile)).toBe("Only JPEG, WebP, and PNG images are allowed.");
+  });
+});
+

@@ -9,7 +9,7 @@ import { CoverCropperModal } from "@/components/admin/cover-cropper-modal";
 import { toDatetimeLocalIST } from "@/lib/format";
 import type { RideImport } from "@/lib/ride-import";
 import { uploadRideCover, removeRideCover, fetchRemoteImageDataUrl, type RideFormState, type MediaFormState } from "../actions";
-import { friendlyUploadError } from "@/lib/client-image";
+import { dataUrlToFile, friendlyUploadError, ACCEPTED_IMAGE_TYPES, IMAGE_UPLOAD_HINT } from "@/lib/client-image";
 
 const POPULAR_ACTIVITIES = [
   "Breakfast / Chai",
@@ -124,17 +124,6 @@ export function RideForm({
       setCoverState({});
     }
   };
-
-function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
-  const [header, base64] = dataUrl.split(",");
-  const mime = header.match(/:(.*?);/)?.[1] || "image/jpeg";
-  const binary = atob(base64);
-  const u8arr = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    u8arr[i] = binary.charCodeAt(i);
-  }
-  return new File([u8arr], filename, { type: mime });
-}
 
   const handleReadjustCover = async () => {
     if (rawCoverFile) {
@@ -415,7 +404,7 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
                     label="Choose image file"
                     htmlFor="cover"
                     required
-                    hint="JPEG or WebP, max 10 MB · Adjust and fit in 16:9 directly before upload"
+                    hint={`${IMAGE_UPLOAD_HINT} · Adjust and fit in 16:9 directly before upload`}
                   >
                     <div className="relative">
                       <input
@@ -423,7 +412,7 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
                         id="cover"
                         name="cover"
                         type="file"
-                        accept="image/jpeg,image/webp"
+                        accept={ACCEPTED_IMAGE_TYPES}
                         disabled={isPending || isUploadingCover}
                         onChange={handleCoverFileChange}
                         className="block w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-surface-3 file:text-text hover:file:bg-surface-3/80 cursor-pointer disabled:opacity-50"

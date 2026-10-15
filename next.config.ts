@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
+      // Apex + www both serve the site — unlisted origins get 403 on action POSTs.
       allowedOrigins: ["motobharat.co", "www.motobharat.co"],
     },
   },

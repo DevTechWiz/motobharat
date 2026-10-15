@@ -31,8 +31,8 @@ export function missingR2Vars(): string[] {
 
 export function r2NotConfiguredError(context: string): string {
   const missing = missingR2Vars();
-  const detail = missing.length > 0 ? ` — missing: ${missing.join(", ")}` : "";
-  return `${context}${detail} (set them on the Worker under Settings → Variables and Secrets, not just .env.local).`;
+  const detail = missing.length > 0 ? ` Setup detail — missing: ${missing.join(",")}.` : "";
+  return `${context} right now.${detail} Set them on the Worker under Settings → Variables and Secrets, not just .env.local.`;
 }
 
 let client: S3Client | null = null;

@@ -11,7 +11,7 @@ import {
   addGalleryPhotoByUrl,
   uploadGalleryPhotos,
 } from "../../../actions";
-import { compressImageFile, friendlyUploadError } from "@/lib/client-image";
+import { compressImageFile, friendlyUploadError, ACCEPTED_IMAGE_TYPES } from "@/lib/client-image";
 
 function DeletePhotoButton({
   id,
@@ -208,7 +208,7 @@ export function GalleryManager({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/webp"
+            accept={ACCEPTED_IMAGE_TYPES}
             multiple
             className="hidden"
             onChange={handleFileChange}

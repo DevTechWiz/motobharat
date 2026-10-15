@@ -9,7 +9,7 @@ import { Input, Field } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/lib/auth-context";
 import { normalizeImageUrl } from "@/lib/image-link";
-import { compressImageFile, friendlyUploadError } from "@/lib/client-image";
+import { compressImageFile, friendlyUploadError, ACCEPTED_IMAGE_TYPES, IMAGE_UPLOAD_HINT } from "@/lib/client-image";
 import { updateAvatar } from "./actions";
 
 interface ProfileAvatarProps {
@@ -376,7 +376,7 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept={ACCEPTED_IMAGE_TYPES}
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -392,7 +392,7 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
                     {selectedFile ? "Choose a different photo" : "Click to select a photo"}
                   </span>
                   <span className="mt-1 font-mono text-[10px] text-muted">
-                    JPEG, PNG, or WebP (max 10 MB)
+                    {IMAGE_UPLOAD_HINT}
                   </span>
                 </button>
 

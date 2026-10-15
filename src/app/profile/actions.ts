@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ageFromDob } from "@/lib/format";
 import { RATE_LIMITS, rateLimit } from "@/lib/rateLimit";
 import { validateIndianPhone } from "@/lib/phone";
-import { processImage, sniffImageBuffer, validateImageFile } from "@/lib/media";
+import { processImage, validateImageFile } from "@/lib/media";
 import {
   deleteR2Object,
   putR2Object,
@@ -243,7 +243,7 @@ export async function saveRiderDetails(
   const dlUpload = locked ? null : picked;
   if (!locked && !existing.dl_image_url && !dlUpload) {
     if (!r2Configured()) {
-      return { error: r2NotConfiguredError("Licence photo uploads need R2 keys") };
+      return { error: r2NotConfiguredError("Licence photo can't be saved — photo storage isn't connected") };
     }
     return { error: "Driving licence photo is required — upload a clear JPEG or WebP (max 10 MB)." };
   }
@@ -254,7 +254,7 @@ export async function saveRiderDetails(
 
   if (dlUpload) {
     if (!r2Configured()) {
-      return { error: r2NotConfiguredError("Licence photo uploads need R2 keys") };
+      return { error: r2NotConfiguredError("Licence photo can't be saved — photo storage isn't connected") };
     }
     const invalid = await validateImageFile(dlUpload);
     if (invalid) return { error: `Licence photo: ${invalid}` };
@@ -383,13 +383,9 @@ export async function updateAvatar(
   let newAvatarKey: string | null = null;
 
   if (file && file.size > 0) {
-    if (file.size > 10 * 1024 * 1024) {
-      return { error: "Image must be under 10 MB." };
-    }
-    const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-    const kind = sniffImageBuffer(head);
-    if (!kind) {
-      return { error: "Only JPEG, WebP, and PNG images are allowed." };
+    const invalid = await validateImageFile(file);
+    if (invalid) {
+      return { error: invalid };
     }
 
     const processed = await processImage(file, 400, 80);

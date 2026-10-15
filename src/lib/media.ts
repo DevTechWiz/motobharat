@@ -125,14 +125,16 @@ export function parseImageDimensions(buf: Uint8Array): { width: number; height: 
   return parseJpegDimensions(buf) ?? parsePngDimensions(buf) ?? parseWebpDimensions(buf);
 }
 
-// Returns a human-readable error, or null when the file passes (size cap + jpeg/webp magic bytes; SVG banned).
-// File uploads stay JPEG/WebP only — PNG rows exist solely for URL-added photos (06_MEDIA.md).
+// Picker accept-list lives in lib/client-image.ts (sharp must never enter a
+// browser bundle) — do not re-add client-facing constants here.
+
+// Returns a human-readable error, or null when the file passes (size cap + jpeg/webp/png magic bytes; SVG banned).
 export async function validateImageFile(file: File): Promise<string | null> {
   if (file.size === 0) return "The selected file is empty.";
   if (file.size > MAX_BYTES) return "Image is over 10 MB — please upload a smaller file.";
   const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
   const kind = sniffImageBuffer(head);
-  if (!kind || kind === "image/png") return "Only JPEG and WebP images are allowed.";
+  if (!kind) return "Only JPEG, WebP, and PNG images are allowed.";
   return null;
 }
 

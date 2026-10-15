@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IdCard, X } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { compressImageFile } from "@/lib/client-image";
+import { compressImageFile, ACCEPTED_IMAGE_TYPES, IMAGE_UPLOAD_HINT } from "@/lib/client-image";
 
 // Card-style file picker: dotted ID-card-ratio dropzone instead of the native
 // "Choose File" button. The real input stays functional (opacity-0 overlay) so
@@ -12,10 +12,10 @@ export function PhotoPicker({
   id,
   name,
   required = false,
-  accept = "image/jpeg,image/webp",
+  accept = ACCEPTED_IMAGE_TYPES,
   disabled = false,
   caption = "Tap to upload your DL card",
-  hint = "JPEG or WebP · max 10 MB",
+  hint = IMAGE_UPLOAD_HINT,
   existingUrl = null,
 }: {
   id: string;

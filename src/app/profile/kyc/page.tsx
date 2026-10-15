@@ -337,7 +337,7 @@ function KycForm() {
           <Field
             label="Driving Licence Photo"
             htmlFor="dl_document"
-            hint="Clear photo of your DL card (JPEG/WebP, max 10 MB). Checked once at approval, then deleted — only the number is kept."
+            hint="Clear photo of your DL card (JPEG, PNG, or WebP, max 10 MB). Checked once at approval, then deleted — only the number is kept."
             required
           >
             <PhotoPicker id="dl_document" name="dl_document" required />
