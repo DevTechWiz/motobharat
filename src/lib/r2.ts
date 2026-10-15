@@ -15,6 +15,26 @@ export function r2Configured(): boolean {
   return !!(e.accountId && e.accessKeyId && e.secretAccessKey && e.bucket && e.publicBaseUrl);
 }
 
+// Names-only diagnostic: safe to surface to admins (never values). Lets a
+// production "not configured" error say exactly which var is missing instead
+// of sending anyone back to re-check all five.
+export function missingR2Vars(): string[] {
+  const e = env();
+  const missing: string[] = [];
+  if (!e.accountId) missing.push("R2_ACCOUNT_ID");
+  if (!e.accessKeyId) missing.push("R2_ACCESS_KEY_ID");
+  if (!e.secretAccessKey) missing.push("R2_SECRET_ACCESS_KEY");
+  if (!e.bucket) missing.push("R2_BUCKET");
+  if (!e.publicBaseUrl) missing.push("R2_PUBLIC_BASE_URL");
+  return missing;
+}
+
+export function r2NotConfiguredError(context: string): string {
+  const missing = missingR2Vars();
+  const detail = missing.length > 0 ? ` — missing: ${missing.join(", ")}` : "";
+  return `${context}${detail} (set them on the Worker under Settings → Variables and Secrets, not just .env.local).`;
+}
+
 let client: S3Client | null = null;
 
 function getClient(): S3Client {

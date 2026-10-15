@@ -9,6 +9,7 @@ import { CoverCropperModal } from "@/components/admin/cover-cropper-modal";
 import { toDatetimeLocalIST } from "@/lib/format";
 import type { RideImport } from "@/lib/ride-import";
 import { uploadRideCover, removeRideCover, fetchRemoteImageDataUrl, type RideFormState, type MediaFormState } from "../actions";
+import { friendlyUploadError } from "@/lib/client-image";
 
 const POPULAR_ACTIVITIES = [
   "Breakfast / Chai",
@@ -109,10 +110,14 @@ export function RideForm({
       const fd = new FormData();
       fd.append("cover", file);
       startCoverTransition(async () => {
-        const res = await uploadRideCover(ride.id, {}, fd);
-        setCoverState(res);
-        if (res.ok) {
-          setCurrentCoverUrl(preview);
+        try {
+          const res = await uploadRideCover(ride.id, {}, fd);
+          setCoverState(res);
+          if (res.ok) {
+            setCurrentCoverUrl(preview);
+          }
+        } catch (err: unknown) {
+          setCoverState({ error: friendlyUploadError(err, "Failed to upload cover.") });
         }
       });
     } else {
@@ -172,12 +177,16 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
     if (ride?.id) {
       if (!window.confirm("Remove this ride's cover photo?")) return;
       startRemoveCoverTransition(async () => {
-        const res = await removeRideCover(ride.id);
-        setCoverState(res);
-        if (res.ok) {
-          setCurrentCoverUrl(null);
-          setCoverFile(null);
-          setRawCoverFile(null);
+        try {
+          const res = await removeRideCover(ride.id);
+          setCoverState(res);
+          if (res.ok) {
+            setCurrentCoverUrl(null);
+            setCoverFile(null);
+            setRawCoverFile(null);
+          }
+        } catch (err: unknown) {
+          setCoverState({ error: friendlyUploadError(err, "Failed to remove cover.") });
         }
       });
     } else {
@@ -406,7 +415,7 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
                     label="Choose image file"
                     htmlFor="cover"
                     required
-                    hint="JPEG, WebP or PNG, max 10 MB · Adjust and fit in 16:9 directly before upload"
+                    hint="JPEG or WebP, max 10 MB · Adjust and fit in 16:9 directly before upload"
                   >
                     <div className="relative">
                       <input
@@ -414,7 +423,7 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
                         id="cover"
                         name="cover"
                         type="file"
-                        accept="image/jpeg,image/webp,image/png"
+                        accept="image/jpeg,image/webp"
                         disabled={isPending || isUploadingCover}
                         onChange={handleCoverFileChange}
                         className="block w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-surface-3 file:text-text hover:file:bg-surface-3/80 cursor-pointer disabled:opacity-50"

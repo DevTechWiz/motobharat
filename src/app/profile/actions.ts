@@ -12,6 +12,7 @@ import {
   putR2Object,
   r2Configured,
   r2KeyFromUrl,
+  r2NotConfiguredError,
   r2PublicUrl,
 } from "@/lib/r2";
 import { validateExternalImageUrl } from "@/lib/url-image";
@@ -242,30 +243,25 @@ export async function saveRiderDetails(
   const dlUpload = locked ? null : picked;
   if (!locked && !existing.dl_image_url && !dlUpload) {
     if (!r2Configured()) {
-      return { error: "Licence photo uploads need R2 keys — ask an admin to finish storage setup first." };
+      return { error: r2NotConfiguredError("Licence photo uploads need R2 keys") };
     }
     return { error: "Driving licence photo is required — upload a clear JPEG or WebP (max 10 MB)." };
   }
 
   let nextDlUrl: string | null = existing.dl_image_url ?? null;
+  let newDlKey: string | null = null;
+  const oldDlKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
 
   if (dlUpload) {
     if (!r2Configured()) {
-      return { error: "Licence photo uploads need R2 keys — ask an admin to finish storage setup first." };
+      return { error: r2NotConfiguredError("Licence photo uploads need R2 keys") };
     }
     const invalid = await validateImageFile(dlUpload);
     if (invalid) return { error: `Licence photo: ${invalid}` };
     const image = await processImage(dlUpload, 1600, 80);
-    const key = `rider-docs/${user.id}/dl_${crypto.randomUUID()}.webp`;
-    await putR2Object(key, image.data, "image/webp");
-    const oldKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
-    if (oldKey) {
-      try {
-        await deleteR2Object(oldKey);
-      } catch (e) {
-        console.warn(`[saveRiderDetails] failed to delete old DL ${oldKey}:`, e);
-      }
-    }
+    const key = `rider-docs/${user.id}/dl_${crypto.randomUUID()}.${image.format}`;
+    await putR2Object(key, image.data, image.contentType);
+    newDlKey = key;
     nextDlUrl = r2PublicUrl(key);
   }
 
@@ -314,7 +310,21 @@ export async function saveRiderDetails(
     );
   if (error) {
     console.error("[saveRiderDetails] Upsert ERROR:", error);
+    if (newDlKey) {
+      try {
+        await deleteR2Object(newDlKey);
+      } catch (e) {
+        console.warn(`[saveRiderDetails] failed to clean up orphan DL ${newDlKey}:`, e);
+      }
+    }
     return { error: error.message };
+  }
+  if (newDlKey && oldDlKey) {
+    try {
+      await deleteR2Object(oldDlKey);
+    } catch (e) {
+      console.warn(`[saveRiderDetails] failed to delete old DL ${oldDlKey}:`, e);
+    }
   }
 
   console.log("[saveRiderDetails] SUCCESS! Revalidating and reporting ok...");
@@ -345,6 +355,13 @@ export async function updateAvatar(
       .eq("id", user.id)
       .single();
 
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_url: null })
+      .eq("id", user.id);
+
+    if (error) return { error: error.message };
+
     const oldKey = current?.avatar_url ? r2KeyFromUrl(current.avatar_url) : null;
     if (oldKey) {
       try {
@@ -353,13 +370,6 @@ export async function updateAvatar(
         console.warn("[updateAvatar] failed to delete old avatar", e);
       }
     }
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({ avatar_url: null })
-      .eq("id", user.id);
-
-    if (error) return { error: error.message };
 
     revalidatePath("/profile");
     revalidatePath("/", "layout");
@@ -370,6 +380,7 @@ export async function updateAvatar(
   const url = String(formData.get("avatar_url") ?? "").trim();
 
   let finalUrl: string | null = null;
+  let newAvatarKey: string | null = null;
 
   if (file && file.size > 0) {
     if (file.size > 10 * 1024 * 1024) {
@@ -384,11 +395,12 @@ export async function updateAvatar(
     const processed = await processImage(file, 400, 80);
 
     if (r2Configured()) {
-      const key = `avatars/${user.id}/${crypto.randomUUID()}.webp`;
-      await putR2Object(key, processed.data, "image/webp");
+      const key = `avatars/${user.id}/${crypto.randomUUID()}.${processed.format}`;
+      await putR2Object(key, processed.data, processed.contentType);
+      newAvatarKey = key;
       finalUrl = r2PublicUrl(key);
     } else {
-      finalUrl = `data:image/webp;base64,${processed.data.toString("base64")}`;
+      finalUrl = `data:${processed.contentType};base64,${processed.data.toString("base64")}`;
     }
   } else if (url) {
     const result = await validateExternalImageUrl(url);
@@ -406,6 +418,22 @@ export async function updateAvatar(
     .eq("id", user.id)
     .single();
 
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: finalUrl })
+    .eq("id", user.id);
+
+  if (error) {
+    if (newAvatarKey) {
+      try {
+        await deleteR2Object(newAvatarKey);
+      } catch (e) {
+        console.warn("[updateAvatar] failed to clean up orphan avatar", e);
+      }
+    }
+    return { error: error.message };
+  }
+
   const oldKey = current?.avatar_url ? r2KeyFromUrl(current.avatar_url) : null;
   if (oldKey) {
     try {
@@ -414,13 +442,6 @@ export async function updateAvatar(
       console.warn("[updateAvatar] failed to delete old avatar", e);
     }
   }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ avatar_url: finalUrl })
-    .eq("id", user.id);
-
-  if (error) return { error: error.message };
 
   revalidatePath("/profile");
   revalidatePath("/", "layout");

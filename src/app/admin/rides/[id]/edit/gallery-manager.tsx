@@ -11,6 +11,7 @@ import {
   addGalleryPhotoByUrl,
   uploadGalleryPhotos,
 } from "../../../actions";
+import { compressImageFile, friendlyUploadError } from "@/lib/client-image";
 
 function DeletePhotoButton({
   id,
@@ -102,22 +103,33 @@ export function GalleryManager({
         const errors: string[] = [];
 
         for (let i = 0; i < selectedFiles.length; i++) {
-          const file = selectedFiles[i];
+          const original = selectedFiles[i];
           setUploadProgress(
             selectedFiles.length > 1
               ? `Uploading ${i + 1} of ${selectedFiles.length}...`
               : "Uploading..."
           );
 
+          let file = original;
+          try {
+            file = await compressImageFile(original);
+          } catch {
+            // keep the original — server validation reports the specific cause
+          }
+
           const fd = new FormData();
           fd.append("photos", file);
           fd.set("alt", "Ride photo");
 
-          const res = await uploadGalleryPhotos(rideId, {}, fd);
-          if (res.error) {
-            errors.push(`${file.name}: ${res.error}`);
-          } else {
-            uploaded++;
+          try {
+            const res = await uploadGalleryPhotos(rideId, {}, fd);
+            if (res.error) {
+              errors.push(`${original.name}: ${res.error}`);
+            } else {
+              uploaded++;
+            }
+          } catch (err: unknown) {
+            errors.push(`${original.name}: ${friendlyUploadError(err, "Upload failed.")}`);
           }
         }
 
@@ -196,7 +208,7 @@ export function GalleryManager({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/webp,image/png"
+            accept="image/jpeg,image/webp"
             multiple
             className="hidden"
             onChange={handleFileChange}

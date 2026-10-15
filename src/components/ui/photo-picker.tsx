@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IdCard, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { compressImageFile } from "@/lib/client-image";
 
 // Card-style file picker: dotted ID-card-ratio dropzone instead of the native
 // "Choose File" button. The real input stays functional (opacity-0 overlay) so
@@ -37,10 +38,25 @@ export function PhotoPicker({
     };
   }, [preview]);
 
-  function take(f: File | null) {
+  // Compress at select time so the form posts small, EXIF-free JPEGs and the
+  // user never hits the 10 MB server cap. Failures keep the original file —
+  // server validation then reports the specific cause.
+  async function take(f: File | null) {
     if (preview) URL.revokeObjectURL(preview);
     setFile(f);
     setPreview(f ? URL.createObjectURL(f) : null);
+    if (!f || !inputRef.current) return;
+    try {
+      const compressed = await compressImageFile(f);
+      if (compressed !== f && inputRef.current?.files?.[0] === f) {
+        const dt = new DataTransfer();
+        dt.items.add(compressed);
+        inputRef.current.files = dt.files;
+        setFile(compressed);
+      }
+    } catch {
+      // keep the original
+    }
   }
 
   function clear() {

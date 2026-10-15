@@ -9,6 +9,7 @@ import { Input, Field } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/lib/auth-context";
 import { normalizeImageUrl } from "@/lib/image-link";
+import { compressImageFile, friendlyUploadError } from "@/lib/client-image";
 import { updateAvatar } from "./actions";
 
 interface ProfileAvatarProps {
@@ -81,27 +82,34 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
     setIsOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError("Image must be smaller than 10 MB.");
-      return;
-    }
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       setError("Only JPEG, PNG, and WebP images are allowed.");
       return;
     }
 
+    let uploadable = file;
+    try {
+      uploadable = await compressImageFile(file);
+    } catch {
+      // keep the original — server validation reports the specific cause
+    }
+
+    if (uploadable.size > 10 * 1024 * 1024) {
+      setError("Image must be smaller than 10 MB.");
+      return;
+    }
+
     setError(null);
     setIsRemoving(false);
-    setSelectedFile(file);
+    setSelectedFile(uploadable);
     if (previewUrl && previewUrl.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrl);
     }
-    const blobUrl = URL.createObjectURL(file);
+    const blobUrl = URL.createObjectURL(uploadable);
     setPreviewUrl(blobUrl);
   };
 
@@ -148,17 +156,21 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
     }
 
     startTransition(async () => {
-      const res = await updateAvatar({}, formData);
-      if (res.error) {
-        setError(res.error);
-        return;
-      }
+      try {
+        const res = await updateAvatar({}, formData);
+        if (res.error) {
+          setError(res.error);
+          return;
+        }
 
-      setCustomAvatarUrl(res.avatar_url ?? null);
-      toast(isRemoving ? "Profile picture removed." : "Profile picture updated.", "success");
-      handleClose();
-      await refreshProfile();
-      router.refresh();
+        setCustomAvatarUrl(res.avatar_url ?? null);
+        toast(isRemoving ? "Profile picture removed." : "Profile picture updated.", "success");
+        handleClose();
+        await refreshProfile();
+        router.refresh();
+      } catch (err: unknown) {
+        setError(friendlyUploadError(err, "Could not save the profile picture."));
+      }
     });
   };
 

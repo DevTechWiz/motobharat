@@ -1,6 +1,6 @@
 import { lookup } from "node:dns/promises";
 import { extractDriveFileId, normalizeImageUrl } from "@/lib/image-link";
-import { sniffImageBuffer, type ImageMime } from "@/lib/media";
+import { parseImageDimensions, sniffImageBuffer, type ImageMime } from "@/lib/media";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const TIMEOUT_MS = 10_000;
@@ -170,12 +170,15 @@ async function validateInner(raw: string, deadline: AbortSignal): Promise<UrlIma
     return { ok: false, error: "That link doesn't point to a JPEG, WebP or PNG image." };
   }
 
-  let meta: { width?: number; height?: number };
+  let meta: { width?: number; height?: number } | null = null;
   try {
     // Lazy: sharp is Node-native and must never be a static import on Workers.
     const { default: sharp } = await import("sharp");
     meta = await sharp(buffer).metadata();
   } catch {
+    meta = parseImageDimensions(new Uint8Array(buffer));
+  }
+  if (!meta) {
     return { ok: false, error: "The image could not be read." };
   }
   const width = meta.width ?? 0;

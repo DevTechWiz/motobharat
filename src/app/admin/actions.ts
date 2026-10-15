@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ageFromDob, slugify } from "@/lib/format";
 import { processImage, validateImageFile } from "@/lib/media";
 import { validateExternalImageUrl } from "@/lib/url-image";
-import { deleteR2Object, putR2Object, r2Configured, r2KeyFromUrl, r2PublicUrl } from "@/lib/r2";
+import { deleteR2Object, putR2Object, r2Configured, r2KeyFromUrl, r2NotConfiguredError, r2PublicUrl } from "@/lib/r2";
 import { RATE_LIMITS, rateLimit } from "@/lib/rateLimit";
 
 async function requireAdmin() {
@@ -145,16 +145,18 @@ export async function createRide(
   const coverPick = coverFile && coverFile.size > 0 ? coverFile : null;
   let coverUrlFinal: string | null = null;
   let newId: string | null = null;
+  let uploadedCoverKey: string | null = null;
   if (coverPick) {
     if (!r2Configured()) {
-      return { error: "Cover photo uploads need R2 keys — add the R2_* env vars (.env.example)." };
+      return { error: r2NotConfiguredError("Cover photo uploads need R2 keys") };
     }
     const invalid = await validateImageFile(coverPick);
     if (invalid) return { error: `Cover photo: ${invalid}` };
     newId = crypto.randomUUID();
     const image = await processImage(coverPick, 2000, 80);
-    const key = `events/${newId}/cover_${crypto.randomUUID()}.webp`;
-    await putR2Object(key, image.data, "image/webp");
+    const key = `events/${newId}/cover_${crypto.randomUUID()}.${image.format}`;
+    await putR2Object(key, image.data, image.contentType);
+    uploadedCoverKey = key;
     coverUrlFinal = r2PublicUrl(key);
   } else if (status !== "draft") {
     return { error: "Cover photo is required — upload one to publish." };
@@ -193,6 +195,13 @@ export async function createRide(
   }
 
   if (error) {
+    if (uploadedCoverKey) {
+      try {
+        await deleteR2Object(uploadedCoverKey);
+      } catch (e) {
+        console.warn(`[admin] failed to clean up orphan cover ${uploadedCoverKey}:`, e);
+      }
+    }
     if (uniqueConstraint(error)) return { error: "A ride with that title already exists." };
     return { error: error.message };
   }
@@ -232,15 +241,17 @@ export async function updateRide(
   const coverPick = coverFile && coverFile.size > 0 ? coverFile : null;
 
   let newCoverUrl: string | null = null;
+  let newCoverKey: string | null = null;
   if (coverPick) {
     if (!r2Configured()) {
-      return { error: "Cover photo uploads need R2 keys — add the R2_* env vars (.env.example)." };
+      return { error: r2NotConfiguredError("Cover photo uploads need R2 keys") };
     }
     const invalid = await validateImageFile(coverPick);
     if (invalid) return { error: `Cover photo: ${invalid}` };
     const image = await processImage(coverPick, 2000, 80);
-    const key = `events/${id}/cover_${crypto.randomUUID()}.webp`;
-    await putR2Object(key, image.data, "image/webp");
+    const key = `events/${id}/cover_${crypto.randomUUID()}.${image.format}`;
+    await putR2Object(key, image.data, image.contentType);
+    newCoverKey = key;
     newCoverUrl = r2PublicUrl(key);
   }
 
@@ -306,7 +317,16 @@ export async function updateRide(
     error = retry.error;
   }
 
-  if (error) return { error: error.message };
+  if (error) {
+    if (newCoverKey) {
+      try {
+        await deleteR2Object(newCoverKey);
+      } catch (e) {
+        console.warn(`[admin] failed to clean up orphan cover ${newCoverKey}:`, e);
+      }
+    }
+    return { error: error.message };
+  }
 
   if (newCoverUrl && current?.cover_url) {
     const oldKey = r2KeyFromUrl(current.cover_url);
@@ -362,9 +382,20 @@ export async function deleteRide(id: string) {
   const admin = await requireAdmin();
   if ("error" in admin) return { ok: false, error: admin.error };
   const { supabase } = admin;
-  const { data: ride } = await supabase.from("events").select("slug").eq("id", id).maybeSingle();
+  const { data: ride } = await supabase.from("events").select("slug, cover_url").eq("id", id).maybeSingle();
+  const { data: photos } = await supabase.from("gallery").select("url, thumb_url").eq("event_id", id);
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (!error) {
+    const keys = [ride?.cover_url, ...(photos ?? []).flatMap((p) => [p.url, p.thumb_url])]
+      .map((u) => (u ? r2KeyFromUrl(u) : null))
+      .filter((k): k is string => k !== null);
+    if (keys.length > 0) {
+      try {
+        await Promise.all(keys.map((k) => deleteR2Object(k)));
+      } catch (e) {
+        console.warn(`[admin] failed to delete R2 objects for ride ${id}:`, e);
+      }
+    }
     revalidatePath("/");
     revalidatePath("/rides");
     revalidatePath("/admin/rides");
@@ -383,41 +414,48 @@ export async function uploadRideCover(
   const admin = await requireAdmin();
   if ("error" in admin) return admin;
   const { supabase } = admin;
-  if (!r2Configured()) return { error: "R2 not configured — add the R2_* env vars (.env.example)." };
+
+  try {
+  if (!r2Configured()) return { error: r2NotConfiguredError("R2 not configured") };
 
   const file = formData.get("cover") as File | null;
-  if (!file) return { error: "Choose an image first." };
-  const invalid = await validateImageFile(file);
-  if (invalid) return { error: invalid };
+    if (!file) return { error: "Choose an image first." };
+    const invalid = await validateImageFile(file);
+    if (invalid) return { error: invalid };
 
-  const { data: ride } = await supabase
-    .from("events")
-    .select("id, slug, cover_url")
-    .eq("id", rideId)
-    .maybeSingle();
-  if (!ride) return { error: "Ride not found." };
+    const { data: ride } = await supabase
+      .from("events")
+      .select("id, slug, cover_url")
+      .eq("id", rideId)
+      .maybeSingle();
+    if (!ride) return { error: "Ride not found." };
 
-  const image = await processImage(file, 1600, 80);
-  const key = `events/${rideId}/cover_${crypto.randomUUID()}.webp`;
-  await putR2Object(key, image.data, "image/webp");
+    const image = await processImage(file, 1600, 80);
+    const key = `events/${rideId}/cover_${crypto.randomUUID()}.${image.format}`;
+    await putR2Object(key, image.data, image.contentType);
 
-  const { error } = await supabase
-    .from("events")
-    .update({ cover_url: r2PublicUrl(key) })
-    .eq("id", rideId);
-  if (error) return { error: error.message };
+    const { error } = await supabase
+      .from("events")
+      .update({ cover_url: r2PublicUrl(key) })
+      .eq("id", rideId);
+    if (error) return { error: error.message };
 
-  const oldKey = ride.cover_url ? r2KeyFromUrl(ride.cover_url) : null;
-  if (oldKey) {
-    try {
-      await deleteR2Object(oldKey);
-    } catch (e) {
-      console.warn(`[admin] failed to delete old cover ${oldKey}:`, e);
+    const oldKey = ride.cover_url ? r2KeyFromUrl(ride.cover_url) : null;
+    if (oldKey) {
+      try {
+        await deleteR2Object(oldKey);
+      } catch (e) {
+        console.warn(`[admin] failed to delete old cover ${oldKey}:`, e);
+      }
     }
-  }
 
-  revalidateRidePaths(rideId, ride.slug);
-  return { ok: true };
+    revalidateRidePaths(rideId, ride.slug);
+    return { ok: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to upload cover photo.";
+    console.error("[admin] uploadRideCover failed:", err);
+    return { error: message };
+  }
 }
 
 export async function removeRideCover(rideId: string): Promise<MediaFormState> {
@@ -425,30 +463,36 @@ export async function removeRideCover(rideId: string): Promise<MediaFormState> {
   if ("error" in admin) return admin;
   const { supabase } = admin;
 
-  const { data: ride } = await supabase
-    .from("events")
-    .select("id, slug, cover_url")
-    .eq("id", rideId)
-    .maybeSingle();
-  if (!ride) return { error: "Ride not found." };
+  try {
+    const { data: ride } = await supabase
+      .from("events")
+      .select("id, slug, cover_url")
+      .eq("id", rideId)
+      .maybeSingle();
+    if (!ride) return { error: "Ride not found." };
 
-  const { error } = await supabase
-    .from("events")
-    .update({ cover_url: null })
-    .eq("id", rideId);
-  if (error) return { error: error.message };
+    const { error } = await supabase
+      .from("events")
+      .update({ cover_url: null })
+      .eq("id", rideId);
+    if (error) return { error: error.message };
 
-  const oldKey = ride.cover_url ? r2KeyFromUrl(ride.cover_url) : null;
-  if (oldKey) {
-    try {
-      await deleteR2Object(oldKey);
-    } catch (e) {
-      console.warn(`[admin] failed to delete old cover ${oldKey}:`, e);
+    const oldKey = ride.cover_url ? r2KeyFromUrl(ride.cover_url) : null;
+    if (oldKey) {
+      try {
+        await deleteR2Object(oldKey);
+      } catch (e) {
+        console.warn(`[admin] failed to delete old cover ${oldKey}:`, e);
+      }
     }
-  }
 
-  revalidateRidePaths(rideId, ride.slug);
-  return { ok: true };
+    revalidateRidePaths(rideId, ride.slug);
+    return { ok: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to remove cover photo.";
+    console.error("[admin] removeRideCover failed:", err);
+    return { error: message };
+  }
 }
 
 
@@ -460,55 +504,62 @@ export async function uploadGalleryPhotos(
   const admin = await requireAdmin();
   if ("error" in admin) return admin;
   const { supabase } = admin;
-  if (!r2Configured()) return { error: "R2 not configured — add the R2_* env vars (.env.example)." };
+
+  try {
+  if (!r2Configured()) return { error: r2NotConfiguredError("R2 not configured") };
 
   const alt = String(formData.get("alt") ?? "").trim() || "Ride photo";
-  if (alt.length > 200) return { error: "Alt text must be 200 characters or fewer." };
+    if (alt.length > 200) return { error: "Alt text must be 200 characters or fewer." };
 
-  const files = (formData.getAll("photos") as File[]).filter((f) => f && f.size > 0);
-  if (files.length === 0) return { error: "Choose one or more images first." };
+    const files = (formData.getAll("photos") as File[]).filter((f) => f && f.size > 0);
+    if (files.length === 0) return { error: "Choose one or more images first." };
 
-  for (const file of files) {
-    const invalid = await validateImageFile(file);
-    if (invalid) return { error: invalid };
+    for (const file of files) {
+      const invalid = await validateImageFile(file);
+      if (invalid) return { error: invalid };
+    }
+
+    const { data: ride } = await supabase
+      .from("events")
+      .select("id, slug")
+      .eq("id", rideId)
+      .maybeSingle();
+    if (!ride) return { error: "Ride not found." };
+
+    const rows: { event_id: string; url: string; thumb_url: string; mime: string; width: number; height: number; alt: string }[] = [];
+    for (const file of files) {
+      const uuid = crypto.randomUUID();
+      const [full, thumb] = await Promise.all([
+        processImage(file, 2000, 80),
+        processImage(file, 400, 75),
+      ]);
+      const fullKey = `events/${rideId}/${uuid}.${full.format}`;
+      const thumbKey = `events/${rideId}/${uuid}_thumb.${thumb.format}`;
+      await Promise.all([
+        putR2Object(fullKey, full.data, full.contentType),
+        putR2Object(thumbKey, thumb.data, thumb.contentType),
+      ]);
+      rows.push({
+        event_id: rideId,
+        url: r2PublicUrl(fullKey),
+        thumb_url: r2PublicUrl(thumbKey),
+        mime: full.contentType,
+        width: full.width,
+        height: full.height,
+        alt,
+      });
+    }
+
+    const { error } = await supabase.from("gallery").insert(rows);
+    if (error) return { error: error.message };
+
+    revalidateRidePaths(rideId, ride.slug);
+    return { ok: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to upload gallery photos.";
+    console.error("[admin] uploadGalleryPhotos failed:", err);
+    return { error: message };
   }
-
-  const { data: ride } = await supabase
-    .from("events")
-    .select("id, slug")
-    .eq("id", rideId)
-    .maybeSingle();
-  if (!ride) return { error: "Ride not found." };
-
-  const rows: { event_id: string; url: string; thumb_url: string; mime: string; width: number; height: number; alt: string }[] = [];
-  for (const file of files) {
-    const uuid = crypto.randomUUID();
-    const fullKey = `events/${rideId}/${uuid}.webp`;
-    const thumbKey = `events/${rideId}/${uuid}_thumb.webp`;
-    const [full, thumb] = await Promise.all([
-      processImage(file, 2000, 80),
-      processImage(file, 400, 75),
-    ]);
-    await Promise.all([
-      putR2Object(fullKey, full.data, "image/webp"),
-      putR2Object(thumbKey, thumb.data, "image/webp"),
-    ]);
-    rows.push({
-      event_id: rideId,
-      url: r2PublicUrl(fullKey),
-      thumb_url: r2PublicUrl(thumbKey),
-      mime: "image/webp",
-      width: full.width,
-      height: full.height,
-      alt,
-    });
-  }
-
-  const { error } = await supabase.from("gallery").insert(rows);
-  if (error) return { error: error.message };
-
-  revalidateRidePaths(rideId, ride.slug);
-  return { ok: true };
 }
 
 // URL-based alternative to R2 uploads (06_MEDIA.md § URL-based photos) — no R2 config needed.
@@ -563,20 +614,20 @@ export async function deleteMedia(mediaId: string) {
     .maybeSingle();
   if (!media) return { ok: false, error: "Photo not found." };
 
-  // Delete R2 objects only when the URLs belong to our bucket; demo/external links just drop the row.
-  const keys = [media.url, media.thumb_url]
-    .map((u) => r2KeyFromUrl(u))
-    .filter((k): k is string => k !== null);
-  if (keys.length > 0) {
-    try {
-      await Promise.all(keys.map((k) => deleteR2Object(k)));
-    } catch (e) {
-      console.warn(`[admin] failed to delete R2 objects for ${mediaId}:`, e);
-    }
-  }
-
+  // DB row goes first so a failed delete never strands the row pointing at
+  // gone objects; R2 cleanup is best-effort after the row is gone.
   const { error } = await supabase.from("gallery").delete().eq("id", mediaId);
   if (!error) {
+    const keys = [media.url, media.thumb_url]
+      .map((u) => r2KeyFromUrl(u))
+      .filter((k): k is string => k !== null);
+    if (keys.length > 0) {
+      try {
+        await Promise.all(keys.map((k) => deleteR2Object(k)));
+      } catch (e) {
+        console.warn(`[admin] failed to delete R2 objects for ${mediaId}:`, e);
+      }
+    }
     const slug = (media.events as { slug?: string } | null)?.slug ?? null;
     revalidateRidePaths(media.event_id, slug);
   }
@@ -771,22 +822,17 @@ export async function updateLockedFields(
 
   // Approved rows hold no photo (purged at approval) — nothing to replace.
   let nextDlUrl: string | null = current.dl_image_url ?? null;
+  let newDlKey: string | null = null;
+  const oldDlKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
   const dlFile = formData.get("dl_photo") as File | null;
   if (!current.registered && dlFile && dlFile.size > 0) {
-    if (!r2Configured()) return { error: "R2 not configured — add the R2_* env vars (.env.example)." };
+    if (!r2Configured()) return { error: r2NotConfiguredError("R2 not configured") };
     const invalid = await validateImageFile(dlFile);
     if (invalid) return { error: `Licence photo: ${invalid}` };
     const image = await processImage(dlFile, 1600, 80);
-    const key = `rider-docs/${userId}/dl_${crypto.randomUUID()}.webp`;
-    await putR2Object(key, image.data, "image/webp");
-    const oldKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
-    if (oldKey) {
-      try {
-        await deleteR2Object(oldKey);
-      } catch (e) {
-        console.warn(`[admin] failed to delete replaced DL ${oldKey}:`, e);
-      }
-    }
+    const key = `rider-docs/${userId}/dl_${crypto.randomUUID()}.${image.format}`;
+    await putR2Object(key, image.data, image.contentType);
+    newDlKey = key;
     nextDlUrl = r2PublicUrl(key);
   }
 
@@ -803,7 +849,23 @@ export async function updateLockedFields(
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", userId);
-  if (rErr) return { error: rErr.message };
+  if (rErr) {
+    if (newDlKey) {
+      try {
+        await deleteR2Object(newDlKey);
+      } catch (e) {
+        console.warn(`[admin] failed to clean up orphan DL ${newDlKey}:`, e);
+      }
+    }
+    return { error: rErr.message };
+  }
+  if (newDlKey && oldDlKey) {
+    try {
+      await deleteR2Object(oldDlKey);
+    } catch (e) {
+      console.warn(`[admin] failed to delete replaced DL ${oldDlKey}:`, e);
+    }
+  }
 
   revalidatePath("/admin/riders");
   revalidatePath(`/admin/riders/${userId}`);

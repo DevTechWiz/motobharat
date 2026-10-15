@@ -6,6 +6,7 @@ import { Trash2, Loader2, Crop } from "lucide-react";
 import { Field } from "@/components/ui/field";
 import { CoverCropperModal } from "@/components/admin/cover-cropper-modal";
 import { uploadRideCover, removeRideCover, fetchRemoteImageDataUrl, type MediaFormState } from "../../../actions";
+import { friendlyUploadError } from "@/lib/client-image";
 
 export function CoverUpload({
   rideId,
@@ -53,10 +54,14 @@ export function CoverUpload({
     fd.append("cover", file);
 
     startTransition(async () => {
-      const res = await uploadRideCover(rideId, {}, fd);
-      setState(res);
-      if (res.ok) {
-        setCurrentCoverUrl(preview);
+      try {
+        const res = await uploadRideCover(rideId, {}, fd);
+        setState(res);
+        if (res.ok) {
+          setCurrentCoverUrl(preview);
+        }
+      } catch (err: unknown) {
+        setState({ error: friendlyUploadError(err, "Failed to upload cover.") });
       }
     });
   };
@@ -115,11 +120,15 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
     if (!rideId) return;
     if (!window.confirm("Remove this ride's cover photo?")) return;
     startRemoveTransition(async () => {
-      const res = await removeRideCover(rideId);
-      setState(res);
-      if (res.ok) {
-        setCurrentCoverUrl(null);
-        setRawFile(null);
+      try {
+        const res = await removeRideCover(rideId);
+        setState(res);
+        if (res.ok) {
+          setCurrentCoverUrl(null);
+          setRawFile(null);
+        }
+      } catch (err: unknown) {
+        setState({ error: friendlyUploadError(err, "Failed to remove cover.") });
       }
     });
   };
@@ -178,7 +187,7 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
                 label="Cover photo"
                 htmlFor="cover"
                 required
-                hint="JPEG, WebP or PNG, max 10 MB · Adjust and fit in 16:9 directly before upload"
+                hint="JPEG or WebP, max 10 MB · Adjust and fit in 16:9 directly before upload"
               >
                 <div className="relative">
                   <input
@@ -186,7 +195,7 @@ function dataUrlToFile(dataUrl: string, filename = "cover-readjust.jpg"): File {
                     id="cover"
                     name="cover"
                     type="file"
-                    accept="image/jpeg,image/webp,image/png"
+                    accept="image/jpeg,image/webp"
                     disabled={isPending}
                     onChange={handleFileChange}
                     className="block w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-surface-3 file:text-text hover:file:bg-surface-3/80 cursor-pointer disabled:opacity-50"
