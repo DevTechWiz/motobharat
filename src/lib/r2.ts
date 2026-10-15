@@ -1,13 +1,30 @@
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 function env() {
-  return {
-    accountId: process.env.R2_ACCOUNT_ID,
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-    bucket: process.env.R2_BUCKET,
-    publicBaseUrl: process.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, ""),
-  };
+  let accountId = process.env.R2_ACCOUNT_ID;
+  let accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  let secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  let bucket = process.env.R2_BUCKET;
+  let publicBaseUrl = process.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicBaseUrl) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getCloudflareContext } = require("@opennextjs/cloudflare");
+      const ctx = getCloudflareContext();
+      if (ctx?.env) {
+        accountId = accountId || ctx.env.R2_ACCOUNT_ID;
+        accessKeyId = accessKeyId || ctx.env.R2_ACCESS_KEY_ID;
+        secretAccessKey = secretAccessKey || ctx.env.R2_SECRET_ACCESS_KEY;
+        bucket = bucket || ctx.env.R2_BUCKET;
+        publicBaseUrl = publicBaseUrl || ctx.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return { accountId, accessKeyId, secretAccessKey, bucket, publicBaseUrl };
 }
 
 export function r2Configured(): boolean {
