@@ -9,18 +9,36 @@ function env() {
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicBaseUrl) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { getCloudflareContext } = require("@opennextjs/cloudflare");
-      const ctx = getCloudflareContext();
-      if (ctx?.env) {
-        accountId = accountId || ctx.env.R2_ACCOUNT_ID;
-        accessKeyId = accessKeyId || ctx.env.R2_ACCESS_KEY_ID;
-        secretAccessKey = secretAccessKey || ctx.env.R2_SECRET_ACCESS_KEY;
-        bucket = bucket || ctx.env.R2_BUCKET;
-        publicBaseUrl = publicBaseUrl || ctx.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
+      const globalContext = (
+        globalThis as unknown as Record<symbol, { env?: Record<string, string> }>
+      )[Symbol.for("__cloudflare-context__")];
+      const cfEnv = globalContext?.env;
+      if (cfEnv) {
+        accountId = accountId || cfEnv.R2_ACCOUNT_ID;
+        accessKeyId = accessKeyId || cfEnv.R2_ACCESS_KEY_ID;
+        secretAccessKey = secretAccessKey || cfEnv.R2_SECRET_ACCESS_KEY;
+        bucket = bucket || cfEnv.R2_BUCKET;
+        publicBaseUrl = publicBaseUrl || cfEnv.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
       }
     } catch {
       // ignore
+    }
+
+    if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicBaseUrl) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { getCloudflareContext } = require("@opennextjs/cloudflare");
+        const ctx = getCloudflareContext();
+        if (ctx?.env) {
+          accountId = accountId || ctx.env.R2_ACCOUNT_ID;
+          accessKeyId = accessKeyId || ctx.env.R2_ACCESS_KEY_ID;
+          secretAccessKey = secretAccessKey || ctx.env.R2_SECRET_ACCESS_KEY;
+          bucket = bucket || ctx.env.R2_BUCKET;
+          publicBaseUrl = publicBaseUrl || ctx.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
+        }
+      } catch {
+        // ignore
+      }
     }
   }
 
