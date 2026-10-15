@@ -147,7 +147,7 @@ export async function createRide(
   let newId: string | null = null;
   let uploadedCoverKey: string | null = null;
   if (coverPick) {
-    if (!r2Configured()) {
+    if (!(await r2Configured())) {
       return { error: r2NotConfiguredError("Cover photo can't be saved — photo storage isn't connected") };
     }
     const invalid = await validateImageFile(coverPick);
@@ -243,7 +243,7 @@ export async function updateRide(
   let newCoverUrl: string | null = null;
   let newCoverKey: string | null = null;
   if (coverPick) {
-    if (!r2Configured()) {
+    if (!(await r2Configured())) {
       return { error: r2NotConfiguredError("Cover photo can't be saved — photo storage isn't connected") };
     }
     const invalid = await validateImageFile(coverPick);
@@ -416,7 +416,7 @@ export async function uploadRideCover(
   const { supabase } = admin;
 
   try {
-  if (!r2Configured()) return { error: r2NotConfiguredError("Cover photo can't be saved — photo storage isn't connected") };
+  if (!(await r2Configured())) return { error: r2NotConfiguredError("Cover photo can't be saved — photo storage isn't connected") };
 
   const file = formData.get("cover") as File | null;
     if (!file) return { error: "Choose an image first." };
@@ -506,7 +506,7 @@ export async function uploadGalleryPhotos(
   const { supabase } = admin;
 
   try {
-  if (!r2Configured()) return { error: r2NotConfiguredError("Gallery photo can't be saved — photo storage isn't connected") };
+  if (!(await r2Configured())) return { error: r2NotConfiguredError("Gallery photo can't be saved — photo storage isn't connected") };
 
   const alt = String(formData.get("alt") ?? "").trim() || "Ride photo";
     if (alt.length > 200) return { error: "Alt text must be 200 characters or fewer." };
@@ -826,7 +826,7 @@ export async function updateLockedFields(
   const oldDlKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
   const dlFile = formData.get("dl_photo") as File | null;
   if (!current.registered && dlFile && dlFile.size > 0) {
-    if (!r2Configured()) return { error: r2NotConfiguredError("Licence photo can't be saved — photo storage isn't connected") };
+    if (!(await r2Configured())) return { error: r2NotConfiguredError("Licence photo can't be saved — photo storage isn't connected") };
     const invalid = await validateImageFile(dlFile);
     if (invalid) return { error: `Licence photo: ${invalid}` };
     const image = await processImage(dlFile, 1600, 80);

@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "motobharat",
+  "name": "motobharat-web",
   "compatibility_date": "2025-10-01",
   "compatibility_flags": [
     // Node.js APIs (Buffer, process.env, node: prefixes) — sharp itself is
@@ -14,10 +14,16 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "r2_buckets": [
+    {
+      "binding": "motobharat_assets",
+      "bucket_name": "motobharat-assets"
+    }
+  ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "motobharat"
+      "service": "motobharat-web"
     }
   ],
   // Cloudflare Images binding for next/image optimization.

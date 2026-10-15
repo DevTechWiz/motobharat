@@ -242,7 +242,7 @@ export async function saveRiderDetails(
   const picked = dlFile && dlFile.size > 0 ? dlFile : null;
   const dlUpload = locked ? null : picked;
   if (!locked && !existing.dl_image_url && !dlUpload) {
-    if (!r2Configured()) {
+    if (!(await r2Configured())) {
       return { error: r2NotConfiguredError("Licence photo can't be saved — photo storage isn't connected") };
     }
     return { error: "Driving licence photo is required — upload a clear JPEG or WebP (max 10 MB)." };
@@ -253,7 +253,7 @@ export async function saveRiderDetails(
   const oldDlKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
 
   if (dlUpload) {
-    if (!r2Configured()) {
+    if (!(await r2Configured())) {
       return { error: r2NotConfiguredError("Licence photo can't be saved — photo storage isn't connected") };
     }
     const invalid = await validateImageFile(dlUpload);
@@ -390,7 +390,7 @@ export async function updateAvatar(
 
     const processed = await processImage(file, 400, 80);
 
-    if (r2Configured()) {
+    if (await r2Configured()) {
       const key = `avatars/${user.id}/${crypto.randomUUID()}.${processed.format}`;
       await putR2Object(key, processed.data, processed.contentType);
       newAvatarKey = key;
