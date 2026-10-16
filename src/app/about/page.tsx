@@ -22,7 +22,7 @@ import type { Ride } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "About" };
+export const metadata = { title: "About Us" };
 
 const MEMBERSHIP_STEPS = [
   {
@@ -192,6 +192,19 @@ export default async function AboutPage() {
         : { href: "/profile/kyc", label: "Complete your KYC" };
   }
 
+  const steps = MEMBERSHIP_STEPS.map((s) => {
+    if (s.num === "01" && user) {
+      return {
+        ...s,
+        title: "Signed in with Google",
+        body: "Your rider account is authenticated and active.",
+        href: "/profile",
+        cta: "Account active",
+      };
+    }
+    return s;
+  });
+
   return (
     <>
       <PageMasthead
@@ -206,8 +219,8 @@ export default async function AboutPage() {
         <Reveal>
           <div className="group relative aspect-16/10 overflow-hidden rounded-2xl border border-border bg-surface-2 sm:aspect-21/9">
             <Image
-              src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=2000&q=75"
-              alt="Mountain highway winding into the hills at golden hour"
+              src="https://assets.motobharat.co/hero/WhatsApp%20Image%202026-10-16%20at%201.18.35%20PM.jpeg"
+              alt="MotoBharat riders assembled for a community expedition"
               fill
               sizes="100vw"
               priority
@@ -273,10 +286,10 @@ export default async function AboutPage() {
           <SectionHeader
             eyebrow="Joining"
             title="How Membership Works"
-            cta={{ href: "/profile/kyc", label: "Start KYC" }}
+            cta={joinCta}
           />
           <Stagger className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-5" gap={0.08}>
-            {MEMBERSHIP_STEPS.map((s) => (
+            {steps.map((s) => (
               <StaggerItem key={s.num}>
                 <Link
                   href={s.href}
@@ -331,16 +344,16 @@ export default async function AboutPage() {
         <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {[
             {
-              src: "https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=800&q=80",
-              alt: "Misty hairpin curves and ghat roads on a community expedition",
+              src: "https://assets.motobharat.co/hero/IMG_9456_11zon.jpg",
+              alt: "MotoBharat riders on the open road",
             },
             {
-              src: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=800&q=80",
-              alt: "Rider on an open highway at dusk",
+              src: "https://assets.motobharat.co/hero/IMG_9782_11zon.jpg",
+              alt: "Community riding column in formation",
             },
             {
-              src: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=75",
-              alt: "Mountain highway winding into the hills at golden hour",
+              src: "https://assets.motobharat.co/hero/WhatsApp%20Image%202026-10-16%20at%201.17.26%20PM.jpeg",
+              alt: "Riders gathered at the departure assembly point",
             },
           ].map((p) => (
             <div

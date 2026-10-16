@@ -9,23 +9,25 @@ import { cn } from "@/lib/cn";
 import { isPast } from "@/lib/format";
 import type { Ride } from "@/lib/types";
 
-type Tab = "upcoming" | "completed" | "cancelled";
+type Tab = "all" | "upcoming" | "completed" | "cancelled";
 const DIFFICULTIES = ["All", "easy", "moderate", "hard"] as const;
 
 const TABS: { key: Tab; label: string }[] = [
+  { key: "all", label: "All" },
   { key: "upcoming", label: "Upcoming" },
   { key: "completed", label: "Completed" },
   { key: "cancelled", label: "Cancelled" },
 ];
 
 export function RidesExplorer({ rides }: { rides: Ride[] }) {
-  const [tab, setTab] = useState<Tab>("upcoming");
+  const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [difficulty, setDifficulty] = useState<(typeof DIFFICULTIES)[number]>("All");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rides.filter((ride) => {
+      if (tab === "all") return true;
       const cancelled = ride.status === "cancelled";
       const completed =
         ride.status === "completed" || (ride.status === "published" && isPast(ride.starts_at));
@@ -45,6 +47,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
   const reset = () => {
     setQuery("");
     setDifficulty("All");
+    setTab("all");
   };
 
   return (
@@ -52,7 +55,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
       {/* Filter strip */}
       <div className="space-y-2.5 sm:space-y-3 rounded-xl border border-border bg-surface p-2.5 sm:p-4">
         <div className="flex flex-col gap-2.5 sm:gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-1 rounded-xl bg-bg p-1">
+          <div className="flex items-center gap-1 rounded-xl bg-bg p-1 overflow-x-auto">
             {TABS.map((t) => (
               <button
                 key={t.key}
