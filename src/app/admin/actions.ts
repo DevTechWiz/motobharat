@@ -5,11 +5,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ageFromDob, slugify } from "@/lib/format";
 import { processImage, validateImageFile } from "@/lib/media";
-import { validateExternalImageUrl } from "@/lib/url-image";
 import { deleteR2Object, putR2Object, r2Configured, r2KeyFromUrl, r2NotConfiguredError, r2PublicUrl } from "@/lib/r2";
 import { RATE_LIMITS, rateLimit } from "@/lib/rateLimit";
 
-async function requireAdmin() {
+export async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -404,7 +403,11 @@ export async function deleteRide(id: string) {
   return { ok: !error, error: error?.message };
 }
 
-export type MediaFormState = { error?: string; ok?: boolean };
+export type MediaFormState = {
+  error?: string;
+  ok?: boolean;
+  photos?: { url: string; thumb: string; caption?: string }[];
+};
 
 export async function uploadRideCover(
   rideId: string,
@@ -533,6 +536,11 @@ export async function uploadGalleryPhotos(
         processImage(file, 2000, 80),
         processImage(file, 400, 75),
       ]);
+      if (!["image/jpeg", "image/webp", "image/png"].includes(full.contentType)) {
+        return {
+          error: `Photo "${file.name}" format (${full.contentType}) cannot be saved. Please convert it to JPG or PNG before uploading.`,
+        };
+      }
       const fullKey = `events/${rideId}/${uuid}.${full.format}`;
       const thumbKey = `events/${rideId}/${uuid}_thumb.${thumb.format}`;
       await Promise.all([
@@ -562,45 +570,7 @@ export async function uploadGalleryPhotos(
   }
 }
 
-// URL-based alternative to R2 uploads (06_MEDIA.md § URL-based photos) — no R2 config needed.
-export async function addGalleryPhotoByUrl(
-  rideId: string,
-  _prev: MediaFormState,
-  formData: FormData,
-): Promise<MediaFormState> {
-  const admin = await requireAdmin();
-  if ("error" in admin) return admin;
-  const { supabase } = admin;
 
-  const url = String(formData.get("url") ?? "").trim();
-  if (!url) return { error: "Image URL is required." };
-  const alt = String(formData.get("alt") ?? "").trim() || "Ride photo";
-  if (alt.length > 200) return { error: "Alt text must be 200 characters or fewer." };
-
-  const { data: ride } = await supabase
-    .from("events")
-    .select("id, slug")
-    .eq("id", rideId)
-    .maybeSingle();
-  if (!ride) return { error: "Ride not found." };
-
-  const result = await validateExternalImageUrl(url);
-  if (!result.ok) return { error: result.error };
-
-  const { error } = await supabase.from("gallery").insert({
-    event_id: rideId,
-    url: result.info.url,
-    thumb_url: result.info.thumbUrl,
-    mime: result.info.mime,
-    width: result.info.width,
-    height: result.info.height,
-    alt,
-  });
-  if (error) return { error: error.message };
-
-  revalidateRidePaths(rideId, ride.slug);
-  return { ok: true };
-}
 
 export async function deleteMedia(mediaId: string) {
   const admin = await requireAdmin();
@@ -751,13 +721,16 @@ export async function approveRider(userId: string) {
     }
   }
   // Null separately: same-statement nulling would trip the completeness check.
-  // Approval stands even if this housekeeping fails (photo retention is the
-  // safe direction); the warn keeps it visible.
   const { error: nullErr } = await supabase
     .from("rider_details")
     .update({ dl_image_url: null })
     .eq("user_id", userId);
-  if (nullErr) console.warn(`[admin] DL purge column null failed for ${userId}:`, nullErr.message);
+  if (nullErr) {
+    console.error(`[admin] DL purge column null failed for ${userId}:`, nullErr.message);
+    revalidatePath("/admin/riders");
+    revalidatePath(`/admin/riders/${userId}`);
+    return { ok: false, error: `Rider approved, but DL photo could not be cleared: ${nullErr.message}` };
+  }
   revalidatePath("/admin/riders");
   revalidatePath(`/admin/riders/${userId}`);
   revalidatePath("/profile", "layout");

@@ -1,16 +1,15 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect, useCallback } from "react";
-import { Expand, Pencil, Upload, Link as LinkIcon, Trash2, X } from "lucide-react";
+import { Expand, Pencil, Upload, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input, Field } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/lib/auth-context";
-import { normalizeImageUrl } from "@/lib/image-link";
 import { compressImageFile, friendlyUploadError, ACCEPTED_IMAGE_TYPES, IMAGE_UPLOAD_HINT } from "@/lib/client-image";
 import { updateAvatar } from "./actions";
+import { SingleImageViewer } from "@/components/ui/image-lightbox";
 
 interface ProfileAvatarProps {
   displayName: string;
@@ -20,13 +19,10 @@ interface ProfileAvatarProps {
 export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"file" | "url">("file");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [urlInput, setUrlInput] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewBroken, setPreviewBroken] = useState(false);
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null | undefined>(undefined);
   const [isPending, startTransition] = useTransition();
 
@@ -42,9 +38,7 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
       URL.revokeObjectURL(previewUrl);
     }
     setSelectedFile(null);
-    setUrlInput("");
     setPreviewUrl(null);
-    setPreviewBroken(false);
     setIsRemoving(false);
     setError(null);
     setIsOpen(false);
@@ -75,10 +69,8 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
   const handleOpen = () => {
     setError(null);
     setSelectedFile(null);
-    setUrlInput("");
     setIsRemoving(false);
     setPreviewUrl(null);
-    setPreviewBroken(false);
     setIsOpen(true);
   };
 
@@ -86,8 +78,13 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setError("Only JPEG, PNG, and WebP images are allowed.");
+    const isImg =
+      (file.type.startsWith("image/") ||
+        /\.(jpg|jpeg|png|webp|heic|heif|avif|gif|tiff|bmp)$/i.test(file.name)) &&
+      file.type !== "image/svg+xml" &&
+      !/\.svg$/i.test(file.name);
+    if (!isImg) {
+      setError("Please select a valid image file (JPEG, PNG, WebP, HEIC, or AVIF).");
       return;
     }
 
@@ -113,23 +110,12 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
     setPreviewUrl(blobUrl);
   };
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setUrlInput(val);
-    setError(null);
-    setPreviewBroken(false);
-    setIsRemoving(false);
-    if (val.trim().startsWith("http://") || val.trim().startsWith("https://")) {
-      setPreviewUrl(val.trim());
-    } else if (!val.trim()) {
-      setPreviewUrl(null);
-    }
-  };
-
   const handleRemoveChoice = () => {
     setIsRemoving(true);
     setSelectedFile(null);
-    setUrlInput("");
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setPreviewUrl(null);
     setError(null);
   };
@@ -140,19 +126,12 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
     const formData = new FormData();
     if (isRemoving) {
       formData.set("remove", "true");
-    } else if (activeTab === "file") {
+    } else {
       if (!selectedFile) {
         setError("Please choose an image file to upload.");
         return;
       }
       formData.set("avatar_file", selectedFile);
-    } else {
-      const trimmed = urlInput.trim();
-      if (!trimmed) {
-        setError("Please enter a valid image URL.");
-        return;
-      }
-      formData.set("avatar_url", trimmed);
     }
 
     startTransition(async () => {
@@ -211,36 +190,14 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
         </button>
       </div>
 
-      {/* Full-image viewer */}
-      {viewOpen && activeAvatar && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-overlay/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Profile picture viewer"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setViewOpen(false);
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setViewOpen(false)}
-            className="fixed top-4 right-4 z-10 flex size-9 items-center justify-center rounded-lg border border-border bg-bg/80 text-muted backdrop-blur transition-colors hover:text-white hover:border-border-strong cursor-pointer"
-            aria-label="Close viewer"
-          >
-            <X className="size-4" />
-          </button>
-          <div className="max-h-[85vh] overflow-hidden rounded-2xl border border-border-strong bg-surface shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- blob/data URLs can't go through next/image */}
-            <img
-              src={activeAvatar}
-              alt={displayName}
-              referrerPolicy="no-referrer"
-              className="max-h-[85vh] w-auto max-w-[90vw] object-contain"
-            />
-          </div>
-        </div>
-      )}
+      {/* Full-image viewer with zoom, pan, and rotation */}
+      <SingleImageViewer
+        src={activeAvatar ?? ""}
+        alt={`Profile picture of ${displayName}`}
+        title={`${displayName}'s Profile Picture`}
+        isOpen={viewOpen && Boolean(activeAvatar)}
+        onClose={() => setViewOpen(false)}
+      />
 
       {/* Modal Dialog */}
       {isOpen && (
@@ -314,64 +271,10 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
                   ? "Current Photo"
                   : "No photo set"}
               </span>
-              {/* Probe: remote URLs that refuse hotlinking (401/403, expired CDN
-                  links) fail here immediately instead of only at Save. */}
-              {previewUrl && !previewUrl.startsWith("blob:") && (
-                // eslint-disable-next-line @next/next/no-img-element -- error probe only, never displayed
-                <img
-                  key={previewUrl}
-                  src={normalizeImageUrl(previewUrl)}
-                  alt=""
-                  aria-hidden
-                  referrerPolicy="no-referrer"
-                  className="hidden"
-                  onLoad={() => setPreviewBroken(false)}
-                  onError={() => setPreviewBroken(true)}
-                />
-              )}
-              {previewBroken && (
-                <span className="text-xs font-semibold text-danger">
-                  That link won&apos;t load here — use a direct public image link (https, ends in .jpg/.png/.webp).
-                </span>
-              )}
             </div>
 
-            {/* Tabs for choosing method */}
-            <div className="mb-4 flex rounded-lg border border-border-strong bg-surface-2 p-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("file");
-                  setIsRemoving(false);
-                }}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "file" && !isRemoving
-                    ? "bg-accent text-accent-fg shadow-sm"
-                    : "text-secondary hover:text-white"
-                }`}
-              >
-                <Upload className="size-3.5" />
-                Upload File
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("url");
-                  setIsRemoving(false);
-                }}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "url" && !isRemoving
-                    ? "bg-accent text-accent-fg shadow-sm"
-                    : "text-secondary hover:text-white"
-                }`}
-              >
-                <LinkIcon className="size-3.5" />
-                Image Link
-              </button>
-            </div>
-
-            {/* Tab: Upload File */}
-            {activeTab === "file" && !isRemoving && (
+            {/* Upload File dropzone */}
+            {!isRemoving && (
               <div className="space-y-3">
                 <input
                   ref={fileInputRef}
@@ -406,26 +309,6 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
                     </span>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Tab: Image Link */}
-            {activeTab === "url" && !isRemoving && (
-              <div className="space-y-3">
-                <Field label="Image Web Address (HTTPS)" htmlFor="avatar-url-input">
-                  <Input
-                    id="avatar-url-input"
-                    type="url"
-                    placeholder="https://example.com/avatar.jpg"
-                    value={urlInput}
-                    onChange={handleUrlChange}
-                    disabled={isPending}
-                  />
-                </Field>
-                <p className="text-[11px] text-muted">
-                  Direct link to an image file (Unsplash, Google Photos, Cloudflare) — Google Drive
-                  share links work too.
-                </p>
               </div>
             )}
 
@@ -475,7 +358,7 @@ export function ProfileAvatar({ displayName, avatarUrl }: ProfileAvatarProps) {
                 variant={isRemoving ? "danger" : "primary"}
                 size="sm"
                 onClick={handleSave}
-                disabled={isPending || (!isRemoving && !selectedFile && !urlInput.trim())}
+                disabled={isPending || (!isRemoving && !selectedFile)}
                 loading={isPending}
               >
                 {isRemoving ? "Remove Photo" : "Save Picture"}

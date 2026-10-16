@@ -107,7 +107,7 @@ export function RideEditor({
         />
       )}
 
-      <AdminSection num="02" title="Gallery" hint="Memories from the road">
+      <AdminSection num="02" title="Gallery" hint="Photos displayed in the ride gallery">
         <GalleryManager rideId={rideId} photos={initialPhotos} />
       </AdminSection>
 

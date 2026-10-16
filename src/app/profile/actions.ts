@@ -15,7 +15,6 @@ import {
   r2NotConfiguredError,
   r2PublicUrl,
 } from "@/lib/r2";
-import { validateExternalImageUrl } from "@/lib/url-image";
 
 export type ProfileFormState = { error?: string; ok?: boolean; next?: string };
 
@@ -76,6 +75,8 @@ export async function saveBasicProfile(
 
   if (!displayName) return { error: "Name is required." };
   if (displayName.length > 50) return { error: "Name must be 50 characters or fewer." };
+  if (!city) return { error: "City / Location is required." };
+  if (city.length > 100) return { error: "City must be 100 characters or fewer." };
 
   if (age == null || !Number.isInteger(age) || age < 18 || age > 90) {
     return { error: "Enter your date of birth — you must be 18 or older to join MotoBharat (18–90 years)." };
@@ -377,35 +378,27 @@ export async function updateAvatar(
   }
 
   const file = formData.get("avatar_file") as File | null;
-  const url = String(formData.get("avatar_url") ?? "").trim();
+  if (!file || file.size === 0) {
+    return { error: "Please choose an image file to upload." };
+  }
 
   let finalUrl: string | null = null;
   let newAvatarKey: string | null = null;
 
-  if (file && file.size > 0) {
-    const invalid = await validateImageFile(file);
-    if (invalid) {
-      return { error: invalid };
-    }
+  const invalid = await validateImageFile(file);
+  if (invalid) {
+    return { error: invalid };
+  }
 
-    const processed = await processImage(file, 400, 80);
+  const processed = await processImage(file, 400, 80);
 
-    if (await r2Configured()) {
-      const key = `avatars/${user.id}/${crypto.randomUUID()}.${processed.format}`;
-      await putR2Object(key, processed.data, processed.contentType);
-      newAvatarKey = key;
-      finalUrl = r2PublicUrl(key);
-    } else {
-      finalUrl = `data:${processed.contentType};base64,${processed.data.toString("base64")}`;
-    }
-  } else if (url) {
-    const result = await validateExternalImageUrl(url);
-    if (!result.ok) {
-      return { error: result.error };
-    }
-    finalUrl = result.info.url;
+  if (await r2Configured()) {
+    const key = `avatars/${user.id}/${crypto.randomUUID()}.${processed.format}`;
+    await putR2Object(key, processed.data, processed.contentType);
+    newAvatarKey = key;
+    finalUrl = r2PublicUrl(key);
   } else {
-    return { error: "Please choose an image file or provide an image link." };
+    finalUrl = `data:${processed.contentType};base64,${processed.data.toString("base64")}`;
   }
 
   const { data: current } = await supabase

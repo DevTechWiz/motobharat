@@ -31,21 +31,86 @@ export function CoverCropperModal({
   const panStartRef = useRef({ x: 0, y: 0 });
   const imageRef = useRef<HTMLImageElement | null>(null);
 
+  const onApplyRef = useRef(onApply);
+  useEffect(() => {
+    onApplyRef.current = onApply;
+  }, [onApply]);
+
   // Load image object URL whenever file changes
   useEffect(() => {
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = url;
-    img.onload = () => {
-      setImageSrc(url);
-      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
-      setZoom(1);
-      setPan({ x: 0, y: 0 });
-    };
+    let isCancelled = false;
+    let activeUrl = "";
+
+    (async () => {
+      let sourceFile = file;
+      const isHeic =
+        /\.(heic|heif)$/i.test(file.name) ||
+        file.type === "image/heic" ||
+        file.type === "image/heif";
+
+      if (isHeic && typeof window !== "undefined") {
+        try {
+          type HeicConverter = (options: {
+            blob: Blob;
+            toType?: string;
+            quality?: number;
+          }) => Promise<Blob | Blob[]>;
+          const raw = (await import("heic2any")) as unknown;
+          const mod = raw as { default?: HeicConverter | { default?: HeicConverter } };
+          const heic2any =
+            typeof mod.default === "function"
+              ? mod.default
+              : typeof raw === "function"
+              ? (raw as HeicConverter)
+              : typeof mod.default?.default === "function"
+              ? mod.default.default
+              : null;
+          if (heic2any) {
+            const conversionPromise = heic2any({
+              blob: file,
+              toType: "image/jpeg",
+              quality: 0.75,
+            });
+            const timeoutPromise = new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("Timeout")), 25000)
+            );
+            const result = await Promise.race([conversionPromise, timeoutPromise]);
+            const convertedBlob = Array.isArray(result) ? result[0] : result;
+            if (convertedBlob && !isCancelled) {
+              sourceFile = new File(
+                [convertedBlob],
+                file.name.replace(/\.(heic|heif)$/i, ".jpg"),
+                { type: "image/jpeg" }
+              );
+            }
+          }
+        } catch (e) {
+          console.warn("[CoverCropperModal] heic2any conversion failed:", e);
+        }
+      }
+
+      if (isCancelled) return;
+      activeUrl = URL.createObjectURL(sourceFile);
+      const img = new Image();
+      img.src = activeUrl;
+      img.onload = () => {
+        if (isCancelled) return;
+        setImageSrc(activeUrl);
+        setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+      };
+      img.onerror = () => {
+        if (isCancelled) return;
+        // If browser cannot render this image format in canvas, bypass cropper and pass through directly
+        onApplyRef.current(sourceFile, activeUrl);
+      };
+    })();
 
     return () => {
-      URL.revokeObjectURL(url);
+      isCancelled = true;
+      if (activeUrl) URL.revokeObjectURL(activeUrl);
     };
   }, [file]);
 
@@ -169,13 +234,16 @@ export function CoverCropperModal({
       canvas.toBlob(
         (blob) => {
           if (!blob) return;
-          const cleanName = file.name.replace(/\.[^.]+$/, "") + "_cover.jpg";
-          const croppedFile = new File([blob], cleanName, { type: "image/jpeg" });
+          const isWebp = blob.type === "image/webp";
+          const ext = isWebp ? ".webp" : ".jpg";
+          const mime = isWebp ? "image/webp" : "image/jpeg";
+          const cleanName = file.name.replace(/\.[^.]+$/, "") + `_cover${ext}`;
+          const croppedFile = new File([blob], cleanName, { type: mime });
           const previewUrl = URL.createObjectURL(croppedFile);
           onApply(croppedFile, previewUrl);
         },
-        "image/jpeg",
-        0.9,
+        "image/webp",
+        0.85,
       );
     };
   };

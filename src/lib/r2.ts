@@ -134,7 +134,22 @@ function getClient(e: StorageEnv): S3Client {
 export async function putR2Object(key: string, body: Buffer, contentType: string): Promise<void> {
   const e = await getStorageEnv();
 
-  // 1. Primary: Native Cloudflare R2 bucket binding via OpenNext
+  // 1. If S3 credentials are configured (e.g. local dev with real credentials in .env.local),
+  // use S3 client so objects reach real Cloudflare R2 instead of a local emulated mock bucket.
+  if (e.accountId && e.accessKeyId && e.secretAccessKey && e.bucket) {
+    await getClient(e).send(
+      new PutObjectCommand({
+        Bucket: e.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        CacheControl: "public, max-age=31536000, immutable",
+      }),
+    );
+    return;
+  }
+
+  // 2. Cloudflare Worker runtime (production without S3 env vars): use native bucket binding
   if (e.r2Bucket && typeof e.r2Bucket.put === "function") {
     await e.r2Bucket.put(key, body, {
       httpMetadata: {
@@ -145,7 +160,6 @@ export async function putR2Object(key: string, body: Buffer, contentType: string
     return;
   }
 
-  // 2. Secondary: AWS S3 Client compatibility
   if (!e.bucket) throw new Error("R2 is not configured — missing R2_BUCKET");
   await getClient(e).send(
     new PutObjectCommand({
@@ -161,13 +175,18 @@ export async function putR2Object(key: string, body: Buffer, contentType: string
 export async function deleteR2Object(key: string): Promise<void> {
   const e = await getStorageEnv();
 
-  // 1. Primary: Native Cloudflare R2 bucket binding via OpenNext
+  // 1. If S3 credentials are configured, use S3 client to delete from real Cloudflare R2
+  if (e.accountId && e.accessKeyId && e.secretAccessKey && e.bucket) {
+    await getClient(e).send(new DeleteObjectCommand({ Bucket: e.bucket, Key: key }));
+    return;
+  }
+
+  // 2. Cloudflare Worker runtime: use native bucket binding
   if (e.r2Bucket && typeof e.r2Bucket.delete === "function") {
     await e.r2Bucket.delete(key);
     return;
   }
 
-  // 2. Secondary: AWS S3 Client compatibility
   if (!e.bucket) throw new Error("R2 is not configured — missing R2_BUCKET");
   await getClient(e).send(new DeleteObjectCommand({ Bucket: e.bucket, Key: key }));
 }

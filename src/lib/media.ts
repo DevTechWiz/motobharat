@@ -9,11 +9,20 @@ export interface ProcessedImage {
   data: Buffer;
   width: number;
   height: number;
-  format: "webp" | "jpg" | "png";
+  format: "webp" | "jpg" | "png" | "heic" | "avif" | "gif";
   contentType: string;
 }
 
-export type ImageMime = "image/jpeg" | "image/webp" | "image/png";
+export type ImageMime =
+  | "image/jpeg"
+  | "image/webp"
+  | "image/png"
+  | "image/heic"
+  | "image/heif"
+  | "image/avif"
+  | "image/gif"
+  | "image/tiff"
+  | "image/bmp";
 
 export function sniffImageBuffer(head: Uint8Array): ImageMime | null {
   if (head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) {
@@ -28,7 +37,38 @@ export function sniffImageBuffer(head: Uint8Array): ImageMime | null {
     head.length >= 8 &&
     head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47 &&
     head[4] === 0x0d && head[5] === 0x0a && head[6] === 0x1a && head[7] === 0x0a;
-  return isPng ? "image/png" : null;
+  if (isPng) return "image/png";
+
+  // ISOBMFF: HEIC, HEIF, AVIF (bytes 4-7 are 'ftyp')
+  if (head.length >= 12 && head[4] === 0x66 && head[5] === 0x74 && head[6] === 0x79 && head[7] === 0x70) {
+    let ftypStr = "";
+    for (let i = 8; i < Math.min(head.length, 32); i++) {
+      ftypStr += String.fromCharCode(head[i]);
+    }
+    if (/avif|avis/i.test(ftypStr)) return "image/avif";
+    if (/heic|heix|hevc|hevx|mif1|msf1/i.test(ftypStr)) return "image/heic";
+  }
+
+  // GIF ('GIF87a' or 'GIF89a')
+  if (head.length >= 6 && head[0] === 0x47 && head[1] === 0x49 && head[2] === 0x46) {
+    return "image/gif";
+  }
+
+  // TIFF ('II*\0' or 'MM\0*')
+  if (
+    head.length >= 4 &&
+    ((head[0] === 0x49 && head[1] === 0x49 && head[2] === 0x2a && head[3] === 0x00) ||
+      (head[0] === 0x4d && head[1] === 0x4d && head[2] === 0x00 && head[3] === 0x2a))
+  ) {
+    return "image/tiff";
+  }
+
+  // BMP ('BM')
+  if (head.length >= 2 && head[0] === 0x42 && head[1] === 0x4d) {
+    return "image/bmp";
+  }
+
+  return null;
 }
 
 export function parseJpegDimensions(buf: Uint8Array): { width: number; height: number } | null {
@@ -128,13 +168,23 @@ export function parseImageDimensions(buf: Uint8Array): { width: number; height: 
 // Picker accept-list lives in lib/client-image.ts (sharp must never enter a
 // browser bundle) — do not re-add client-facing constants here.
 
-// Returns a human-readable error, or null when the file passes (size cap + jpeg/webp/png magic bytes; SVG banned).
+// Returns a human-readable error, or null when the file passes (size cap + valid image bytes; SVG banned).
 export async function validateImageFile(file: File): Promise<string | null> {
   if (file.size === 0) return "The selected file is empty.";
   if (file.size > MAX_BYTES) return "Image is over 10 MB — please upload a smaller file.";
-  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  if (file.type === "image/svg+xml" || /\.svg$/i.test(file.name)) {
+    return "SVG images are not allowed for security reasons.";
+  }
+  const head = new Uint8Array(await file.slice(0, 32).arrayBuffer());
   const kind = sniffImageBuffer(head);
-  if (!kind) return "Only JPEG, WebP, and PNG images are allowed.";
+  if (!kind) {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    const validExts = ["jpg", "jpeg", "png", "webp", "heic", "heif", "avif", "gif", "tiff", "bmp"];
+    if (file.type.startsWith("image/") || (ext && validExts.includes(ext))) {
+      return null;
+    }
+    return "Only image files (JPEG, PNG, WebP, HEIC, AVIF, GIF) are allowed.";
+  }
   return null;
 }
 
@@ -153,9 +203,20 @@ export async function processImage(file: File, maxEdge: number, quality: number)
     return { data, width: info.width, height: info.height, format: "webp", contentType: "image/webp" };
   } catch (err) {
     console.warn("[media] sharp processing unavailable in this runtime; using validated input bytes fallback:", err);
-    const mime = sniffImageBuffer(new Uint8Array(input.subarray(0, 16))) ?? "image/jpeg";
+    const mime = sniffImageBuffer(new Uint8Array(input.subarray(0, 32))) ?? "image/jpeg";
     const dims = parseImageDimensions(new Uint8Array(input));
-    const format = mime === "image/webp" ? "webp" : mime === "image/png" ? "png" : "jpg";
+    const format =
+      mime === "image/webp"
+        ? "webp"
+        : mime === "image/png"
+        ? "png"
+        : mime === "image/heic"
+        ? "heic"
+        : mime === "image/avif"
+        ? "avif"
+        : mime === "image/gif"
+        ? "gif"
+        : "jpg";
     return {
       data: input,
       width: dims?.width ?? maxEdge,

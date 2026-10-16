@@ -109,3 +109,35 @@ export interface GalleryItem {
   alt: string;
   created_at: string;
 }
+
+export type StoryCategory = "achievement" | "milestone" | "tour_story" | "spotlight";
+
+export interface StoryStat {
+  label: string;
+  value: string;
+}
+
+export interface StoryPhoto {
+  url: string;
+  thumb?: string;
+  caption?: string;
+}
+
+export interface Story {
+  id: string;
+  slug: string | null;
+  title: string;
+  subtitle?: string | null;
+  category: StoryCategory;
+  cover_url?: string | null;
+  content: string;
+  rider_name?: string | null;
+  rider_bike?: string | null;
+  rider_id?: string | null;
+  author?: string | null;
+  tags?: string[] | null;
+  stats?: StoryStat[] | null;
+  photos?: StoryPhoto[] | null;
+  created_by?: string | null;
+  created_at: string;
+}

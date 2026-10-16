@@ -103,7 +103,7 @@ describe("parseWebpDimensions", () => {
 });
 
 describe("validateImageFile", () => {
-  it("accepts valid JPEG, PNG, and WebP files", async () => {
+  it("accepts valid JPEG, PNG, WebP, HEIC, and AVIF files", async () => {
     const jpegFile = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])], "test.jpg", { type: "image/jpeg" });
     const pngFile = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "test.png", { type: "image/png" });
     const webpFile = new File(
@@ -111,10 +111,29 @@ describe("validateImageFile", () => {
       "test.webp",
       { type: "image/webp" }
     );
+    const heicFile = new File(
+      [new Uint8Array([0x00, 0x00, 0x00, 0x1c, 0x66, 0x74, 0x79, 0x70, 0x6d, 0x69, 0x66, 0x31, 0x00, 0x00, 0x00, 0x00, 0x6d, 0x69, 0x66, 0x31, 0x68, 0x65, 0x69, 0x63, 0x68, 0x65, 0x76, 0x63])],
+      "test.heic",
+      { type: "image/heic" }
+    );
+    const avifFile = new File(
+      [new Uint8Array([0x00, 0x00, 0x00, 0x1c, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66, 0x00, 0x00, 0x00, 0x00, 0x61, 0x76, 0x69, 0x66, 0x6d, 0x69, 0x66, 0x31])],
+      "test.avif",
+      { type: "image/avif" }
+    );
 
     expect(await validateImageFile(jpegFile)).toBeNull();
     expect(await validateImageFile(pngFile)).toBeNull();
     expect(await validateImageFile(webpFile)).toBeNull();
+    expect(await validateImageFile(heicFile)).toBeNull();
+    expect(await validateImageFile(avifFile)).toBeNull();
+  });
+
+  it("sniffs HEIC and AVIF magic bytes correctly", () => {
+    const heicBuf = new Uint8Array([0x00, 0x00, 0x00, 0x1c, 0x66, 0x74, 0x79, 0x70, 0x6d, 0x69, 0x66, 0x31, 0x00, 0x00, 0x00, 0x00, 0x6d, 0x69, 0x66, 0x31, 0x68, 0x65, 0x69, 0x63, 0x68, 0x65, 0x76, 0x63]);
+    const avifBuf = new Uint8Array([0x00, 0x00, 0x00, 0x1c, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66, 0x00, 0x00, 0x00, 0x00, 0x61, 0x76, 0x69, 0x66]);
+    expect(sniffImageBuffer(heicBuf)).toBe("image/heic");
+    expect(sniffImageBuffer(avifBuf)).toBe("image/avif");
   });
 
   it("rejects empty files", async () => {
@@ -129,7 +148,7 @@ describe("validateImageFile", () => {
 
   it("rejects non-whitelisted image formats such as SVG", async () => {
     const svgFile = new File([Buffer.from("<svg></svg>")], "image.svg", { type: "image/svg+xml" });
-    expect(await validateImageFile(svgFile)).toBe("Only JPEG, WebP, and PNG images are allowed.");
+    expect(await validateImageFile(svgFile)).toBe("SVG images are not allowed for security reasons.");
   });
 });
 
