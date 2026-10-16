@@ -156,16 +156,21 @@ const PILLARS = [
 export default async function AboutPage() {
   const supabase = await createClient();
 
-  const [{ data: events }, { count: riderCount }, { count: photoCount }] =
-    await Promise.all([
-      supabase
-        .from("events")
-        .select("*")
-        .eq("status", "published")
-        .order("starts_at", { ascending: true }),
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
-      supabase.from("gallery").select("id", { count: "exact", head: true }),
-    ]);
+  const [
+    { data: events },
+    { count: riderCount },
+    { count: photoCount },
+    { data: authData },
+  ] = await Promise.all([
+    supabase
+      .from("events")
+      .select("*")
+      .eq("status", "published")
+      .order("starts_at", { ascending: true }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase.from("gallery").select("id", { count: "exact", head: true }),
+    supabase.auth.getUser(),
+  ]);
 
   const all = (events ?? []) as Ride[];
   const upcoming = all.filter((r) => !isPast(r.starts_at));
@@ -178,7 +183,7 @@ export default async function AboutPage() {
     { value: Math.round(totalKm), label: "KM Together", icon: Route },
   ];
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = authData?.user ?? null;
   let joinCta = { href: "/login", label: "Join with Google" };
   if (user) {
     const { data: rd } = await supabase
@@ -224,6 +229,7 @@ export default async function AboutPage() {
               fill
               sizes="100vw"
               priority
+              fetchPriority="high"
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             />
             <div

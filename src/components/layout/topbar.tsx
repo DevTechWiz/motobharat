@@ -33,31 +33,38 @@ export function Topbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Client auth state (menu pills, Join button) only loads at sign-in — re-sync
-  // on navigation and when the tab regains focus, so admin verdicts and fresh
-  // submits surface without a full reload.
+  // Client auth state: re-sync on navigation and when the tab regains focus
+  // only when a user session exists, avoiding redundant network traffic for guests.
   useEffect(() => {
-    refreshProfile();
-  }, [pathname, refreshProfile]);
+    if (user) {
+      refreshProfile();
+    }
+  }, [pathname, user, refreshProfile]);
 
   useEffect(() => {
+    if (!user) return;
+
     const onFocus = () => refreshProfile();
     const onVisibility = () => {
       if (document.visibilityState === "visible") refreshProfile();
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
-    // Poll while the tab is visible: verdicts must surface on idle pages too,
-    // not only after the user navigates or switches tabs.
-    const id = window.setInterval(() => {
-      if (document.visibilityState === "visible") refreshProfile();
-    }, 10000);
+
+    // Poll while the tab is visible ONLY if a rider is actively awaiting KYC review
+    let intervalId: number | null = null;
+    if (approval === "pending") {
+      intervalId = window.setInterval(() => {
+        if (document.visibilityState === "visible") refreshProfile();
+      }, 15000);
+    }
+
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
-      window.clearInterval(id);
+      if (intervalId) window.clearInterval(intervalId);
     };
-  }, [refreshProfile]);
+  }, [user, approval, refreshProfile]);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 

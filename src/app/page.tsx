@@ -43,22 +43,29 @@ const PRINCIPLES = [
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const [{ data: events }, { count: riderCount }, { count: photoCount }, { data: galleryRows }, stories] =
-    await Promise.all([
-      supabase
-        .from("events")
-        .select("*")
-        .in("status", ["published", "completed"])
-        .order("starts_at", { ascending: true }),
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
-      supabase.from("gallery").select("id", { count: "exact", head: true }),
-      supabase
-        .from("gallery")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(4),
-      getStories(),
-    ]);
+  const [
+    { data: events },
+    { count: riderCount },
+    { count: photoCount },
+    { data: galleryRows },
+    stories,
+    { data: authData },
+  ] = await Promise.all([
+    supabase
+      .from("events")
+      .select("*")
+      .in("status", ["published", "completed"])
+      .order("starts_at", { ascending: true }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase.from("gallery").select("id", { count: "exact", head: true }),
+    supabase
+      .from("gallery")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(4),
+    getStories(),
+    supabase.auth.getUser(),
+  ]);
 
   const all = (events ?? []) as Ride[];
   const upcoming = all.filter((r) => !isPast(r.starts_at) && r.status !== "completed");
@@ -84,7 +91,7 @@ export default async function HomePage() {
 
   // Auth-aware finale CTA — the section must not pitch Google sign-in to riders
   // who are already signed in (server check, no client JS).
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = authData?.user ?? null;
   let finaleCta = { href: "/login", label: "Join with Google" };
   if (user) {
     const { data: rd } = await supabase
@@ -108,7 +115,9 @@ export default async function HomePage() {
             alt="Sunrise motorcycle convoy riding through misty mountains"
             fill
             sizes="100vw"
+            quality={65}
             priority
+            fetchPriority="high"
             className="animate-ken-burns object-cover object-[75%_center] sm:object-left opacity-80"
           />
           {/* Tight localized vignette behind text only — does not wash across the rest of the image */}

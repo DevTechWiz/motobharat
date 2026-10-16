@@ -47,7 +47,10 @@ const nextConfig: NextConfig = {
       allowedOrigins: ["motobharat.co", "www.motobharat.co"],
     },
   },
-  images: { remotePatterns },
+  images: {
+    formats: ["image/avif", "image/webp"],
+    remotePatterns,
+  },
   turbopack: {
     rules: {
       "*.css": {
@@ -58,6 +61,15 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/(favicon.*|apple-touch-icon.*|brand/.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=604800, stale-while-revalidate=86400",
+          },
+        ],
+      },
       {
         source: "/(.*)",
         headers: securityHeaders,

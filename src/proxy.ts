@@ -48,17 +48,34 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // refresh session — must run before any code that uses the user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const path = request.nextUrl.pathname;
 
   // component gallery is dev-only (00_OVERVIEW: dev-only unlinked routes)
   if (path === "/dev/ui" && process.env.NODE_ENV === "production") {
     return new NextResponse(null, { status: 404 });
   }
+
+  const isProtected = path.startsWith("/admin") || path.startsWith("/profile");
+
+  // Fast path: if no Supabase auth cookie exists, skip remote session refresh.
+  const hasAuthCookies = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"));
+
+  if (!hasAuthCookies) {
+    if (isProtected) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("next", path);
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  // refresh session — must run before any code that uses the user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Logged-in users should not see /login
   if (path === "/login" && user) {
@@ -71,8 +88,6 @@ export async function proxy(request: NextRequest) {
     supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
     return res;
   }
-
-  const isProtected = path.startsWith("/admin") || path.startsWith("/profile");
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();

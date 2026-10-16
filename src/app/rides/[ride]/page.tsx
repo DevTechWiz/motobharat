@@ -61,26 +61,21 @@ export default async function RideDetailPage({
 }: {
   params: Promise<{ ride: string }>;
 }) {
-  const { ride: rideParam } = await params;
-  const ride = await getRide(rideParam);
+  const [{ ride: rideParam }, supabase] = await Promise.all([params, createClient()]);
+  const [ride, { data: authData }] = await Promise.all([
+    getRide(rideParam),
+    supabase.auth.getUser(),
+  ]);
   if (!ride) notFound();
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = authData?.user ?? null;
 
-  // Server-side role check for the admin edit shortcut (display only —
-  // /admin enforces proxy + requireAdmin + RLS independently).
-  let isAdmin = false;
-  if (user) {
-    const { data: self } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-    isAdmin = self?.role === "admin";
-  }
-
-  const [{ data: members }, { data: membership }, { data: media }] = await Promise.all([
+  const [
+    { data: members },
+    { data: membership },
+    { data: media },
+    adminProfileRes,
+  ] = await Promise.all([
     supabase
       .from("event_members")
       .select("*, profile:profiles(id, display_name, avatar_url)")
@@ -99,7 +94,16 @@ export default async function RideDetailPage({
       .select("*")
       .eq("event_id", ride.id)
       .order("created_at"),
+    user
+      ? supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
+
+  const isAdmin = adminProfileRes?.data?.role === "admin";
 
   const riderList = (members ?? []) as RideMember[];
   const isMember = !!membership;
@@ -214,6 +218,7 @@ export default async function RideDetailPage({
                   src={ride.cover_url}
                   alt=""
                   fill
+                  sizes="(min-width: 1024px) 66vw, 100vw"
                   aria-hidden="true"
                   className="scale-110 object-cover blur-2xl opacity-35 select-none pointer-events-none"
                 />

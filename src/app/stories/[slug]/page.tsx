@@ -53,15 +53,17 @@ export default async function StoryDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  const story = await getStoryBySlug(slug);
+  const [{ slug }, supabase] = await Promise.all([params, createClient()]);
+  const [story, { data: authData }, allStories] = await Promise.all([
+    getStoryBySlug(slug),
+    supabase.auth.getUser(),
+    getStories(),
+  ]);
+
   if (!story) notFound();
 
   // Admin edit shortcut check (same pattern as /rides/[ride] and /announcements/[a])
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = authData?.user ?? null;
   let isAdmin = false;
   if (user) {
     const { data: self } = await supabase
@@ -72,7 +74,6 @@ export default async function StoryDetailPage({
     isAdmin = self?.role === "admin";
   }
 
-  const allStories = await getStories();
   const moreStories = allStories
     .filter((s) => s.id !== story.id && s.slug !== story.slug)
     .slice(0, 3);
@@ -332,6 +333,7 @@ export default async function StoryDetailPage({
                   src={story.cover_url}
                   alt=""
                   fill
+                  sizes="(min-width: 1024px) 66vw, 100vw"
                   aria-hidden="true"
                   className="scale-110 object-cover blur-2xl opacity-35 select-none pointer-events-none"
                 />
