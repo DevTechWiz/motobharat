@@ -78,7 +78,7 @@ export function MemoriesGrid({
                 aria-label={`View full photo: ${displayTitle}`}
               >
                 <Image
-                  src={m.thumb_url || m.url}
+                  src={m.url || m.thumb_url || ""}
                   alt={m.alt || displayTitle}
                   fill
                   sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"

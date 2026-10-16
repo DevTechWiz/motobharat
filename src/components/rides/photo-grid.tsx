@@ -13,7 +13,7 @@ export interface GalleryPhoto {
 
 function PhotoThumb({ photo }: { photo: GalleryPhoto }) {
   const [failed, setFailed] = useState(false);
-  const [src, setSrc] = useState(photo.thumb || photo.url);
+  const [src, setSrc] = useState(photo.url || photo.thumb);
 
   if (failed) {
     return (

@@ -557,7 +557,7 @@ export async function uploadGalleryPhotos(
       const uuid = crypto.randomUUID();
       const [full, thumb] = await Promise.all([
         processImage(file, 2000, 80),
-        processImage(file, 400, 75),
+        processImage(file, 800, 82),
       ]);
       if (!["image/jpeg", "image/webp", "image/png"].includes(full.contentType)) {
         return {

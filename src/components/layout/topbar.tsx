@@ -144,7 +144,7 @@ export function Topbar() {
           ) : (
             <Link
               href="/login"
-              className="group inline-flex items-center gap-2 rounded-full border border-accent/80 bg-accent/5 px-5 py-2 text-xs font-semibold tracking-wider text-accent uppercase backdrop-blur-sm transition-all duration-300 hover:border-accent hover:bg-accent hover:text-black hover:shadow-[0_0_24px_rgba(245,158,11,0.4)] active:scale-[0.97]"
+              className="group inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2 text-xs font-bold tracking-wider text-black uppercase shadow-[0_4px_20px_-4px_rgba(245,158,11,0.5)] transition-all duration-300 hover:bg-accent-hover hover:shadow-[0_6px_28px_-4px_rgba(245,158,11,0.7)] hover:scale-[1.02] active:scale-[0.97]"
             >
               <span>Join Us</span>
               <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
@@ -367,7 +367,7 @@ export function Topbar() {
               <Link
                 href="/login"
                 onClick={() => setOpen(false)}
-                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-accent bg-accent/15 py-2.5 text-center text-xs font-semibold tracking-wider text-accent uppercase hover:bg-accent hover:text-black transition-colors"
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full bg-accent py-2.5 text-center text-xs font-bold tracking-wider text-black uppercase shadow-[0_4px_20px_-4px_rgba(245,158,11,0.4)] transition-all duration-200 hover:bg-accent-hover active:scale-[0.98]"
               >
                 Join Us
               </Link>
