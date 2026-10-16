@@ -19,6 +19,7 @@ export interface RideImport {
   status?: EventStatus;
   activities?: string[];
   itinerary?: RideImportItineraryItem[];
+  whatsapp_group_url?: string;
 }
 
 export interface RideImportSkip {
@@ -48,6 +49,7 @@ const KNOWN_KEYS = new Set([
   "status",
   "activities",
   "itinerary",
+  "whatsapp_group_url",
   "cover_url",
 ]);
 
@@ -176,6 +178,16 @@ export function parseRideImport(raw: string): RideImportResult {
   if (destination) {
     values.destination = destination;
     filled.push("Destination");
+  }
+
+  const whatsappGroupUrl = asTrimmedString(input.whatsapp_group_url);
+  if (whatsappGroupUrl) {
+    if (/^https?:\/\/(chat\.whatsapp\.com\/[A-Za-z0-9_-]+|wa\.me\/.+)/i.test(whatsappGroupUrl)) {
+      values.whatsapp_group_url = whatsappGroupUrl;
+      filled.push("WhatsApp group");
+    } else {
+      skip("whatsapp_group_url", "must be a valid WhatsApp link — skipped");
+    }
   }
 
   if (input.distance_km !== undefined && input.distance_km !== null && input.distance_km !== "") {

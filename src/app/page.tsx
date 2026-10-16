@@ -9,9 +9,9 @@ import { EmptyState } from "@/components/ui/feedback";
 import { RideCard } from "@/components/rides/ride-card";
 import { Reveal, Stagger, StaggerItem, CountUp } from "@/components/ui/reveal";
 import { Marquee } from "@/components/ui/marquee";
-import { PhotoGrid, type GalleryPhoto } from "@/components/rides/photo-grid";
+import { MemoriesGrid, type MemoryItem } from "@/components/gallery/memory-card";
 import { formatRideDate, formatRideTime, isPast } from "@/lib/format";
-import type { GalleryItem, Ride } from "@/lib/types";
+import type { Ride } from "@/lib/types";
 import { StoryCard } from "@/components/stories/story-card";
 import { getStories } from "@/lib/stories";
 
@@ -60,7 +60,7 @@ export default async function HomePage() {
     supabase.from("gallery").select("id", { count: "exact", head: true }),
     supabase
       .from("gallery")
-      .select("*")
+      .select("*, event:events(id, title, slug, starts_at, destination)")
       .order("created_at", { ascending: false })
       .limit(4),
     getStories(),
@@ -83,11 +83,7 @@ export default async function HomePage() {
     { value: Math.round(totalKm), label: "KM Together", icon: MapPin },
   ];
 
-  const memories: GalleryPhoto[] = ((galleryRows ?? []) as GalleryItem[]).map((m) => ({
-    url: m.url,
-    thumb: m.thumb_url || m.url,
-    alt: m.alt || "Ride photo",
-  }));
+  const memories: MemoryItem[] = (galleryRows ?? []) as unknown as MemoryItem[];
 
   // Auth-aware finale CTA — the section must not pitch Google sign-in to riders
   // who are already signed in (server check, no client JS).
@@ -111,14 +107,14 @@ export default async function HomePage() {
       <section className="relative flex min-h-[90vh] items-center overflow-hidden border-b border-border pt-14 sm:pt-16">
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://assets.motobharat.co/hero/Sunrise%20Motorcycle%20Convoy%20Through%20Misty%20Mountains.png"
+            src="https://assets.motobharat.co/hero/hero_02.png"
             alt="Sunrise motorcycle convoy riding through misty mountains"
             fill
             sizes="100vw"
-            quality={65}
+            unoptimized
             priority
             fetchPriority="high"
-            className="animate-ken-burns object-cover object-[75%_center] sm:object-left opacity-80"
+            className="animate-ken-burns object-cover object-[75%_center] sm:object-left opacity-95"
           />
           {/* Tight localized vignette behind text only — does not wash across the rest of the image */}
           <div className="absolute inset-y-0 left-0 w-full sm:w-[48%] bg-gradient-to-r from-bg/80 via-bg/30 to-transparent" />
@@ -176,24 +172,24 @@ export default async function HomePage() {
               {nextRide && (
                 <Link
                   href={nextRide.slug ? `/rides/${nextRide.slug}` : `/rides/${nextRide.id}`}
-                  className="group inline-flex w-fit max-w-full items-center gap-2.5 sm:gap-3.5 rounded-xl border border-border/80 bg-surface/70 px-3 py-2 sm:px-5 sm:py-3.5 backdrop-blur-md transition-all duration-200 hover:border-accent/60 hover:bg-surface-2/80 active:scale-[0.98]"
+                  className="group inline-flex w-fit max-w-full items-center gap-2 sm:gap-3 rounded-lg sm:rounded-xl border border-white/10 bg-black/30 px-2.5 py-1.5 sm:px-4 sm:py-2.5 backdrop-blur-md transition-all duration-200 hover:border-accent/50 hover:bg-black/50 active:scale-[0.98] shadow-sm"
                 >
-                  <div className="flex size-8 sm:size-10 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-accent">
-                    <Calendar className="size-4 sm:size-5" aria-hidden />
+                  <div className="flex size-7 sm:size-9 shrink-0 items-center justify-center rounded-md sm:rounded-lg border border-accent/30 bg-accent/10 text-accent">
+                    <Calendar className="size-3.5 sm:size-4.5" aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="block font-mono text-[8px] sm:text-[10px] font-bold tracking-[0.18em] sm:tracking-[0.2em] text-accent uppercase">
+                    <span className="block font-mono text-[7.5px] sm:text-[9.5px] font-bold tracking-[0.16em] sm:tracking-[0.2em] text-accent uppercase leading-tight">
                       Next Departure
                     </span>
-                    <span className="block truncate text-xs sm:text-base font-bold text-white">
+                    <span className="block truncate text-[11px] sm:text-sm font-bold text-white leading-snug">
                       {nextRide.title}
                     </span>
-                    <span className="block font-mono text-[10px] sm:text-xs text-secondary tabular-nums">
+                    <span className="block font-mono text-[9px] sm:text-[11px] text-white/70 tabular-nums leading-tight">
                       {formatRideDate(nextRide.starts_at)} · {formatRideTime(nextRide.starts_at)}
                     </span>
                   </div>
                   <ArrowUpRight
-                    className="size-3.5 sm:size-4 shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent"
+                    className="size-3 sm:size-4 shrink-0 text-white/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent"
                     aria-hidden
                   />
                 </Link>
@@ -296,7 +292,7 @@ export default async function HomePage() {
                 />
                 <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-bg">
                   <Image
-                    src="https://assets.motobharat.co/hero/IMG_9782_11zon.jpg"
+                    src="https://assets.motobharat.co/hero/aboutUs_04.jpg"
                     alt="MotoBharat riders together on a community ride"
                     fill
                     sizes="(min-width:1024px) 50vw, 100vw"
@@ -371,9 +367,9 @@ export default async function HomePage() {
             <SectionHeader
               eyebrow="Visual Archive"
               title="Moments on the Road"
-              cta={{ href: "/rides", label: "Rides with Photos" }}
+              cta={{ href: "/gallery", label: "View All Photos" }}
             />
-            <PhotoGrid photos={memories} />
+            <MemoriesGrid memories={memories} />
           </Container>
         </Section>
       )}

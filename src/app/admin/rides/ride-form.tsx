@@ -42,6 +42,7 @@ export function RideForm({
     difficulty?: string | null;
     status?: string;
     cover_url?: string | null;
+    whatsapp_group_url?: string | null;
   };
   action: (prev: RideFormState, formData: FormData) => Promise<RideFormState>;
   onCreated?: (id: string) => void;
@@ -331,6 +332,20 @@ export function RideForm({
             </Select>
           </Field>
         </div>
+
+        <Field
+          label="WhatsApp Group Link (Optional)"
+          htmlFor="whatsapp_group_url"
+          hint="Dedicated convoy chat — unlocked only for approved KYC riders who join this ride"
+        >
+          <Input
+            id="whatsapp_group_url"
+            name="whatsapp_group_url"
+            type="url"
+            defaultValue={ride?.whatsapp_group_url ?? imported?.whatsapp_group_url ?? ""}
+            placeholder="https://chat.whatsapp.com/..."
+          />
+        </Field>
 
         {/* Cover photo wrapped like Ride Highlights & Activities */}
         <div className="space-y-2.5 sm:space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">

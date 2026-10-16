@@ -14,6 +14,8 @@ import {
   Flag,
   Route,
   Sparkles,
+  MessageCircle,
+  Lock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container } from "@/components/layout/container";
@@ -446,6 +448,26 @@ export default async function RideDetailPage({
             {!cancelled && (
               <>
                 <JoinLeaveButton rideId={ride.id} isMember={isMember} />
+
+                {ride.whatsapp_group_url && (
+                  isMember || isAdmin ? (
+                    <a
+                      href={ride.whatsapp_group_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-h-[38px] sm:min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-[#25D366]/40 bg-[#25D366]/15 px-3 py-2 sm:px-4 sm:py-3 text-[11px] sm:text-xs font-bold tracking-wider text-[#25D366] uppercase transition-[color,border-color,background-color,transform] duration-150 ease-out hover:border-[#25D366] hover:bg-[#25D366]/25 active:scale-[0.97]"
+                    >
+                      <MessageCircle className="size-3.5" aria-hidden />
+                      Join WhatsApp Group
+                    </a>
+                  ) : (
+                    <div className="flex min-h-[36px] w-full items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-surface-2/60 px-3 py-2 text-center text-[10.5px] sm:text-[11px] text-muted">
+                      <Lock className="size-3 shrink-0 text-muted/70" aria-hidden />
+                      <span>Join this ride to unlock the WhatsApp group</span>
+                    </div>
+                  )
+                )}
+
                 <a
                   href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
                     `🏍️ MotoBharat Warangal — ${ride.title}\n📅 ${formatRideDate(ride.starts_at)} · ${formatRideTime(ride.starts_at)}\n📍 Start: ${ride.meeting_point ?? "Warangal"}${ride.destination ? `\n🏁 Destination: ${ride.destination}` : ""}\n\nJoin the ride: https://motobharat.co/rides/${ride.slug ?? ride.id}`

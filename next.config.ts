@@ -15,13 +15,17 @@ if (r2Base) {
 // script-src needs 'unsafe-inline': App Router ships the RSC payload as inline <script> tags.
 // static.cloudflareinsights.com / cloudflareinsights.com: Cloudflare Web Analytics
 // beacon (auto-injected RUM) — analytics-only, allowlisted so it loads and reports.
-// connect-src allows the browser Supabase client; frame-src covers the Google OAuth flow.
+const isDev = process.env.NODE_ENV === "development";
+const scriptSrc = isDev
+  ? "'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com"
+  : "'self' 'unsafe-inline' https://static.cloudflareinsights.com";
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+      `script-src ${scriptSrc}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' https: data: blob:",
       "font-src 'self'",
@@ -48,7 +52,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    formats: ["image/avif", "image/webp"],
+    unoptimized: true,
     remotePatterns,
   },
   turbopack: {

@@ -117,6 +117,20 @@ function parseActivities(raw: string): string[] {
   return [];
 }
 
+function cleanWhatsAppGroupUrl(raw: string | null): { value: string | null; error?: string } {
+  if (!raw) return { value: null };
+  const trimmed = raw.trim();
+  if (!trimmed) return { value: null };
+  const isValid = /^https?:\/\/(chat\.whatsapp\.com\/[A-Za-z0-9_-]+|wa\.me\/.+)/i.test(trimmed);
+  if (!isValid) {
+    return {
+      value: null,
+      error: "WhatsApp group link must be a valid link (e.g. https://chat.whatsapp.com/...).",
+    };
+  }
+  return { value: trimmed };
+}
+
 export async function createRide(
   _prev: RideFormState,
   formData: FormData,
@@ -130,6 +144,9 @@ export async function createRide(
   const startsAt = String(formData.get("starts_at") ?? "");
   const meetingPoint = String(formData.get("meeting_point") ?? "").trim();
   const destination = String(formData.get("destination") ?? "").trim() || null;
+  const rawWhatsapp = String(formData.get("whatsapp_group_url") ?? "").trim();
+  const cleanWhatsApp = cleanWhatsAppGroupUrl(rawWhatsapp);
+  if (cleanWhatsApp.error) return { error: cleanWhatsApp.error };
   const itinerary = parseItinerary(String(formData.get("itinerary") ?? "[]"));
   const activities = parseActivities(String(formData.get("activities") ?? "[]"));
   const distanceKm = String(formData.get("distance_km") ?? "").trim();
@@ -174,6 +191,7 @@ export async function createRide(
     difficulty: cleanDifficulty(difficulty),
     status,
     cover_url: coverUrlFinal,
+    whatsapp_group_url: cleanWhatsApp.value,
     slug: slugify(title),
     created_by: user.id,
   };
@@ -182,11 +200,11 @@ export async function createRide(
     .select("id")
     .single();
 
-  // Graceful fallback if activities column has not yet been applied
-  if (error && (error.code === "42703" || error.message?.includes("activities"))) {
+  // Graceful fallback if whatsapp_group_url or activities column has not yet been applied
+  if (error && (error.code === "42703" || error.message?.includes("activities") || error.message?.includes("whatsapp_group_url"))) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { activities: _omit, ...payloadWithoutActivities } = insertPayload;
-    const retry = await supabase.from("events").insert(payloadWithoutActivities)
+    const { activities: _omit1, whatsapp_group_url: _omit2, ...payloadClean } = insertPayload;
+    const retry = await supabase.from("events").insert(payloadClean)
       .select("id")
       .single();
     error = retry.error;
@@ -228,6 +246,10 @@ export async function updateRide(
   const startsAt = String(formData.get("starts_at") ?? "");
   const meetingPoint = String(formData.get("meeting_point") ?? "").trim();
   const destination = String(formData.get("destination") ?? "").trim() || null;
+  const hasWhatsappGroup = formData.has("whatsapp_group_url");
+  const rawWhatsapp = String(formData.get("whatsapp_group_url") ?? "").trim();
+  const cleanWhatsApp = cleanWhatsAppGroupUrl(rawWhatsapp);
+  if (cleanWhatsApp.error) return { error: cleanWhatsApp.error };
   const activities = parseActivities(String(formData.get("activities") ?? "[]"));
   const distanceKm = String(formData.get("distance_km") ?? "").trim();
   const difficulty = String(formData.get("difficulty") ?? "");
@@ -291,6 +313,7 @@ export async function updateRide(
     difficulty: cleanDifficulty(difficulty),
     status,
     ...(hasItinerary ? { itinerary } : {}),
+    ...(hasWhatsappGroup ? { whatsapp_group_url: cleanWhatsApp.value } : {}),
     ...(newCoverUrl ? { cover_url: newCoverUrl } : {}),
   };
 
@@ -302,13 +325,13 @@ export async function updateRide(
     .select("slug")
     .maybeSingle();
 
-  // Graceful fallback if activities column has not yet been applied
-  if (error && (error.code === "42703" || error.message?.includes("activities"))) {
+  // Graceful fallback if whatsapp_group_url or activities column has not yet been applied
+  if (error && (error.code === "42703" || error.message?.includes("activities") || error.message?.includes("whatsapp_group_url"))) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { activities: _omit, ...payloadWithoutActivities } = updatePayload;
+    const { activities: _omit1, whatsapp_group_url: _omit2, ...payloadClean } = updatePayload;
     const retry = await supabase
       .from("events")
-      .update(payloadWithoutActivities)
+      .update(payloadClean)
       .eq("id", id)
       .select("slug")
       .maybeSingle();

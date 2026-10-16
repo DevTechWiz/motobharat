@@ -224,7 +224,7 @@ export default async function AboutPage() {
         <Reveal>
           <div className="group relative aspect-16/10 overflow-hidden rounded-2xl border border-border bg-surface-2 sm:aspect-21/9">
             <Image
-              src="https://assets.motobharat.co/hero/WhatsApp%20Image%202026-10-16%20at%201.18.35%20PM.jpeg"
+              src="https://assets.motobharat.co/hero/aboutUs_01.jpeg"
               alt="MotoBharat riders assembled for a community expedition"
               fill
               sizes="100vw"
@@ -354,11 +354,11 @@ export default async function AboutPage() {
               alt: "MotoBharat riders on the open road",
             },
             {
-              src: "https://assets.motobharat.co/hero/IMG_9782_11zon.jpg",
+              src: "https://assets.motobharat.co/hero/aboutUs_04.jpg",
               alt: "Community riding column in formation",
             },
             {
-              src: "https://assets.motobharat.co/hero/WhatsApp%20Image%202026-10-16%20at%201.17.26%20PM.jpeg",
+              src: "https://assets.motobharat.co/hero/aboutUs_03.jpeg",
               alt: "Riders gathered at the departure assembly point",
             },
           ].map((p) => (

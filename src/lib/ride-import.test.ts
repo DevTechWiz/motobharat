@@ -111,4 +111,20 @@ describe("parseRideImport", () => {
     expect(r.ok).toBe(true);
     expect(r.values.description).toBe("see https://example.com/route // not a comment");
   });
+
+  it("parses valid whatsapp_group_url and skips invalid ones", () => {
+    const valid = parseRideImport(
+      `{ "title": "X", "whatsapp_group_url": "https://chat.whatsapp.com/ABC123xyz" }`
+    );
+    expect(valid.ok).toBe(true);
+    expect(valid.values.whatsapp_group_url).toBe("https://chat.whatsapp.com/ABC123xyz");
+    expect(valid.filled).toContain("WhatsApp group");
+
+    const invalid = parseRideImport(
+      `{ "title": "X", "whatsapp_group_url": "not-a-whatsapp-url" }`
+    );
+    expect(invalid.ok).toBe(true);
+    expect(invalid.values.whatsapp_group_url).toBeUndefined();
+    expect(invalid.skipped.map((s) => s.field)).toContain("whatsapp_group_url");
+  });
 });

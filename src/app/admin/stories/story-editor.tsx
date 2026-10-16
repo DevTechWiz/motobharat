@@ -409,7 +409,7 @@ export function StoryEditor({
               <Field
                 label="Custom URL Slug"
                 htmlFor="slug"
-                hint="Optional: e.g. ramesh-babu-ladakh-ride"
+                hint="Optional: e.g. dev-ladakh-ride"
               >
                 <Input
                   id="slug"

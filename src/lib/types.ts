@@ -66,6 +66,7 @@ export interface Ride {
   distance_km: number | null;
   difficulty: RideDifficulty | null;
   cover_url: string | null;
+  whatsapp_group_url?: string | null;
   status: EventStatus;
   created_by: string | null;
   created_at: string;

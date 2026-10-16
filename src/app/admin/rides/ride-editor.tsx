@@ -27,6 +27,7 @@ interface RideEditorProps {
     difficulty: string | null;
     status: string;
     cover_url: string | null;
+    whatsapp_group_url?: string | null;
   } | null;
   initialPhotos?: { id: string; url: string; alt: string }[];
   initialMembers?: RideMember[];
