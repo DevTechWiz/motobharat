@@ -72,7 +72,7 @@ export function MotorcycleCombobox({
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          className="w-full rounded-lg border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
+          className="w-full rounded-lg border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-text placeholder:text-white/20 focus:border-accent focus:outline-none"
         />
         <button
           type="button"

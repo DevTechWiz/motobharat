@@ -1,10 +1,21 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isPast } from "@/lib/format";
 import { LoginForm, type LoginStats } from "./login-form";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { next } = await searchParams;
+    const dest = next && next.startsWith("/") && !next.startsWith("//") ? next : "/profile";
+    redirect(dest);
+  }
 
   const [{ data: events }, { count: riderCount }] = await Promise.all([
     supabase

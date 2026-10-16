@@ -4,7 +4,7 @@ import { useActionState, useEffect, useState, useTransition, useRef } from "reac
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Bike, Shield, ShieldAlert, HeartPulse, FileText, CheckCircle2, ArrowLeft, type LucideIcon } from "lucide-react";
+import { Bike, Shield, ShieldAlert, HeartPulse, FileText, CheckCircle2, ArrowLeft, Lock, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { RegSteps } from "../reg-steps";
@@ -461,7 +461,7 @@ function KycForm() {
         </div>
 
         <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
-          <Field label="Secondary Emergency Contact Phone" htmlFor="emergency_contact_2_phone" hint="Optional backup">
+          <Field label="Secondary Emergency Contact Phone" htmlFor="emergency_contact_2_phone" hint="Backup contact in case primary is unreachable">
             <PhoneInput
               id="emergency_contact_2_phone"
               name="emergency_contact_2_phone"
@@ -469,7 +469,7 @@ function KycForm() {
               placeholder="+91 98765 00000"
             />
           </Field>
-          <Field label="Known Medical Conditions / Allergies" htmlFor="medical_conditions" hint="Optional — asthma, diabetes, penicillin, etc.">
+          <Field label="Known Medical Conditions / Allergies" htmlFor="medical_conditions" hint="Asthma, diabetes, penicillin allergy, etc.">
             <Input
               id="medical_conditions"
               name="medical_conditions"
@@ -486,7 +486,7 @@ function KycForm() {
         title="3. Community Details & Address"
         subtitle="Optional background info for the Warangal riders community"
       >
-        <Field label="Permanent House Address" htmlFor="permanent_address" hint="Optional">
+        <Field label="Permanent House Address" htmlFor="permanent_address" hint="For official records and physical correspondence">
             <Textarea
               id="permanent_address"
               name="permanent_address"
@@ -505,7 +505,7 @@ function KycForm() {
               placeholder="rider_warangal"
             />
           </Field>
-          <Field label="How did you hear about MotoBharat?" htmlFor="referral_source" hint="Optional">
+          <Field label="How did you hear about MotoBharat?" htmlFor="referral_source" hint="e.g. Instagram, Friends, WhatsApp community">
             <Input
               id="referral_source"
               name="referral_source"
@@ -515,7 +515,7 @@ function KycForm() {
           </Field>
         </div>
 
-        <Field label="Suggestions / Expectations" htmlFor="suggestions" hint="Optional">
+        <Field label="Suggestions / Expectations" htmlFor="suggestions" hint="Rides, routes, or events you would like to see organized">
             <Input
               id="suggestions"
               name="suggestions"
@@ -528,20 +528,71 @@ function KycForm() {
       {/* Section 4: Safety Code & Risk Waiver */}
       <SectionCard
         icon={FileText}
-        title="4. Safety Code & Risk Waiver"
-        subtitle="Mandatory confirmation before riding with the column"
+        title="4. Safety Code, Privacy & Risk Waiver"
+        subtitle="Transparency on sensitive data, safety standards, and legal declaration"
       >
+        {/* Data Privacy & Sensitive Information Disclosure */}
+        <div className="rounded-xl border border-border bg-surface-2/60 p-3.5 sm:p-4.5 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="rounded-md border border-border bg-surface p-1.5 text-accent">
+              <Lock className="size-4" aria-hidden />
+            </span>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-text">Data Privacy & Sensitive Information Disclosure</h4>
+              <p className="text-[11px] sm:text-xs text-muted">Why we collect emergency and licence details & how your privacy is protected</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 pt-1 text-[11px] sm:text-xs leading-relaxed">
+            {/* Why We Collect */}
+            <div className="rounded-lg border border-border/70 bg-surface/80 p-3 space-y-2">
+              <p className="font-semibold flex items-center gap-1.5 uppercase tracking-wider text-[10px] sm:text-[11px] text-accent">
+                <HeartPulse className="size-3.5 text-accent" />
+                Why We Collect This Data
+              </p>
+              <ul className="space-y-1.5 text-secondary text-[11px] sm:text-xs">
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent font-bold">•</span>
+                  <span><strong className="text-text">Emergency Care (&ldquo;Golden Hour&rdquo;):</strong> Blood group, allergies, medical notes, and emergency phone numbers allow ride marshals and local medics to deliver immediate assistance during unforeseen highway incidents.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-accent font-bold">•</span>
+                  <span><strong className="text-text">Legal & Column Safety:</strong> Driving Licence (DL) and vehicle registration verify that every participant holds a valid government licence and road-legal machine under Indian motor vehicle regulations.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* How We Manage & Protect */}
+            <div className="rounded-lg border border-border/70 bg-surface/80 p-3 space-y-2">
+              <p className="font-semibold flex items-center gap-1.5 uppercase tracking-wider text-[10px] sm:text-[11px] text-emerald-400">
+                <Shield className="size-3.5 text-emerald-400" />
+                How We Protect & Manage It
+              </p>
+              <ul className="space-y-1.5 text-secondary text-[11px] sm:text-xs">
+                <li className="flex items-start gap-1.5">
+                  <span className="text-emerald-400 font-bold">•</span>
+                  <span><strong className="text-text">Strictly Confidential:</strong> Your licence number, emergency contacts, medical notes, and address are <strong className="text-text">never shown publicly</strong>. Only verified club administrators have emergency access.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-emerald-400 font-bold">•</span>
+                  <span><strong className="text-text">DL Photo Auto-Purge:</strong> Your uploaded Driving Licence photo is permanently deleted from cloud storage the moment an admin verifies your account.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="text-emerald-400 font-bold">•</span>
+                  <span><strong className="text-text">Zero Commercial Sharing:</strong> Your data is solely used for ride safety and incident management. It is never sold, leased, or shared with commercial marketers.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <div className="rounded-lg border border-accent/40 bg-accent/5 p-3 sm:p-4 text-[11px] sm:text-xs leading-relaxed text-secondary space-y-1.5 sm:space-y-2">
           <p className="font-semibold text-text uppercase tracking-wide flex items-center gap-1.5 text-[11px] sm:text-xs">
             <CheckCircle2 className="size-3.5 sm:size-4 text-accent" />
             Declaration & Undertaking
           </p>
           <p>
-            &ldquo;I confirm that the information provided by me is true and correct. I understand that
-            motorcycle riding and group rides involve inherent risks. I agree to follow traffic laws, wear
-            proper safety gear, ride responsibly, and follow the instructions of the ride organizers. I
-            voluntarily participate in Motobharat_Warangal rides and accept responsibility for my own safety
-            and actions.&rdquo;
+            &ldquo;I declare that all personal, vehicle, and licensing information provided by me is true and valid. I understand that motorcycle touring involves inherent road hazards. I agree to wear full protective riding gear, obey Indian traffic regulations, maintain zero tolerance for rash riding or intoxication, and adhere to Ride Marshal instructions. I participate in MotoBharat Warangal rides voluntarily and assume full responsibility for my own safety, health, and vehicle.&rdquo;
           </p>
         </div>
 
@@ -556,7 +607,7 @@ function KycForm() {
               className="mt-0.5 size-4 rounded border-border text-accent focus:ring-accent"
             />
             <span className="text-[11px] sm:text-xs text-text font-medium leading-snug">
-              I have read, understood, and accept the MotoBharat Warangal Safety Code, traffic discipline rules, and voluntary participation risk waiver.
+              I have read, understood, and accept the Data Privacy Notice, MotoBharat Warangal Safety Code, traffic discipline rules, and voluntary participation risk waiver.
             </span>
           </label>
         </div>

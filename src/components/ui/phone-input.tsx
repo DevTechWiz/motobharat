@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 export interface PhoneInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "defaultValue"> {
   id?: string;
-  name: string;
+  name?: string;
   defaultValue?: string;
   value?: string;
   onChange?: (formattedValue: string) => void;
@@ -66,9 +66,10 @@ export function PhoneInput({
         maxLength={16}
         autoComplete="tel"
         className={cn(
-          "w-full rounded-lg border border-border bg-surface px-3 py-2 sm:px-3.5 sm:py-2.5 font-mono text-xs sm:text-sm text-text placeholder:text-muted transition-all scroll-mt-28",
+          "w-full rounded-lg border border-border bg-surface px-3 py-2 sm:px-3.5 sm:py-2.5 font-mono text-xs sm:text-sm text-text placeholder:text-white/20 transition-all scroll-mt-28",
           "hover:border-border-strong hover:bg-surface-2",
           "focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/40",
+          "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:bg-surface",
           className
         )}
         {...props}

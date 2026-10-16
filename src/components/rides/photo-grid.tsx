@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X, Camera } from "lucide-react";
+import { Camera } from "lucide-react";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 
 export interface GalleryPhoto {
   url: string;
@@ -12,6 +13,7 @@ export interface GalleryPhoto {
 
 function PhotoThumb({ photo }: { photo: GalleryPhoto }) {
   const [failed, setFailed] = useState(false);
+  const [src, setSrc] = useState(photo.thumb || photo.url);
 
   if (failed) {
     return (
@@ -22,46 +24,30 @@ function PhotoThumb({ photo }: { photo: GalleryPhoto }) {
     );
   }
 
+  const isLocalOrData =
+    typeof src === "string" && (src.startsWith("blob:") || src.startsWith("data:"));
+
   return (
     <Image
-      src={photo.thumb}
+      src={src}
       alt={photo.alt}
       fill
+      unoptimized={isLocalOrData}
       sizes="(min-width:768px) 25vw, 50vw"
       className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-      onError={() => setFailed(true)}
+      onError={() => {
+        if (src !== photo.url && photo.url) {
+          setSrc(photo.url);
+        } else {
+          setFailed(true);
+        }
+      }}
     />
   );
 }
 
 export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
   const [index, setIndex] = useState<number | null>(null);
-  const open = index !== null;
-
-  const close = useCallback(() => setIndex(null), []);
-  const prev = useCallback(
-    () => setIndex((i) => (i === null ? null : (i - 1 + photos.length) % photos.length)),
-    [photos.length],
-  );
-  const next = useCallback(
-    () => setIndex((i) => (i === null ? null : (i + 1) % photos.length)),
-    [photos.length],
-  );
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-      if (e.key === "ArrowLeft") prev();
-      if (e.key === "ArrowRight") next();
-    };
-    window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open, close, prev, next]);
 
   if (photos.length === 0) return null;
 
@@ -73,7 +59,7 @@ export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
             key={p.url}
             type="button"
             onClick={() => setIndex(i)}
-            className="group relative aspect-4/3 overflow-hidden rounded-lg border border-border bg-surface-2 transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.4)] active:scale-[0.97]"
+            className="group relative aspect-4/3 overflow-hidden rounded-lg border border-border bg-surface-2 transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_16px_40px_-16px_rgba(245,158,11,0.4)] active:scale-[0.97] cursor-pointer"
             aria-label={`View photo: ${p.alt}`}
           >
             <PhotoThumb photo={p} />
@@ -85,64 +71,13 @@ export function PhotoGrid({ photos }: { photos: GalleryPhoto[] }) {
         ))}
       </div>
 
-      {open && index !== null && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-fade-in"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Photo viewer"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) close();
-          }}
-        >
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Close"
-            className="absolute top-4 right-4 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
-          >
-            <X className="size-5" aria-hidden />
-          </button>
-
-          {photos.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={prev}
-                aria-label="Previous photo"
-                className="absolute left-4 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
-              >
-                <ChevronLeft className="size-6" aria-hidden />
-              </button>
-              <button
-                type="button"
-                onClick={next}
-                aria-label="Next photo"
-                className="absolute right-4 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
-              >
-                <ChevronRight className="size-6" aria-hidden />
-              </button>
-            </>
-          )}
-
-          <figure className="max-h-full max-w-4xl space-y-3 animate-scale-in">
-            <Image
-              src={photos[index].url}
-              alt={photos[index].alt}
-              width={1600}
-              height={1067}
-              className="max-h-[80vh] w-auto max-w-full rounded-lg object-contain"
-              priority
-            />
-            <figcaption className="flex items-center justify-between gap-4 text-xs text-white/80">
-              <span>{photos[index].alt}</span>
-              <span className="font-mono tabular-nums">
-                {index + 1} / {photos.length}
-              </span>
-            </figcaption>
-          </figure>
-        </div>
-      )}
+      <ImageLightbox
+        photos={photos}
+        initialIndex={index ?? 0}
+        isOpen={index !== null}
+        onClose={() => setIndex(null)}
+      />
     </>
   );
 }
+

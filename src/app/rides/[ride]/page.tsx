@@ -23,6 +23,7 @@ import { AdminEditLink } from "@/components/layout/admin-edit-link";
 import { formatRideDate, formatRideTime, isPast } from "@/lib/format";
 import { JoinLeaveButton } from "./join-leave-button";
 import { PhotoGrid, type GalleryPhoto } from "@/components/rides/photo-grid";
+import { ZoomableImage } from "@/components/ui/image-lightbox";
 import type { GalleryItem, Ride, RideMember } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -104,8 +105,8 @@ export default async function RideDetailPage({
   const isMember = !!membership;
   const photos: GalleryPhoto[] = ((media ?? []) as GalleryItem[]).map((m) => ({
     url: m.url,
-    thumb: m.thumb_url,
-    alt: m.alt,
+    thumb: m.thumb_url || m.url,
+    alt: m.alt || "Ride photo",
   }));
 
   const past = isPast(ride.starts_at) || ride.status === "completed";
@@ -202,23 +203,30 @@ export default async function RideDetailPage({
         <div className="min-w-0 space-y-5 sm:space-y-8">
           {/* Cover Card - True 16:9 frame with zero-clip containment & ambient backdrop */}
           {ride.cover_url && (
-            <div className="relative aspect-video w-full overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-surface-2 shadow-lg">
-              <Image
-                src={ride.cover_url}
-                alt=""
-                fill
-                aria-hidden="true"
-                className="scale-110 object-cover blur-2xl opacity-35 select-none pointer-events-none"
-              />
-              <Image
-                src={ride.cover_url}
-                alt={ride.title}
-                fill
-                sizes="(min-width: 1024px) 66vw, 100vw"
-                className="relative object-contain"
-                priority
-              />
-            </div>
+            <ZoomableImage
+              src={ride.cover_url}
+              alt={ride.title}
+              title={`${ride.title} — Official Cover`}
+              className="w-full"
+            >
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-surface-2 shadow-lg">
+                <Image
+                  src={ride.cover_url}
+                  alt=""
+                  fill
+                  aria-hidden="true"
+                  className="scale-110 object-cover blur-2xl opacity-35 select-none pointer-events-none"
+                />
+                <Image
+                  src={ride.cover_url}
+                  alt={ride.title}
+                  fill
+                  sizes="(min-width: 1024px) 66vw, 100vw"
+                  className="relative object-contain"
+                  priority
+                />
+              </div>
+            </ZoomableImage>
           )}
 
           {/* Activities & Highlights moved into content area */}
@@ -368,23 +376,28 @@ export default async function RideDetailPage({
                 No riders joined yet — be the first on the column.
               </p>
             ) : (
-              <ul className="grid grid-cols-2 gap-2">
-                {riderList.map((m) => (
-                  <li
-                    key={m.user_id}
-                    className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-1.5 sm:gap-2.5 sm:rounded-xl sm:px-3 sm:py-2"
-                  >
-                    <Avatar
-                      name={m.profile?.display_name ?? "Rider"}
-                      src={m.profile?.avatar_url}
-                      size="sm"
-                    />
-                    <span className="truncate text-[11px] sm:text-sm font-semibold">
-                      {m.profile?.display_name ?? "Rider"}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <div className="flex items-center">
+                  {riderList.slice(0, 6).map((m) => {
+                    const name = m.profile?.display_name ?? "Rider";
+                    return (
+                      <span key={m.user_id} title={name} className="-ml-2 shrink-0 first:ml-0">
+                        <Avatar name={name} src={m.profile?.avatar_url} size="sm" className="ring-2 ring-bg" />
+                      </span>
+                    );
+                  })}
+                  {riderList.length > 6 && (
+                    <span className="-ml-2 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-2 font-mono text-[10px] font-bold text-accent ring-2 ring-bg">
+                      +{riderList.length - 6}
                     </span>
-                  </li>
-                ))}
-              </ul>
+                  )}
+                </div>
+                <p className="text-xs sm:text-sm text-muted">
+                  {riderList.length === 1
+                    ? "1 rider on the column"
+                    : `${riderList.length} riders on the column`}
+                </p>
+              </div>
             )}
           </div>
 

@@ -66,12 +66,17 @@ export function SetupForm({
   const router = useRouter();
   const [state, formAction] = useActionState(saveBasicProfile, {} as ProfileFormState);
   const [isPending, startTransition] = useTransition();
-  // No draft storage: inputs are uncontrolled (server values as defaults) and
-  // submit dispatches manually, so error returns never clear anything.
-  // Ephemeral UI state only (never persisted).
-  const [sameAsPrimary, setSameAsPrimary] = useState(false);
-  // Ephemeral UI state only (never persisted): WhatsApp mirror + DOB age line.
-  const [wa, setWa] = useState<string | null>(null);
+  const initialPhone = initialData?.phone ?? "";
+  const initialWa = initialData?.whatsapp_number ?? "";
+  const initialSame = Boolean(
+    initialPhone &&
+      initialWa &&
+      initialPhone.replace(/\D/g, "") === initialWa.replace(/\D/g, "")
+  );
+
+  const [phone, setPhone] = useState(initialPhone);
+  const [wa, setWa] = useState(initialWa);
+  const [sameAsPrimary, setSameAsPrimary] = useState(initialSame);
   const [dobShown, setDobShown] = useState<string | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const lastInvalidRef = useRef<number>(0);
@@ -138,20 +143,22 @@ export function SetupForm({
             defaultValue={profile?.display_name ?? ""}
             required
             maxLength={50}
-            placeholder="As you want it on ride lists"
+            placeholder="e.g. Rahul Sharma"
           />
         </Field>
 
         <div className="grid grid-cols-1 gap-2.5 sm:gap-4 sm:grid-cols-2">
-          <Field label="City / Location" htmlFor="city" hint="Your current base">
+          <Field label="City / Location" htmlFor="city" required hint="Your current base">
             <Input
               id="city"
               name="city"
               defaultValue={profile?.city ?? ""}
-              placeholder="Warangal"
+              required
+              maxLength={100}
+              placeholder="e.g. Warangal"
             />
           </Field>
-          <Field label="Occupation" htmlFor="occupation" hint="Optional">
+          <Field label="Occupation" htmlFor="occupation" hint="Your profession or field of study">
             <Input
               id="occupation"
               name="occupation"
@@ -216,7 +223,8 @@ export function SetupForm({
               id="phone"
               name="phone"
               required
-              defaultValue={initialData?.phone ?? ""}
+              value={phone}
+              onChange={(val) => setPhone(val)}
               placeholder="+91 98765 43210"
             />
           </Field>
@@ -224,17 +232,16 @@ export function SetupForm({
             <Field label="WhatsApp Number" htmlFor="whatsapp_number" required>
               <PhoneInput
                 id="whatsapp_number"
-                name="whatsapp_number"
-                required
-                readOnly={sameAsPrimary}
-                className={sameAsPrimary ? "opacity-50" : undefined}
-                value={wa ?? initialData?.whatsapp_number ?? ""}
-                onChange={(val) => {
-                  setSameAsPrimary(false);
-                  setWa(val);
-                }}
+                name={sameAsPrimary ? undefined : "whatsapp_number"}
+                required={!sameAsPrimary}
+                disabled={sameAsPrimary}
+                value={sameAsPrimary ? phone : wa}
+                onChange={(val) => setWa(val)}
                 placeholder="+91 98765 43210"
               />
+              {sameAsPrimary && (
+                <input type="hidden" name="whatsapp_number" value={phone} />
+              )}
             </Field>
             <label
               htmlFor="wa_same"
@@ -248,14 +255,8 @@ export function SetupForm({
                   const checked = e.target.checked;
                   setSameAsPrimary(checked);
                   if (!checked) {
-                    setWa("");
-                    return;
+                    setWa(phone);
                   }
-                  const form = e.currentTarget.form;
-                  const primary = form
-                    ? String(new FormData(form).get("phone") ?? "")
-                    : (initialData?.phone ?? "");
-                  setWa(primary);
                 }}
                 className="size-4 cursor-pointer accent-(--accent)"
               />

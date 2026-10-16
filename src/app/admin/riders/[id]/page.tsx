@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/feedback";
+import { ZoomableImage } from "@/components/ui/image-lightbox";
 import { ApprovalButtons } from "./approval-buttons";
 import { LockedFieldsForm } from "./locked-fields-form";
+import { DlViewerCard } from "./dl-viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,13 @@ export default async function RiderReviewPage({
       </Link>
 
       <div className="flex items-center gap-3 sm:gap-4">
-        <Avatar name={profile.display_name} src={profile.avatar_url} size="md" />
+        <ZoomableImage
+          src={profile.avatar_url}
+          alt={profile.display_name}
+          title={`Profile photo — ${profile.display_name}`}
+        >
+          <Avatar name={profile.display_name} src={profile.avatar_url} size="md" />
+        </ZoomableImage>
         <div>
           <h2 className="text-lg sm:text-xl font-extrabold">{profile.display_name}</h2>
           <div className="mt-1 flex flex-wrap gap-1.5 sm:gap-2">
@@ -71,19 +78,11 @@ export default async function RiderReviewPage({
 
       {(rd.dl_image_url || !rd.registered) &&
         (rd.dl_image_url ? (
-          <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-surface-2">
-            <Image
-              src={rd.dl_image_url}
-              alt={`Driving licence of ${profile.display_name}`}
-              width={1200}
-              height={800}
-              sizes="(min-width:768px) 720px, 100vw"
-              className="max-h-52 sm:max-h-80 h-auto w-full object-contain"
-            />
-            <p className="border-t border-border px-3 sm:px-4 py-1.5 sm:py-2 font-mono text-[10px] tracking-wider text-muted uppercase">
-              Licence photo on file
-            </p>
-          </div>
+          <DlViewerCard
+            imageUrl={rd.dl_image_url}
+            riderName={profile.display_name}
+            dlNumber={rd.driving_licence}
+          />
         ) : (
           <EmptyState
             title="No licence photo on file"

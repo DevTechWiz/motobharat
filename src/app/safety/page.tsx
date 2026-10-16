@@ -119,7 +119,7 @@ export default function SafetyPage() {
                 href={`tel:${e.num}`}
                 className="group flex-1 min-w-[130px] sm:min-w-36 rounded-xl border border-border bg-surface-2 px-4 py-3 sm:px-6 sm:py-4 transition-all hover:border-accent hover:bg-surface-3 active:scale-[0.98]"
               >
-                <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
                   <Phone className="size-3 text-muted group-hover:text-accent transition-colors" />
                   <span className="font-mono text-[9px] font-bold text-accent/80 tracking-widest uppercase">
                     Tap to call

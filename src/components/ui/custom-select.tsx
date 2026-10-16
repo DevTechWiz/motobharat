@@ -184,7 +184,7 @@ export function CustomSelect({
               {selectedOption.label}
             </span>
           ) : (
-            <span className="truncate text-muted">{placeholder}</span>
+            <span className="truncate text-white/20">{placeholder}</span>
           )}
         </div>
         <ChevronDown
@@ -212,7 +212,7 @@ export function CustomSelect({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search options…"
-                className="w-full rounded-lg bg-surface px-8 py-1.5 text-xs text-text placeholder:text-muted focus:border-accent focus:outline-none"
+                className="w-full rounded-lg bg-surface px-8 py-1.5 text-xs text-text placeholder:text-white/20 focus:border-accent focus:outline-none"
               />
               {search && (
                 <button
