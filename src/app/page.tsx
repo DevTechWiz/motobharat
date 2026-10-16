@@ -12,6 +12,8 @@ import { Marquee } from "@/components/ui/marquee";
 import { PhotoGrid, type GalleryPhoto } from "@/components/rides/photo-grid";
 import { formatRideDate, formatRideTime, isPast } from "@/lib/format";
 import type { GalleryItem, Ride } from "@/lib/types";
+import { StoryCard } from "@/components/stories/story-card";
+import { getStories } from "@/lib/stories";
 
 export const dynamic = "force-dynamic";
 
@@ -41,12 +43,12 @@ const PRINCIPLES = [
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const [{ data: events }, { count: riderCount }, { count: photoCount }, { data: galleryRows }] =
+  const [{ data: events }, { count: riderCount }, { count: photoCount }, { data: galleryRows }, stories] =
     await Promise.all([
       supabase
         .from("events")
         .select("*")
-        .eq("status", "published")
+        .in("status", ["published", "completed"])
         .order("starts_at", { ascending: true }),
       supabase.from("profiles").select("id", { count: "exact", head: true }),
       supabase.from("gallery").select("id", { count: "exact", head: true }),
@@ -55,10 +57,15 @@ export default async function HomePage() {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(4),
+      getStories(),
     ]);
 
   const all = (events ?? []) as Ride[];
-  const upcoming = all.filter((r) => !isPast(r.starts_at));
+  const upcoming = all.filter((r) => !isPast(r.starts_at) && r.status !== "completed");
+  const past = all
+    .filter((r) => isPast(r.starts_at) || r.status === "completed")
+    .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+  const featuredRides = [...upcoming, ...past].slice(0, 3);
   const nextRide = upcoming[0] ?? null;
   const totalKm = all.reduce((sum, r) => sum + (r.distance_km ?? 0), 0);
 
@@ -71,8 +78,8 @@ export default async function HomePage() {
 
   const memories: GalleryPhoto[] = ((galleryRows ?? []) as GalleryItem[]).map((m) => ({
     url: m.url,
-    thumb: m.thumb_url,
-    alt: m.alt,
+    thumb: m.thumb_url || m.url,
+    alt: m.alt || "Ride photo",
   }));
 
   // Auth-aware finale CTA — the section must not pitch Google sign-in to riders
@@ -102,7 +109,7 @@ export default async function HomePage() {
             fill
             sizes="100vw"
             priority
-            className="animate-ken-burns object-cover object-center opacity-80"
+            className="animate-ken-burns object-cover object-[75%_center] sm:object-left opacity-80"
           />
           {/* Tight localized vignette behind text only — does not wash across the rest of the image */}
           <div className="absolute inset-y-0 left-0 w-full sm:w-[48%] bg-gradient-to-r from-bg/80 via-bg/30 to-transparent" />
@@ -141,7 +148,7 @@ export default async function HomePage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-4 pt-1.5 sm:pt-2 max-w-sm sm:max-w-none">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 pt-1.5 sm:pt-2 max-w-sm sm:max-w-none">
                 <ButtonLink
                   href="/rides"
                   className="!min-h-[38px] sm:!min-h-[44px] px-3 sm:px-6 py-2 sm:py-3.5 text-[11px] sm:text-xs font-bold tracking-normal sm:tracking-wider justify-center"
@@ -151,7 +158,7 @@ export default async function HomePage() {
                 <ButtonLink
                   href="/safety"
                   variant="secondary"
-                  className="!min-h-[38px] sm:!min-h-[44px] px-3 sm:px-6 py-2 sm:py-3.5 text-[11px] sm:text-xs font-bold tracking-normal sm:tracking-wider justify-center"
+                  className="bg-surface !min-h-[38px] sm:!min-h-[44px] px-3 sm:px-6 py-2 sm:py-3.5 text-[11px] sm:text-xs font-bold tracking-normal sm:tracking-wider justify-center"
                 >
                   Our Safety Code
                 </ButtonLink>
@@ -184,23 +191,26 @@ export default async function HomePage() {
               )}
 
               {/* Instrument-cluster stats strip — live counts (R7) */}
-              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-x-8 sm:gap-y-3 pt-2 sm:pt-3 max-w-sm sm:max-w-none">
-                {stats.map((s) => (
-                  <div
-                    key={s.label}
-                    className="flex items-center gap-2.5 sm:gap-3.5 rounded-lg sm:rounded-none bg-surface/40 sm:bg-transparent p-2 sm:p-0 border border-border/40 sm:border-none sm:border-l sm:border-white/15 sm:pl-6 sm:first:border-l-0 sm:first:pl-0"
-                  >
-                    <s.icon className="size-5 sm:size-7 shrink-0 text-accent" strokeWidth={1.5} aria-hidden />
-                    <span>
-                      <span className="block font-mono text-base sm:text-2xl leading-none font-bold text-white tabular-nums">
-                        <CountUp to={s.value} />
+              <div className="relative w-fit max-w-sm sm:max-w-none">
+                <div aria-hidden className="absolute -inset-4 rounded-[2rem] bg-black/40 blur-2xl" />
+                <div className="relative grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-x-8 sm:gap-y-3 pt-2 sm:pt-3">
+                  {stats.map((s) => (
+                    <div
+                      key={s.label}
+                      className="flex items-center gap-2.5 sm:gap-3.5 sm:border-l sm:border-white/15 sm:pl-6 sm:first:border-l-0 sm:first:pl-0"
+                    >
+                      <s.icon className="size-5 sm:size-7 shrink-0 text-accent drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]" strokeWidth={1.5} aria-hidden />
+                      <span>
+                        <span className="block font-mono text-base sm:text-2xl leading-none font-bold text-white tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                          <CountUp to={s.value} />
+                        </span>
+                        <span className="mt-0.5 sm:mt-1 block text-[9px] sm:text-[10px] font-semibold tracking-[0.14em] text-white/70 uppercase drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                          {s.label}
+                        </span>
                       </span>
-                      <span className="mt-0.5 sm:mt-1 block text-[9px] sm:text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
-                        {s.label}
-                      </span>
-                    </span>
-                  </div>
-                ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </Container>
@@ -220,22 +230,22 @@ export default async function HomePage() {
         />
       </div>
 
-      {/* Upcoming rides — live */}
+      {/* Club rides — upcoming first, then recent past rides */}
       <Section>
         <Container>
           <SectionHeader
             eyebrow="Departures"
-            title="Upcoming Rides"
+            title="Club Rides"
             cta={{ href: "/rides", label: "All Rides" }}
           />
-          {upcoming.length === 0 ? (
+          {featuredRides.length === 0 ? (
             <EmptyState
-              title="No upcoming rides"
+              title="No rides posted yet"
               hint="When the community posts rides, they will show up here."
             />
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {upcoming.slice(0, 3).map((ride) => (
+              {featuredRides.map((ride) => (
                 <RideCard key={ride.id} ride={ride} />
               ))}
             </div>
@@ -243,8 +253,26 @@ export default async function HomePage() {
         </Container>
       </Section>
 
+      {/* Featured Rider Stories & Achievements */}
+      {stories.length > 0 && (
+        <Section bg="surface" border="bottom">
+          <Container>
+            <SectionHeader
+              eyebrow="Chronicles"
+              title="Stories & Achievements"
+              cta={{ href: "/stories", label: "All Stories" }}
+            />
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {stories.slice(0, 3).map((story) => (
+                <StoryCard key={story.id} story={story} />
+              ))}
+            </div>
+          </Container>
+        </Section>
+      )}
+
       {/* About the club — photo essay */}
-      <Section bg="surface" border="both">
+      <Section border="bottom">
         <Container>
           <Reveal>
             <div className="grid items-center gap-6 sm:gap-8 lg:grid-cols-2 lg:gap-12">
@@ -259,8 +287,8 @@ export default async function HomePage() {
                 />
                 <div className="relative aspect-4/3 overflow-hidden rounded-2xl bg-bg">
                   <Image
-                    src="https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=1200&q=80"
-                    alt="Misty hairpin curves and ghat roads on a community expedition"
+                    src="https://assets.motobharat.co/hero/IMG_9782_11zon.jpg"
+                    alt="MotoBharat riders together on a community ride"
                     fill
                     sizes="(min-width:1024px) 50vw, 100vw"
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -341,73 +369,53 @@ export default async function HomePage() {
         </Section>
       )}
 
-      {/* Join invitation */}
-      <Section spacing="spacious">
-        <Container>
-          <Reveal>
-            <div className="relative overflow-hidden rounded-3xl border border-border bg-surface">
-              <div className="grid lg:grid-cols-2">
-                <div className="group relative min-h-72 overflow-hidden lg:min-h-full">
-                  <Image
-                    src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=1600&q=80"
-                    alt="Rider on an open highway at dusk"
-                    fill
-                    sizes="(min-width:1024px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-surface/40" aria-hidden />
-                  <span className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-black/55 px-3 py-1.5 font-mono text-[10px] font-bold tracking-[0.18em] text-white/85 uppercase backdrop-blur-md">
-                    Different Roads · One Community
-                  </span>
-                </div>
+      {/* Join the club — full-bleed band */}
+      <Section spacing="none" border="top" className="relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://assets.motobharat.co/hero/IMG_9456_11zon.jpg"
+            alt="MotoBharat riders on the road together"
+            fill
+            sizes="100vw"
+            className="object-cover object-right"
+          />
+          {/* Left scrim keeps the copy legible over the photo */}
+          <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-bg via-bg/80 to-bg/20 sm:w-[62%] sm:via-bg/60 sm:to-transparent" />
+          {/* Bottom scrim blends the band into the footer */}
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-bg via-bg/50 to-transparent" aria-hidden />
+          <div className="absolute inset-0 bg-bg/20 sm:bg-transparent" aria-hidden />
+        </div>
 
-                <div className="relative space-y-4 sm:space-y-6 p-4 sm:p-12">
-                  <div
-                    className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-accent/10 blur-[100px]"
-                    aria-hidden
-                  />
-                  <div className="relative space-y-4 sm:space-y-6">
-                    <div className="flex items-center gap-2 font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
-                      <span className="inline-block size-1.5 bg-accent" aria-hidden />
-                      Membership
-                    </div>
-                    <h2 className="text-2xl sm:text-5xl leading-[1.08] sm:leading-[1.06] font-black tracking-tight sm:tracking-tighter text-balance">
-                      Ride with <span className="text-shimmer">purpose.</span>
-                    </h2>
-                    <ol className="space-y-3 sm:space-y-4">
-                      {[
-                        { num: "01", title: "Sign in with Google", desc: "One tap — no passwords, no forms to start." },
-                        { num: "02", title: "Complete rider KYC once", desc: "Bike, licence and the safety waiver." },
-                        { num: "03", title: "Join a ride", desc: "Pick a departure, show up geared up." },
-                      ].map((s) => (
-                        <li key={s.num} className="flex items-start gap-3 sm:gap-4">
-                          <span className="font-mono text-xs font-bold text-accent">{s.num}</span>
-                          <span className="mt-0 h-px w-5 sm:w-6 shrink-0 translate-y-2 bg-border-strong" aria-hidden />
-                          <span>
-                            <span className="block text-xs sm:text-sm font-bold">{s.title}</span>
-                            <span className="mt-0.5 block text-[11px] sm:text-xs text-secondary">{s.desc}</span>
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                    <div className="pt-1 sm:pt-2">
-                      <ButtonLink
-                        href={finaleCta.href}
-                        className="!min-h-[38px] sm:!min-h-[44px] px-4 sm:px-6 py-2 sm:py-3.5 text-xs font-bold justify-center"
-                      >
-                        {finaleCta.label}
-                      </ButtonLink>
-                    </div>
-                    <p className="font-mono text-[9px] sm:text-[10px] tracking-[0.16em] sm:tracking-[0.18em] text-muted uppercase">
-                      Free to join · 18+ · Warangal, Telangana
-                    </p>
-                  </div>
+        <div className="relative z-10 py-12 sm:py-24 lg:py-32">
+          <Container>
+            <Reveal>
+              <div className="max-w-xl space-y-4 sm:space-y-5">
+                <div className="flex items-center gap-2 font-mono text-[10px] font-semibold tracking-[0.16em] uppercase sm:text-[11px] sm:tracking-[0.18em]">
+                  <span className="inline-block size-1.5 bg-accent" aria-hidden />
+                  <span className="text-accent">Join the Club</span>
+                </div>
+                <h2 className="text-2xl leading-[1.08] font-black tracking-tight uppercase text-balance sm:text-5xl sm:leading-[1.06]">
+                  Your next journey
+                  <br />
+                  starts here.
+                </h2>
+                <p className="max-w-md text-xs leading-relaxed text-white/70 sm:text-sm">
+                  Meet fellow riders, discover new roads, and become part of the MotoBharat
+                  community.
+                </p>
+                <div className="pt-1">
+                  <ButtonLink href={finaleCta.href} className="!min-h-[38px] px-4 py-2 text-[11px] sm:!min-h-[44px] sm:px-6 sm:py-3.5 sm:text-xs">
+                    {finaleCta.label}
+                    <ArrowRight
+                      className="size-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5"
+                      aria-hidden
+                    />
+                  </ButtonLink>
                 </div>
               </div>
-            </div>
-          </Reveal>
-        </Container>
+            </Reveal>
+          </Container>
+        </div>
       </Section>
     </>
   );

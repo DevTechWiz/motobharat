@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Bike, Megaphone, Users } from "lucide-react";
+import { LayoutDashboard, Bike, Megaphone, Users, Award } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const TABS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/rides", label: "Rides", icon: Bike, exact: false },
   { href: "/admin/riders", label: "Riders", icon: Users, exact: false },
+  { href: "/admin/stories", label: "Stories", icon: Award, exact: false },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone, exact: false },
 ] as const;
 

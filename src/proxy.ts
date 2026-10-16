@@ -60,13 +60,27 @@ export async function proxy(request: NextRequest) {
     return new NextResponse(null, { status: 404 });
   }
 
+  // Logged-in users should not see /login
+  if (path === "/login" && user) {
+    const rawNext = request.nextUrl.searchParams.get("next") ?? "/profile";
+    const dest = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/profile";
+    const url = request.nextUrl.clone();
+    url.pathname = dest;
+    url.search = "";
+    const res = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
+    return res;
+  }
+
   const isProtected = path.startsWith("/admin") || path.startsWith("/profile");
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
-    return NextResponse.redirect(url);
+    const res = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
+    return res;
   }
 
   // organizers only for /admin
@@ -79,7 +93,9 @@ export async function proxy(request: NextRequest) {
     if (profile?.role !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = "/";
-      return NextResponse.redirect(url);
+      const res = NextResponse.redirect(url);
+      supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
+      return res;
     }
   }
 

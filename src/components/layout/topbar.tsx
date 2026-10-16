@@ -13,7 +13,8 @@ import { UserMenu } from "./user-menu";
 
 const links = [
   { href: "/rides", label: "Rides" },
-  { href: "/about", label: "About" },
+  { href: "/stories", label: "Stories" },
+  { href: "/about", label: "About Us" },
   { href: "/announcements", label: "Announcements" },
   { href: "/safety", label: "Safety" },
 ];
@@ -22,7 +23,7 @@ export function Topbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, profile, registered, approval, refreshProfile, signOut } = useAuth();
+  const { user, profile, registered, approval, loading, refreshProfile, signOut } = useAuth();
   const isHome = pathname === "/";
 
   useEffect(() => {
@@ -115,7 +116,9 @@ export function Topbar() {
         </nav>
 
         <div className="hidden shrink-0 md:block">
-          {user ? (
+          {loading ? (
+            <div className="h-8 w-24 rounded-full bg-white/5 animate-pulse border border-white/10" />
+          ) : user ? (
             <UserMenu />
           ) : (
             <Link
@@ -321,23 +324,16 @@ export function Topbar() {
                   Sign out
                 </button>
               </div>
+            ) : loading ? (
+              <div className="h-11 w-full rounded-full bg-white/5 animate-pulse border border-white/10" />
             ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-border-strong py-2.5 text-center text-xs font-semibold tracking-wider uppercase hover:bg-surface"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-accent bg-accent/15 text-accent py-2.5 text-center text-xs font-semibold tracking-wider uppercase hover:bg-accent hover:text-black transition-colors"
-                >
-                  Join Us
-                </Link>
-              </div>
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-accent bg-accent/15 py-2.5 text-center text-xs font-semibold tracking-wider text-accent uppercase hover:bg-accent hover:text-black transition-colors"
+              >
+                Join Us
+              </Link>
             )}
           </div>
         </div>

@@ -1,28 +1,31 @@
 import Link from "next/link";
-import { ArrowUpRight, Bike, Megaphone, Users, Plus } from "lucide-react";
+import { ArrowUpRight, Bike, Megaphone, Users, Plus, Award } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/ui/button";
 import { CountUp } from "@/components/ui/reveal";
+import { getStories } from "@/lib/stories";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
   const supabase = await createClient();
-  const [{ count: rides }, { count: announcements }, { count: members }] = await Promise.all([
+  const [{ count: rides }, { count: announcements }, { count: members }, stories] = await Promise.all([
     supabase.from("events").select("id", { count: "exact", head: true }),
     supabase.from("announcements").select("id", { count: "exact", head: true }),
     supabase.from("profiles").select("id", { count: "exact", head: true }),
+    getStories(),
   ]);
 
   const cards = [
     { label: "Rides", value: rides ?? 0, href: "/admin/rides", icon: Bike },
+    { label: "Stories & Feats", value: stories.length, href: "/admin/stories", icon: Award },
     { label: "Announcements", value: announcements ?? 0, href: "/admin/announcements", icon: Megaphone },
     { label: "Registered Riders", value: members ?? 0, href: "/admin/riders", icon: Users },
   ];
 
   return (
     <div className="space-y-5 sm:space-y-8">
-      <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => {
           const body = (
             <>
@@ -56,10 +59,14 @@ export default async function AdminOverviewPage() {
         })}
       </div>
 
-      <div className="flex flex-col gap-2.5 sm:flex-row">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-2.5">
         <ButtonLink href="/admin/rides/new" className="w-full sm:w-auto">
           <Plus className="size-4" aria-hidden />
           New Ride
+        </ButtonLink>
+        <ButtonLink href="/admin/stories/new" variant="secondary" className="w-full sm:w-auto">
+          <Plus className="size-4" aria-hidden />
+          New Story
         </ButtonLink>
         <ButtonLink href="/admin/announcements/new" variant="secondary" className="w-full sm:w-auto">
           <Plus className="size-4" aria-hidden />
