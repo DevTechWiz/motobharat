@@ -92,9 +92,11 @@ export function Topbar() {
               scrollToTop();
             }
           }}
-          className="flex shrink-0 items-center py-2"
+          className="flex shrink-0 items-center gap-2 py-2 sm:gap-3"
         >
-          <Wordmark size="lg" className="h-7 sm:h-9 w-auto" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
+          <img src="/brand/logo-128.png" alt="" className="size-9 sm:size-10" />
+          <Wordmark size="lg" className="max-h-7 w-auto sm:max-h-9" />
         </Link>
 
         <nav className="hidden items-center gap-7 lg:gap-9 md:flex" aria-label="Primary">
