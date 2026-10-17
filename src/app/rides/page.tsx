@@ -16,7 +16,7 @@ export default async function RidesPage() {
     .from("events")
     .select("*")
     .in("status", ["published", "completed", "cancelled"])
-    .order("starts_at", { ascending: true });
+    .order("starts_at", { ascending: false });
 
   const all = (rides ?? []) as Ride[];
   const upcoming = all.filter((r) => r.status === "published" && !isPast(r.starts_at));
