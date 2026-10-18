@@ -34,17 +34,20 @@ export function Topbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Client auth state: re-sync on navigation and when the tab regains focus
-  // only when a user session exists, avoiding redundant network traffic for guests.
+  // Client auth state: re-sync on route navigation only when a user session exists.
+  // Avoids re-triggering on user object reference changes.
+  const hasUser = Boolean(user);
   useEffect(() => {
-    if (user) {
+    if (hasUser) {
       refreshProfile();
     }
-  }, [pathname, user, refreshProfile]);
+  }, [pathname, hasUser, refreshProfile]);
 
+  const userId = user?.id;
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
+    // Cooldown-protected focus & visibility checks
     const onFocus = () => refreshProfile();
     const onVisibility = () => {
       if (document.visibilityState === "visible") refreshProfile();
@@ -52,12 +55,12 @@ export function Topbar() {
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
 
-    // Poll while the tab is visible ONLY if a rider is actively awaiting KYC review
+    // Poll while the tab is visible ONLY if a rider is actively awaiting KYC review (every 30s)
     let intervalId: number | null = null;
     if (approval === "pending") {
       intervalId = window.setInterval(() => {
         if (document.visibilityState === "visible") refreshProfile();
-      }, 15000);
+      }, 30000);
     }
 
     return () => {
@@ -65,7 +68,7 @@ export function Topbar() {
       document.removeEventListener("visibilitychange", onVisibility);
       if (intervalId) window.clearInterval(intervalId);
     };
-  }, [user, approval, refreshProfile]);
+  }, [userId, approval, refreshProfile]);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
