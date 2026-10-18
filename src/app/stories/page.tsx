@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/ui/feedback";
 import { StoryCard } from "@/components/stories/story-card";
 import { getStories } from "@/lib/stories";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata = {
   title: "Stories & Achievements · MotoBharat Warangal",

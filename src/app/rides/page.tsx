@@ -5,7 +5,7 @@ import { RidesExplorer } from "./rides-explorer";
 import { isPast } from "@/lib/format";
 import type { Ride } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata = { title: "Rides" };
 
@@ -16,7 +16,8 @@ export default async function RidesPage() {
     .from("events")
     .select("*")
     .in("status", ["published", "completed", "cancelled"])
-    .order("starts_at", { ascending: false });
+    .order("starts_at", { ascending: false })
+    .limit(50);
 
   const all = (rides ?? []) as Ride[];
   const upcoming = all.filter((r) => r.status === "published" && !isPast(r.starts_at));

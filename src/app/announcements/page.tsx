@@ -6,7 +6,7 @@ import { PageMasthead } from "@/components/layout/page-masthead";
 import { EmptyState } from "@/components/ui/feedback";
 import type { Announcement } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata = { title: "Announcements" };
 
@@ -15,7 +15,8 @@ export default async function AnnouncementsPage() {
   const { data } = await supabase
     .from("announcements")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   const items = (data ?? []) as Announcement[];
 

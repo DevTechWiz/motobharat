@@ -5,7 +5,7 @@ import { PageMasthead } from "@/components/layout/page-masthead";
 import { GalleryClient } from "./gallery-client";
 import type { MemoryItem } from "@/components/gallery/memory-card";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Community Gallery · MotoBharat Warangal",
@@ -23,7 +23,8 @@ export default async function GalleryPage() {
   const { data: galleryRows } = await supabase
     .from("gallery")
     .select("*, event:events(id, title, slug, starts_at, destination)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(60);
 
   const photos = (galleryRows ?? []) as unknown as MemoryItem[];
 
