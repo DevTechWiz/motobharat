@@ -192,8 +192,16 @@ function KycForm() {
         <div className="flex items-start gap-2.5 sm:gap-3 rounded-lg border border-danger/40 bg-danger/10 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-text">
           <ShieldAlert className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
           <p className="leading-relaxed">
-            An admin reviewed your KYC and sent it back — most often the profile photo, DL photo
-            or typed name don&apos;t match. Fix the details below and resubmit.
+            An admin reviewed your KYC and sent it back. Fix the details below and resubmit.
+            {prefill?.rejection_reason ? (
+              <span className="mt-1.5 block font-semibold text-danger">
+                Admin note: {prefill.rejection_reason}
+              </span>
+            ) : (
+              <span className="mt-1.5 block">
+                Most often the profile photo, DL photo or typed name don&apos;t match.
+              </span>
+            )}
           </p>
         </div>
       )}

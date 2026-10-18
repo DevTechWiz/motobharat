@@ -12,7 +12,15 @@ export function ApprovalButtons({ userId, approved }: { userId: string; approved
   const router = useRouter();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
+  const [reason, setReason] = useState("");
   const [pending, setPending] = useState(false);
+  const [which, setWhich] = useState<"reject" | "revoke">("reject");
+
+  const openDialog = (kind: "reject" | "revoke") => {
+    setWhich(kind);
+    setReason("");
+    setConfirming(true);
+  };
 
   const run = async (fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) => {
     setPending(true);
@@ -25,6 +33,11 @@ export function ApprovalButtons({ userId, approved }: { userId: string; approved
       toast(result.error ?? "Action failed.", "error");
     }
   };
+
+  const dialogBody =
+    which === "revoke"
+      ? "The rider goes back to unapproved access."
+      : "The rider goes back to fixes — they can correct their details and resubmit.";
 
   return (
     <>
@@ -45,7 +58,7 @@ export function ApprovalButtons({ userId, approved }: { userId: string; approved
           variant={approved ? "secondary" : "danger"}
           disabled={pending}
           className="w-full sm:w-auto"
-          onClick={() => (approved ? run(() => rejectRider(userId), "Approval revoked.") : setConfirming(true))}
+          onClick={() => openDialog(approved ? "revoke" : "reject")}
         >
           <ShieldX className="size-4" aria-hidden />
           {approved ? "Revoke approval" : "Reject application"}
@@ -53,15 +66,39 @@ export function ApprovalButtons({ userId, approved }: { userId: string; approved
       </div>
       <ConfirmDialog
         open={confirming}
-        title="Reject this application?"
-        body="The rider goes back to fixes — they can correct their details and resubmit."
-        confirmLabel="Reject application"
+        title={which === "revoke" ? "Revoke this approval?" : "Reject this application?"}
+        body={dialogBody}
+        confirmLabel={which === "revoke" ? "Revoke approval" : "Reject application"}
+        confirmDisabled={!reason.trim()}
         onConfirm={() => {
           setConfirming(false);
-          run(() => rejectRider(userId), "Application rejected.");
+          run(
+            () => rejectRider(userId, reason),
+            which === "revoke" ? "Approval revoked." : "Application rejected.",
+          );
         }}
         onCancel={() => setConfirming(false)}
-      />
+      >
+        <div>
+          <label htmlFor="rejection-reason" className="block text-sm font-semibold">
+            Reason <span className="text-danger">*</span>
+          </label>
+          <textarea
+            id="rejection-reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            maxLength={500}
+            rows={3}
+            required
+            autoFocus
+            placeholder="e.g. DL photo is blurry — retake and upload a clear one"
+            className="mt-1.5 min-h-[80px] w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder-muted focus:border-accent focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-muted">
+            Shown to the rider on their KYC page. {reason.length}/500
+          </p>
+        </div>
+      </ConfirmDialog>
     </>
   );
 }

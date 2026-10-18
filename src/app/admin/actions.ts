@@ -760,13 +760,18 @@ export async function approveRider(userId: string) {
   return { ok: true };
 }
 
-export async function rejectRider(userId: string) {
+export async function rejectRider(userId: string, rejectionReason: string) {
   const admin = await requireAdmin();
   if ("error" in admin) return { ok: false, error: admin.error };
   const { supabase } = admin;
+  const reason = (rejectionReason ?? "").trim();
+  if (!reason) return { ok: false, error: "Rejection reason is required — the rider sees it on their KYC page." };
+  if (reason.length > 500) {
+    return { ok: false, error: "Rejection reason must be 500 characters or fewer." };
+  }
   const { error } = await supabase
     .from("rider_details")
-    .update({ registered: false, kyc_rejected: true, updated_at: new Date().toISOString() })
+    .update({ registered: false, kyc_rejected: true, rejection_reason: reason, updated_at: new Date().toISOString() })
     .eq("user_id", userId);
   if (!error) {
     revalidatePath("/admin/riders");
@@ -777,10 +782,11 @@ export async function rejectRider(userId: string) {
 }
 
 // Locked-field correction: the only path that can change a rider's frozen
-// identity (dob/age, gender, blood group, DL number/signature/photo). Display
-// name is a public label riders edit themselves — not handled here. Full
-// values are always written (the form is prefilled), so the KYC trigger stays
-// satisfied on registered rows.
+// identity (dob/age, gender, blood group, DL number/signature). Display
+// name is a public label riders edit themselves — not handled here. The DL
+// PHOTO is rider-managed (uploaded at /profile/kyc, purged at approval) and is
+// never touched here. Full values are always written (the form is prefilled),
+// so the KYC trigger stays satisfied on registered rows.
 export async function updateLockedFields(
   _prev: { error?: string; ok?: boolean },
   formData: FormData,
@@ -811,26 +817,10 @@ export async function updateLockedFields(
 
   const { data: current } = await supabase
     .from("rider_details")
-    .select("registered, dl_image_url")
+    .select("user_id")
     .eq("user_id", userId)
     .maybeSingle();
   if (!current) return { error: "Rider details not found." };
-
-  // Approved rows hold no photo (purged at approval) — nothing to replace.
-  let nextDlUrl: string | null = current.dl_image_url ?? null;
-  let newDlKey: string | null = null;
-  const oldDlKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
-  const dlFile = formData.get("dl_photo") as File | null;
-  if (!current.registered && dlFile && dlFile.size > 0) {
-    if (!(await r2Configured())) return { error: r2NotConfiguredError("Licence photo can't be saved — photo storage isn't connected") };
-    const invalid = await validateImageFile(dlFile);
-    if (invalid) return { error: `Licence photo: ${invalid}` };
-    const image = await processImage(dlFile, 1600, 80);
-    const key = `rider-docs/${userId}/dl_${crypto.randomUUID()}.${image.format}`;
-    await putR2Object(key, image.data, image.contentType);
-    newDlKey = key;
-    nextDlUrl = r2PublicUrl(key);
-  }
 
   const { error: rErr } = await supabase
     .from("rider_details")
@@ -841,27 +831,10 @@ export async function updateLockedFields(
       blood_group: bloodGroup,
       driving_licence: drivingLicence,
       digital_signature: digitalSignature,
-      dl_image_url: nextDlUrl,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", userId);
-  if (rErr) {
-    if (newDlKey) {
-      try {
-        await deleteR2Object(newDlKey);
-      } catch (e) {
-        console.warn(`[admin] failed to clean up orphan DL ${newDlKey}:`, e);
-      }
-    }
-    return { error: rErr.message };
-  }
-  if (newDlKey && oldDlKey) {
-    try {
-      await deleteR2Object(oldDlKey);
-    } catch (e) {
-      console.warn(`[admin] failed to delete replaced DL ${oldDlKey}:`, e);
-    }
-  }
+  if (rErr) return { error: rErr.message };
 
   revalidatePath("/admin/riders");
   revalidatePath(`/admin/riders/${userId}`);

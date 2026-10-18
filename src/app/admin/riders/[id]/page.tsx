@@ -109,8 +109,6 @@ export default async function RiderReviewPage({
           blood_group: rd.blood_group ?? null,
           driving_licence: rd.driving_licence ?? null,
           digital_signature: rd.digital_signature ?? null,
-          hasPhoto: Boolean(rd.dl_image_url),
-          approved: rd.registered,
         }}
       />
     </div>

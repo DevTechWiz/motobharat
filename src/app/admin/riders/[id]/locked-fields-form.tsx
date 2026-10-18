@@ -4,7 +4,6 @@ import { useActionState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Field } from "@/components/ui/field";
 import { CustomSelect } from "@/components/ui/custom-select";
-import { PhotoPicker } from "@/components/ui/photo-picker";
 import { updateLockedFields } from "../../actions";
 
 const BLOOD_OPTIONS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((bg) => ({
@@ -38,8 +37,6 @@ export function LockedFieldsForm({
     blood_group: string | null;
     driving_licence: string | null;
     digital_signature: string | null;
-    hasPhoto: boolean;
-    approved: boolean;
   };
 }) {
   const [state, formAction] = useActionState(updateLockedFields, {} as { error?: string; ok?: boolean });
@@ -120,21 +117,6 @@ export function LockedFieldsForm({
             placeholder="Full legal name as on DL"
           />
         </Field>
-        {!initial.approved && (
-          <Field
-            label="Driving Licence Photo"
-            htmlFor="lf-photo"
-            hint={initial.hasPhoto ? "On file — uploading replaces it." : "Required — no photo on file."}
-            required={!initial.hasPhoto}
-          >
-            <PhotoPicker
-              id="lf-photo"
-              name="dl_photo"
-              required={!initial.hasPhoto}
-              caption={initial.hasPhoto ? "Tap to replace the DL card" : "Tap to upload the DL card"}
-            />
-          </Field>
-        )}
       </div>
       <SubmitButton pending={isPending} />
       </fieldset>

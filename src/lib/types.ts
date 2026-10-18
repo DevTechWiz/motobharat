@@ -44,6 +44,7 @@ export interface RiderDetails {
   dl_image_url: string | null;
   kyc_submitted_at: string | null;
   kyc_rejected: boolean;
+  rejection_reason: string | null;
   updated_at: string;
 }
 

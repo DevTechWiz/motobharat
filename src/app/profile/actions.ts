@@ -304,6 +304,7 @@ export async function saveRiderDetails(
         registered: existing.registered ?? false,
         kyc_submitted_at: new Date().toISOString(),
         kyc_rejected: false,
+        rejection_reason: null,
         dl_image_url: nextDlUrl,
         updated_at: new Date().toISOString(),
       },
