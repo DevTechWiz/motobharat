@@ -19,7 +19,7 @@ import {
 export type ProfileFormState = { error?: string; ok?: boolean; next?: string };
 
 const GENDERS = ["male", "female", "other", "prefer_not_to_say"];
-const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", "Not Sure"];
 const EXPERIENCE_LEVELS = ["beginner", "intermediate", "experienced"];
 const GEAR_LEVELS = ["helmet_only", "basic", "full_armored"];
 const INSURANCE_STATUSES = ["valid_insured", "expired", "none"];
@@ -153,7 +153,10 @@ export async function saveRiderDetails(
   const ridesWithPillion = formData.get("rides_with_pillion") === "true" || formData.get("rides_with_pillion") === "on";
 
   // Emergency & Medical
-  let bloodGroup = String(formData.get("blood_group") ?? "");
+  let bloodGroup = String(formData.get("blood_group") ?? "").trim();
+  if (/^(not[\s_]?sure|unknown)$/i.test(bloodGroup)) {
+    bloodGroup = "Not Sure";
+  }
   const ecName = String(formData.get("emergency_contact_name") ?? "").trim();
   const ecPhone = String(formData.get("emergency_contact_phone") ?? "").trim();
   const ecRelation = String(formData.get("emergency_contact_relation") ?? "").trim();
@@ -172,8 +175,33 @@ export async function saveRiderDetails(
   const isPillion = rawMemberType === "pillion";
 
   // Declaration & Signature
-  const declarationConfirmed = formData.get("declaration_confirmed") === "true" || formData.get("declaration_confirmed") === "on";
+  let declarationConfirmed = formData.get("declaration_confirmed") === "true" || formData.get("declaration_confirmed") === "on";
   let digitalSignature = String(formData.get("digital_signature") ?? "").trim();
+
+  // Basic info must exist before KYC (enforced by the setup flow).
+  const { data: existing } = await supabase
+    .from("rider_details")
+    .select("registered, age, gender, phone, dob, whatsapp_number, occupation, dl_image_url, blood_group, driving_licence, digital_signature, declaration_confirmed, kyc_submitted_at, kyc_rejected, member_type")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!existing?.age || !existing?.gender || !existing?.phone) {
+    console.warn("[saveRiderDetails] Basic info missing in rider_details for user:", user.id);
+    redirect("/profile/setup");
+  }
+
+  // Filed applications are read-only until the admin verdict (for riders awaiting review).
+  if (!isPillion && !existing.registered && !existing.kyc_rejected && existing.kyc_submitted_at) {
+    return { error: "Application under review — wait for the admin verdict." };
+  }
+
+  // Locked identity: approved riders keep stored blood group / DL number / signature / declaration.
+  const locked = existing.registered ?? false;
+  if (locked) {
+    if (existing.blood_group) bloodGroup = existing.blood_group;
+    if (existing.driving_licence) drivingLicence = existing.driving_licence;
+    if (existing.digital_signature) digitalSignature = existing.digital_signature;
+    if (existing.declaration_confirmed) declarationConfirmed = true;
+  }
 
   // Field validations for Rider
   if (!isPillion) {
@@ -215,28 +243,6 @@ export async function saveRiderDetails(
     console.log("[saveRiderDetails] Missing digitalSignature");
     return { error: "Type your full name as digital signature to confirm." };
   }
-
-  // Basic info must exist before KYC (enforced by the setup flow).
-  const { data: existing } = await supabase
-    .from("rider_details")
-    .select("registered, age, gender, phone, dob, whatsapp_number, occupation, dl_image_url, blood_group, driving_licence, digital_signature, kyc_submitted_at, kyc_rejected, member_type")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!existing?.age || !existing?.gender || !existing?.phone) {
-    console.warn("[saveRiderDetails] Basic info missing in rider_details for user:", user.id);
-    redirect("/profile/setup");
-  }
-
-  // Filed applications are read-only until the admin verdict (for riders awaiting review).
-  if (!isPillion && !existing.registered && !existing.kyc_rejected && existing.kyc_submitted_at) {
-    return { error: "Application under review — wait for the admin verdict." };
-  }
-
-  // Locked identity: approved riders keep a stored blood group / DL number.
-  const locked = existing.registered ?? false;
-  if (locked && existing.blood_group) bloodGroup = existing.blood_group;
-  if (locked && existing.driving_licence) drivingLicence = existing.driving_licence;
-  if (locked && existing.digital_signature) digitalSignature = existing.digital_signature;
 
   // DL photo: only required for riders who are not yet approved
   const dlFile = formData.get("dl_document") as File | null;

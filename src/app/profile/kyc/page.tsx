@@ -26,7 +26,10 @@ import {
 import { cn } from "@/lib/cn";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
-const BLOOD_OPTIONS = BLOOD_GROUPS.map((bg) => ({ value: bg, label: bg }));
+const BLOOD_OPTIONS = [
+  ...BLOOD_GROUPS.map((bg) => ({ value: bg, label: bg })),
+  { value: "Not Sure", label: "Not sure / Don't know" },
+];
 
 const EXPERIENCE_OPTIONS = [
   { value: "beginner", label: "Beginner", sublabel: "< 1 yr touring / local runs" },
@@ -488,15 +491,16 @@ function KycForm() {
             required
           >
             {locked && prefill?.driving_licence ? (
-              <Input
-                id="driving_licence"
-                name="driving_licence"
-                required
-                disabled
-                value={prefill.driving_licence}
-                placeholder="TS03 20200001234"
-                className="uppercase font-mono"
-              />
+              <>
+                <input type="hidden" name="driving_licence" value={prefill.driving_licence} />
+                <Input
+                  id="driving_licence"
+                  disabled
+                  value={prefill.driving_licence}
+                  placeholder="TS03 20200001234"
+                  className="uppercase font-mono"
+                />
+              </>
             ) : (
               <Input
                 id="driving_licence"
@@ -846,14 +850,15 @@ function KycForm() {
           required
         >
           {locked && prefill?.digital_signature ? (
-            <Input
-              id="digital_signature"
-              name="digital_signature"
-              required
-              disabled
-              value={prefill.digital_signature}
-              placeholder="Your Full Name"
-            />
+            <>
+              <input type="hidden" name="digital_signature" value={prefill.digital_signature} />
+              <Input
+                id="digital_signature"
+                disabled
+                value={prefill.digital_signature}
+                placeholder="Your Full Name"
+              />
+            </>
           ) : (
             <Input
               id="digital_signature"
