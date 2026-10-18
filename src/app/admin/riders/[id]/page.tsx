@@ -30,15 +30,20 @@ export default async function RiderReviewPage({
       .maybeSingle(),
     supabase.from("rider_details").select("*").eq("user_id", id).maybeSingle(),
   ]);
-  if (!profile || !rd) notFound();
+  if (!profile) notFound();
+
+  const isRegistered = Boolean(rd?.registered);
+  const isSubmitted = Boolean(rd?.kyc_submitted_at);
+  const isRejected = Boolean(rd?.kyc_rejected);
+  const memberType = rd?.member_type ?? "rider";
 
   const rows: [string, string][] = [
     ["Display name", profile.display_name],
-    ["Full name (signature)", rd.digital_signature ?? "—"],
-    ["DL number (typed)", rd.driving_licence ?? "—"],
-    ["Plate number", rd.bike_reg_no ?? "—"],
-    ["Motorcycle", rd.bike_model ?? "—"],
-    ["Phone", rd.phone ?? "—"],
+    ["Full name (signature)", rd?.digital_signature ?? "—"],
+    ["DL number (typed)", rd?.driving_licence ?? "—"],
+    ["Plate number", rd?.bike_reg_no ?? "—"],
+    ["Motorcycle", rd?.bike_model ?? "—"],
+    ["Phone", rd?.phone ?? "—"],
     ["City", profile.city ?? "—"],
   ];
 
@@ -63,35 +68,49 @@ export default async function RiderReviewPage({
         <div>
           <h2 className="text-lg sm:text-xl font-extrabold">{profile.display_name}</h2>
           <div className="mt-1 flex flex-wrap gap-1.5 sm:gap-2">
-            <Badge tone={rd.registered ? "easy" : "moderate"}>
-              {rd.registered ? "Registered" : "Incomplete"}
+            <Badge tone={isRegistered ? "easy" : "moderate"}>
+              {isRegistered ? "Registered" : "Incomplete"}
             </Badge>
-            <Badge tone={rd.member_type === "pillion" ? "moderate" : "neutral"}>
-              {rd.member_type === "pillion" ? "Pillion" : "Rider"}
+            <Badge tone={memberType === "pillion" ? "moderate" : "neutral"}>
+              {memberType === "pillion" ? "Pillion" : "Rider"}
             </Badge>
-            {!rd.registered &&
-              (rd.kyc_rejected ? (
+            {!isRegistered &&
+              (isRejected ? (
                 <Badge tone="danger">Rejected — fixes needed</Badge>
-              ) : rd.kyc_submitted_at ? (
+              ) : isSubmitted ? (
                 <Badge tone="moderate">Pending review</Badge>
-              ) : null)}
+              ) : (
+                <Badge tone="neutral">No KYC submitted yet</Badge>
+              ))}
           </div>
         </div>
       </div>
 
-      {(rd.dl_image_url || !rd.registered) &&
-        (rd.dl_image_url ? (
-          <DlViewerCard
-            imageUrl={rd.dl_image_url}
-            riderName={profile.display_name}
-            dlNumber={rd.driving_licence}
-          />
-        ) : (
-          <EmptyState
-            title="No licence photo on file"
-            hint="The rider has not uploaded a licence photo yet."
-          />
-        ))}
+      {!isRegistered && !isSubmitted && (
+        <div className="rounded-xl border border-border bg-surface-2/60 p-3 sm:p-4 text-xs text-secondary leading-relaxed">
+          <p className="font-semibold text-text">No KYC submission on file</p>
+          <p className="mt-0.5 text-muted">
+            This rider has created an account but has not submitted their registration details or driving licence yet.
+          </p>
+        </div>
+      )}
+
+      {rd?.dl_image_url ? (
+        <DlViewerCard
+          imageUrl={rd.dl_image_url}
+          riderName={profile.display_name}
+          dlNumber={rd.driving_licence}
+        />
+      ) : (
+        <EmptyState
+          title="No licence photo on file"
+          hint={
+            memberType === "pillion"
+              ? "Pillion members are not required to upload a driving licence."
+              : "The rider has not uploaded a licence photo yet."
+          }
+        />
+      )}
 
       <dl className="divide-y divide-border rounded-xl border border-border bg-surface">
         {rows.map(([label, value]) => (
@@ -102,16 +121,20 @@ export default async function RiderReviewPage({
         ))}
       </dl>
 
-      <ApprovalButtons userId={id} approved={rd.registered} />
+      <ApprovalButtons
+        userId={id}
+        approved={isRegistered}
+        hasSubmission={isSubmitted}
+      />
 
       <LockedFieldsForm
         userId={id}
         initial={{
-          dob: rd.dob ?? null,
-          gender: rd.gender ?? null,
-          blood_group: rd.blood_group ?? null,
-          driving_licence: rd.driving_licence ?? null,
-          digital_signature: rd.digital_signature ?? null,
+          dob: rd?.dob ?? null,
+          gender: rd?.gender ?? null,
+          blood_group: rd?.blood_group ?? null,
+          driving_licence: rd?.driving_licence ?? null,
+          digital_signature: rd?.digital_signature ?? null,
         }}
       />
     </div>

@@ -8,7 +8,15 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { approveRider, rejectRider } from "../../actions";
 
-export function ApprovalButtons({ userId, approved }: { userId: string; approved: boolean }) {
+export function ApprovalButtons({
+  userId,
+  approved,
+  hasSubmission = true,
+}: {
+  userId: string;
+  approved: boolean;
+  hasSubmission?: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
@@ -45,7 +53,8 @@ export function ApprovalButtons({ userId, approved }: { userId: string; approved
         {!approved && (
           <Button
             type="button"
-            disabled={pending}
+            disabled={pending || !hasSubmission}
+            title={!hasSubmission ? "Rider has not submitted KYC details yet" : undefined}
             className="w-full sm:w-auto"
             onClick={() => run(() => approveRider(userId), "Rider approved — joins and ID card unlocked.")}
           >
@@ -56,7 +65,8 @@ export function ApprovalButtons({ userId, approved }: { userId: string; approved
         <Button
           type="button"
           variant={approved ? "secondary" : "danger"}
-          disabled={pending}
+          disabled={pending || (!approved && !hasSubmission)}
+          title={!approved && !hasSubmission ? "No submission to reject" : undefined}
           className="w-full sm:w-auto"
           onClick={() => openDialog(approved ? "revoke" : "reject")}
         >
