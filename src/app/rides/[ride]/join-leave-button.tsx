@@ -15,11 +15,13 @@ export function JoinLeaveButton({
   isMember,
   joiningPaused,
   isFull,
+  isPast,
 }: {
   rideId: string;
   isMember: boolean;
   joiningPaused: boolean;
   isFull: boolean;
+  isPast?: boolean;
 }) {
   const { user, registered, approval, memberType, loading } = useAuth();
   const router = useRouter();
@@ -63,6 +65,28 @@ export function JoinLeaveButton({
   }, [hasPillion, pillionCode]);
 
   if (loading) return <div className="h-10 sm:h-12 w-full animate-pulse rounded-lg bg-surface-2" />;
+
+  if (isPast) {
+    if (member) {
+      return (
+        <div className="rounded-lg border border-border bg-surface-2/60 p-2.5 sm:p-3 text-center">
+          <span className="flex items-center justify-center gap-1.5 text-xs font-semibold text-emerald-400">
+            <Check className="size-3.5" /> You Completed This Ride
+          </span>
+        </div>
+      );
+    }
+    return (
+      <Button
+        variant="outline"
+        disabled
+        fullWidth
+        className="!min-h-[38px] sm:!min-h-[44px] text-[11px] sm:text-xs py-2 sm:py-3.5 opacity-60 cursor-not-allowed"
+      >
+        Ride Completed
+      </Button>
+    );
+  }
 
   if (!user) {
     return (

@@ -455,6 +455,7 @@ export default async function RideDetailPage({
                   rideId={ride.id}
                   isMember={isMember}
                   joiningPaused={ride.joining_paused}
+                  isPast={past}
                   isFull={
                     ride.max_riders != null &&
                     riderList.length >= ride.max_riders
@@ -472,17 +473,19 @@ export default async function RideDetailPage({
                       <MessageCircle className="size-3.5" aria-hidden />
                       Join WhatsApp Group
                     </a>
-                  ) : (
+                  ) : !past ? (
                     <div className="flex min-h-[36px] w-full items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-surface-2/60 px-3 py-2 text-center text-[10.5px] sm:text-[11px] text-muted">
                       <Lock className="size-3 shrink-0 text-muted/70" aria-hidden />
                       <span>Join this ride to unlock the WhatsApp group</span>
                     </div>
-                  )
+                  ) : null
                 )}
 
                 <a
                   href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                    `🏍️ MotoBharat Warangal — ${ride.title}\n📅 ${formatRideDate(ride.starts_at)} · ${formatRideTime(ride.starts_at)}\n📍 Start: ${ride.meeting_point ?? "Warangal"}${ride.destination ? `\n🏁 Destination: ${ride.destination}` : ""}\n\nJoin the ride: https://motobharat.co/rides/${ride.slug ?? ride.id}`
+                    past
+                      ? `🏍️ MotoBharat Warangal — ${ride.title}\n📅 ${formatRideDate(ride.starts_at)}\n📍 ${ride.meeting_point ?? "Warangal"}${ride.destination ? ` → ${ride.destination}` : ""}\n\nView ride recap: https://motobharat.co/rides/${ride.slug ?? ride.id}`
+                      : `🏍️ MotoBharat Warangal — ${ride.title}\n📅 ${formatRideDate(ride.starts_at)} · ${formatRideTime(ride.starts_at)}\n📍 Start: ${ride.meeting_point ?? "Warangal"}${ride.destination ? `\n🏁 Destination: ${ride.destination}` : ""}\n\nJoin the ride: https://motobharat.co/rides/${ride.slug ?? ride.id}`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -498,11 +501,22 @@ export default async function RideDetailPage({
               <div className="flex items-start gap-1.5 sm:gap-2">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
                 <span>
-                  Full gear mandatory. Read the{" "}
-                  <Link href="/safety" className="font-semibold text-accent hover:underline">
-                    Safety Code
-                  </Link>{" "}
-                  before joining.
+                  {past ? (
+                    <>
+                      Full gear mandatory on all rides. Review the{" "}
+                      <Link href="/safety" className="font-semibold text-accent hover:underline">
+                        Safety Code
+                      </Link>.
+                    </>
+                  ) : (
+                    <>
+                      Full gear mandatory. Read the{" "}
+                      <Link href="/safety" className="font-semibold text-accent hover:underline">
+                        Safety Code
+                      </Link>{" "}
+                      before joining.
+                    </>
+                  )}
                 </span>
               </div>
               <p className="font-mono text-muted tabular-nums text-[10px] sm:text-xs">

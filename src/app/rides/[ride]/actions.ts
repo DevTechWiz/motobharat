@@ -150,6 +150,15 @@ export async function leaveRide(rideId: string) {
     return { ok: false, error: "Too many attempts — try again later." };
   }
 
+  const { data: ride } = await supabase
+    .from("events")
+    .select("status, starts_at")
+    .eq("id", rideId)
+    .maybeSingle();
+  if (ride && (ride.status === "completed" || isPast(ride.starts_at))) {
+    return { ok: false, error: "Cannot leave a ride that has already taken place." };
+  }
+
   // If rider had a pillion or was a rider, delete their row and any pillion row they brought
   const { error } = await supabase
     .from("event_members")
