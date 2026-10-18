@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/feedback";
+import { Pagination } from "@/components/ui/pagination";
 import { cn } from "@/lib/cn";
 
 export interface RiderRow {
@@ -31,6 +32,8 @@ const FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "incomplete", label: "Incomplete" },
 ];
 
+const PAGE_SIZE = 15;
+
 function statusOf(r: RiderRow): Exclude<StatusFilter, "all"> {
   if (r.registered) return "registered";
   if (r.rejected) return "rejected";
@@ -40,10 +43,20 @@ function statusOf(r: RiderRow): Exclude<StatusFilter, "all"> {
 
 export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
-
   const pendingCount = useMemo(() => riders.filter((r) => statusOf(r) === "pending").length, [riders]);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<StatusFilter>(() => (pendingCount > 0 ? "pending" : "all"));
+  const [page, setPage] = useState(1);
+
+  const handleStatusChange = (newStatus: StatusFilter) => {
+    setStatus(newStatus);
+    setPage(1);
+  };
+
+  const handleQueryChange = (q: string) => {
+    setQuery(q);
+    setPage(1);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -53,6 +66,14 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
       return true;
     });
   }, [riders, query, status]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, currentPage]);
 
   return (
     <div className="space-y-3.5 sm:space-y-4">
@@ -66,7 +87,7 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
         {pendingCount > 0 ? (
           <button
             type="button"
-            onClick={() => setStatus("pending")}
+            onClick={() => handleStatusChange("pending")}
             className="rounded-full border border-accent/40 bg-accent/10 px-2.5 sm:px-3 py-1 font-mono text-[10px] sm:text-[11px] font-bold tracking-wider text-accent uppercase transition-colors hover:bg-accent/20"
           >
             {pendingCount} pending review
@@ -84,7 +105,7 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
           <input
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleQueryChange(e.target.value)}
             placeholder="Search name or city…"
             aria-label="Search riders"
             className="w-full rounded-lg border border-border bg-surface py-2 sm:py-2.5 pr-3 pl-9 text-xs sm:text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
@@ -95,7 +116,7 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
             <button
               key={f.value}
               type="button"
-              onClick={() => setStatus(f.value)}
+              onClick={() => handleStatusChange(f.value)}
               aria-pressed={status === f.value}
               className={cn(
                 "rounded-full border px-2.5 py-1 sm:px-3 sm:py-1.5 font-mono text-[10px] sm:text-[11px] font-bold tracking-wider uppercase transition-colors",
@@ -120,74 +141,83 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full text-xs sm:text-sm">
-            <thead>
-              <tr className="border-b border-border bg-surface text-left text-[11px] sm:text-xs text-muted">
-                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Rider</th>
-                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">City</th>
-                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Role</th>
-                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">KYC Status</th>
-                <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Licence</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border bg-surface">
-              {filtered.map((r) => {
-                const s = statusOf(r);
-                const open = () => router.push(`/admin/riders/${r.id}`);
-                return (
-                  <tr
-                    key={r.id}
-                    role="link"
-                    tabIndex={0}
-                    aria-label={`Open ${r.display_name}`}
-                    onClick={open}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        open();
-                      }
-                    }}
-                    className="cursor-pointer transition-colors outline-none hover:bg-surface-2/70 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
-                  >
-                    <td className="px-3 sm:px-4 py-2 sm:py-2.5">
-                      <span className="flex items-center gap-2.5 sm:gap-3">
-                        <Avatar name={r.display_name} src={r.avatar_url} size="sm" />
-                        <span className="font-semibold">{r.display_name}</span>
-                      </span>
-                    </td>
-                    <td className="px-3 sm:px-4 py-2 sm:py-2.5 text-secondary">{r.city ?? "—"}</td>
-                    <td className="px-3 sm:px-4 py-2 sm:py-2.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <Badge tone={r.role === "admin" ? "hard" : "neutral"}>{r.role}</Badge>
-                        {r.member_type === "pillion" && (
-                          <Badge tone="moderate">Pillion</Badge>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 sm:px-4 py-2 sm:py-2.5">
-                      <Badge
-                        tone={
-                          s === "registered" ? "easy" : s === "rejected" ? "danger" : s === "pending" ? "moderate" : "neutral"
+        <div className="space-y-3">
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full text-xs sm:text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface text-left text-[11px] sm:text-xs text-muted">
+                  <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Rider</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">City</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Role</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">KYC Status</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Licence</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border bg-surface">
+                {paginated.map((r) => {
+                  const s = statusOf(r);
+                  const open = () => router.push(`/admin/riders/${r.id}`);
+                  return (
+                    <tr
+                      key={r.id}
+                      role="link"
+                      tabIndex={0}
+                      aria-label={`Open ${r.display_name}`}
+                      onClick={open}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          open();
                         }
-                      >
-                        {s === "registered"
-                          ? "Registered"
-                          : s === "rejected"
-                            ? "Rejected"
-                            : s === "pending"
-                              ? "Pending review"
-                              : "Incomplete"}
-                      </Badge>
-                    </td>
-                    <td className="px-3 sm:px-4 py-2 sm:py-2.5">
-                      <Badge tone="neutral">{r.hasDoc ? "Doc on file" : "No doc"}</Badge>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      }}
+                      className="cursor-pointer transition-colors outline-none hover:bg-surface-2/70 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
+                    >
+                      <td className="px-3 sm:px-4 py-2 sm:py-2.5">
+                        <span className="flex items-center gap-2.5 sm:gap-3">
+                          <Avatar name={r.display_name} src={r.avatar_url} size="sm" />
+                          <span className="font-semibold">{r.display_name}</span>
+                        </span>
+                      </td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-2.5 text-secondary">{r.city ?? "—"}</td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-2.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge tone={r.role === "admin" ? "hard" : "neutral"}>{r.role}</Badge>
+                          {r.member_type === "pillion" && (
+                            <Badge tone="moderate">Pillion</Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-2.5">
+                        <Badge
+                          tone={
+                            s === "registered" ? "easy" : s === "rejected" ? "danger" : s === "pending" ? "moderate" : "neutral"
+                          }
+                        >
+                          {s === "registered"
+                            ? "Registered"
+                            : s === "rejected"
+                              ? "Rejected"
+                              : s === "pending"
+                                ? "Pending review"
+                                : "Incomplete"}
+                        </Badge>
+                      </td>
+                      <td className="px-3 sm:px-4 py-2 sm:py-2.5">
+                        <Badge tone="neutral">{r.hasDoc ? "Doc on file" : "No doc"}</Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>

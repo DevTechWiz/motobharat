@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { Search, X } from "lucide-react";
 import { RideCard } from "@/components/rides/ride-card";
 import { EmptyState } from "@/components/ui/feedback";
+import { Pagination } from "@/components/ui/pagination";
 import { cn } from "@/lib/cn";
-import { isPast } from "@/lib/format";
+import { getEffectiveRideStatus } from "@/lib/format";
 import type { Ride } from "@/lib/types";
 
 type Tab = "all" | "upcoming" | "completed" | "cancelled";
@@ -19,21 +20,37 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "cancelled", label: "Cancelled" },
 ];
 
+const PAGE_SIZE = 9;
+
 export function RidesExplorer({ rides }: { rides: Ride[] }) {
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [difficulty, setDifficulty] = useState<(typeof DIFFICULTIES)[number]>("All");
+  const [page, setPage] = useState(1);
+
+  const handleTabChange = (t: Tab) => {
+    setTab(t);
+    setPage(1);
+  };
+
+  const handleQueryChange = (q: string) => {
+    setQuery(q);
+    setPage(1);
+  };
+
+  const handleDifficultyChange = (d: (typeof DIFFICULTIES)[number]) => {
+    setDifficulty(d);
+    setPage(1);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rides.filter((ride) => {
-      if (tab === "all") return true;
-      const cancelled = ride.status === "cancelled";
-      const completed =
-        ride.status === "completed" || (ride.status === "published" && isPast(ride.starts_at));
-      if (tab === "upcoming") return !cancelled && !completed;
-      if (tab === "completed") return completed;
-      return cancelled;
+      const effective = getEffectiveRideStatus(ride.status, ride.starts_at);
+      if (tab === "upcoming") return effective === "published";
+      if (tab === "completed") return effective === "completed";
+      if (tab === "cancelled") return effective === "cancelled";
+      return true;
     }).filter((ride) => {
       if (difficulty !== "All" && ride.difficulty !== difficulty) return false;
       if (q) {
@@ -44,10 +61,19 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
     });
   }, [rides, tab, query, difficulty]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, currentPage]);
+
   const reset = () => {
     setQuery("");
     setDifficulty("All");
     setTab("all");
+    setPage(1);
   };
 
   return (
@@ -60,7 +86,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
               <button
                 key={t.key}
                 type="button"
-                onClick={() => setTab(t.key)}
+                onClick={() => handleTabChange(t.key)}
                 className={cn(
                   "relative min-h-[36px] sm:min-h-[44px] flex-1 rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold tracking-normal sm:tracking-wider whitespace-nowrap uppercase transition-[color,transform] duration-150 ease-out active:scale-[0.97] sm:flex-none md:flex-none",
                   tab === t.key ? "text-accent-fg" : "text-secondary hover:text-white"
@@ -86,7 +112,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
             <input
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => handleQueryChange(e.target.value)}
               placeholder="Filter by title or meeting point…"
               aria-label="Search rides"
               className="min-h-[38px] sm:min-h-[44px] w-full rounded-lg border border-border bg-bg py-2 pr-3 pl-8.5 sm:pl-9 text-xs sm:text-sm text-white placeholder-muted focus:border-accent focus:outline-none"
@@ -102,7 +128,7 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
             <button
               key={d}
               type="button"
-              onClick={() => setDifficulty(d)}
+              onClick={() => handleDifficultyChange(d)}
               className={cn(
                 "min-h-[30px] sm:min-h-[36px] rounded-lg px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.97]",
                 difficulty === d
@@ -135,22 +161,31 @@ export function RidesExplorer({ rides }: { rides: Ride[] }) {
           </div>
         </div>
       ) : (
-        <motion.div layout className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence mode="popLayout">
-            {filtered.map((ride) => (
-              <motion.div
-                key={ride.id}
-                layout
-                initial={{ opacity: 0, scale: 0.97, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.97, y: 8 }}
-                transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-              >
-                <RideCard ride={ride} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        <div className="space-y-6">
+          <motion.div layout className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <AnimatePresence mode="popLayout">
+              {paginated.map((ride) => (
+                <motion.div
+                  key={ride.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.97, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97, y: 8 }}
+                  transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <RideCard ride={ride} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </div>
       )}
 
       {filtered.length > 0 && (
