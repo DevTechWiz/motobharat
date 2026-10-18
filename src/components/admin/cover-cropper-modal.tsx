@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, ZoomIn, ZoomOut, RotateCcw, Check, Move } from "lucide-react";
+import { X, ZoomIn, ZoomOut, RotateCcw, Check, Move, Maximize2, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 
 interface CoverCropperModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function CoverCropperModal({
 }: CoverCropperModalProps) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
+  const [mode, setMode] = useState<"fit" | "fill">("fit");
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -139,14 +141,14 @@ export function CoverCropperModal({
   const cW = containerSize.width || 480;
   const cH = containerSize.height || 300;
 
-  // Base scale to cover the 16:9 container
-  const baseScale = Math.max(cW / imgW, cH / imgH);
+  // Fit mode preserves 100% of the image without any cut; Fill mode crops to fill 16:9
+  const baseScale = mode === "fit" ? Math.min(cW / imgW, cH / imgH) : Math.max(cW / imgW, cH / imgH);
   const currentScale = baseScale * zoom;
   const displayedW = imgW * currentScale;
   const displayedH = imgH * currentScale;
 
-  const maxPanX = Math.max(0, (displayedW - cW) / 2);
-  const maxPanY = Math.max(0, (displayedH - cH) / 2);
+  const maxPanX = Math.max(0, Math.abs(displayedW - cW) / 2);
+  const maxPanY = Math.max(0, Math.abs(displayedH - cH) / 2);
 
   const clampPan = (x: number, y: number) => ({
     x: Math.max(-maxPanX, Math.min(maxPanX, x)),
@@ -181,8 +183,8 @@ export function CoverCropperModal({
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.1 : -0.1;
-    const nextZoom = Math.max(1, Math.min(3, Number((zoom + delta).toFixed(2))));
+    const delta = e.deltaY < 0 ? 0.05 : -0.05;
+    const nextZoom = Math.max(0.6, Math.min(3, Number((zoom + delta).toFixed(2))));
     setZoom(nextZoom);
   };
 
@@ -192,44 +194,66 @@ export function CoverCropperModal({
   };
 
   const handleApply = () => {
-    if (!naturalSize) return;
+    if (!naturalSize || !imageSrc) return;
 
-    // Output target resolution: 1920x1080 (16:9)
-    const outW = 1920;
-    const outH = 1080;
+    // Use full natural resolution (up to 4K / 3840px) — never arbitrarily downscaling high-res images
+    const naturalMaxEdge = Math.max(imgW, imgH);
+    const outW = Math.max(1920, Math.min(naturalMaxEdge, 3840));
+    const outH = Math.round((outW * 9) / 16);
     const canvas = document.createElement("canvas");
     canvas.width = outW;
     canvas.height = outH;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Map displayed viewport back to natural image coordinates
-    // Center of natural image is (imgW / 2, imgH / 2)
-    // Visible viewport in natural pixels:
-    const viewportInNaturalW = cW / currentScale;
-    const viewportInNaturalH = cH / currentScale;
-
-    // Pan offset in natural pixels:
-    const panInNaturalX = pan.x / currentScale;
-    const panInNaturalY = pan.y / currentScale;
-
-    const cropX = imgW / 2 - viewportInNaturalW / 2 - panInNaturalX;
-    const cropY = imgH / 2 - viewportInNaturalH / 2 - panInNaturalY;
-
     const img = new Image();
     img.src = imageSrc;
     img.onload = () => {
-      ctx.drawImage(
-        img,
-        Math.max(0, cropX),
-        Math.max(0, cropY),
-        Math.min(imgW, viewportInNaturalW),
-        Math.min(imgH, viewportInNaturalH),
-        0,
-        0,
-        outW,
-        outH,
-      );
+      if (mode === "fit") {
+        // 1. Draw ambient blurred background to fill 16:9 canvas cleanly without cutting
+        ctx.save();
+        ctx.filter = "blur(40px)";
+        const bgScale = Math.max(outW / imgW, outH / imgH);
+        const bgW = imgW * bgScale;
+        const bgH = imgH * bgScale;
+        ctx.drawImage(img, (outW - bgW) / 2, (outH - bgH) / 2, bgW, bgH);
+        ctx.restore();
+
+        // 2. Dark vignette overlay on backdrop for contrast
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.fillRect(0, 0, outW, outH);
+
+        // 3. Draw 100% full original photo contained with zero pixels cropped
+        const fitScale = Math.min(outW / imgW, outH / imgH) * zoom;
+        const drawW = imgW * fitScale;
+        const drawH = imgH * fitScale;
+        const panXInCanvas = (pan.x / cW) * outW;
+        const panYInCanvas = (pan.y / cH) * outH;
+        const drawX = (outW - drawW) / 2 + panXInCanvas;
+        const drawY = (outH - drawH) / 2 + panYInCanvas;
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      } else {
+        // Fill / crop mode
+        const viewportInNaturalW = cW / currentScale;
+        const viewportInNaturalH = cH / currentScale;
+        const panInNaturalX = pan.x / currentScale;
+        const panInNaturalY = pan.y / currentScale;
+
+        const cropX = imgW / 2 - viewportInNaturalW / 2 - panInNaturalX;
+        const cropY = imgH / 2 - viewportInNaturalH / 2 - panInNaturalY;
+
+        ctx.drawImage(
+          img,
+          Math.max(0, cropX),
+          Math.max(0, cropY),
+          Math.min(imgW, viewportInNaturalW),
+          Math.min(imgH, viewportInNaturalH),
+          0,
+          0,
+          outW,
+          outH,
+        );
+      }
 
       canvas.toBlob(
         (blob) => {
@@ -243,7 +267,7 @@ export function CoverCropperModal({
           onApply(croppedFile, previewUrl);
         },
         "image/webp",
-        0.85,
+        0.88,
       );
     };
   };
@@ -259,19 +283,59 @@ export function CoverCropperModal({
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div>
             <h3 id="cropper-title" className="text-base font-bold text-text">
-              Adjust Cover Photo
+              Adjust Cover Photo (16:9)
             </h3>
             <p className="text-xs text-muted">
-              Drag to reposition · Zoom to frame for the 16:9 cover banner
+              {mode === "fit"
+                ? "Full photo preserved with zero cropping · Ambient backdrop fills 16:9"
+                : "Drag to reposition · Zoom to crop and frame in 16:9"}
             </p>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-text transition-colors"
+            className="rounded-lg p-1.5 text-muted hover:bg-surface-2 hover:text-text transition-colors cursor-pointer"
             aria-label="Close"
           >
             <X className="size-5" />
+          </button>
+        </div>
+
+        {/* Framing Mode Selector */}
+        <div className="flex items-center gap-1.5 rounded-xl bg-surface-2 p-1 border border-border">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("fit");
+              setZoom(1);
+              setPan({ x: 0, y: 0 });
+            }}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+              mode === "fit"
+                ? "bg-accent text-accent-fg shadow-sm"
+                : "text-secondary hover:text-white"
+            )}
+          >
+            <Maximize2 className="size-3.5" />
+            <span>Fit (Full photo · No cut)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("fill");
+              setZoom(1);
+              setPan({ x: 0, y: 0 });
+            }}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+              mode === "fill"
+                ? "bg-accent text-accent-fg shadow-sm"
+                : "text-secondary hover:text-white"
+            )}
+          >
+            <Crop className="size-3.5" />
+            <span>Fill (Crop to 16:9)</span>
           </button>
         </div>
 
@@ -285,6 +349,15 @@ export function CoverCropperModal({
           onPointerCancel={handlePointerUp}
           className="relative aspect-video w-full select-none overflow-hidden rounded-xl border-2 border-accent/40 bg-black cursor-grab active:cursor-grabbing touch-none"
         >
+          {/* Ambient blur backdrop */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageSrc}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 size-full object-cover scale-110 blur-xl opacity-35 select-none"
+          />
+
           {/* Draggable image */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -325,7 +398,7 @@ export function CoverCropperModal({
           <ZoomOut className="size-4 text-muted shrink-0" />
           <input
             type="range"
-            min="1"
+            min="0.6"
             max="3"
             step="0.05"
             value={zoom}
@@ -335,7 +408,7 @@ export function CoverCropperModal({
           />
           <ZoomIn className="size-4 text-muted shrink-0" />
           <span className="w-12 text-right font-mono text-xs text-muted">
-            {zoom.toFixed(1)}x
+            {zoom.toFixed(2)}x
           </span>
           <button
             type="button"
