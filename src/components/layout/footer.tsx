@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MapPin, ShieldCheck } from "lucide-react";
+import { MapPin, ShieldCheck, Mail, Phone } from "lucide-react";
 import { Wordmark } from "@/components/ui/wordmark";
 import { scrollToTop } from "@/lib/scroll";
 
@@ -104,8 +104,8 @@ export function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-border bg-bg">
       <div className="relative mx-auto max-w-7xl px-4 py-5 sm:py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-5 sm:gap-8 sm:grid-cols-3 lg:grid-cols-[1.8fr_1fr_1fr_1.2fr]">
-          <div className="max-w-sm space-y-3">
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_0.9fr_1.3fr_1.1fr]">
+          <div className="max-w-sm space-y-3 sm:col-span-2 lg:col-span-1">
             <Link
               href="/"
               onClick={(e) => {
@@ -141,53 +141,81 @@ export function Footer() {
           </div>
 
           <div className="grid grid-cols-2 gap-6 sm:contents">
-            {columns.map((col) =>
-              col.heading === "Legal" ? (
-                <div
-                  key="legal-follow"
-                  className="col-start-2 space-y-6 sm:col-start-auto lg:contents lg:space-y-0"
+            <FooterNav col={columns[0]} pathname={pathname} />
+            <FooterNav col={columns[1]} pathname={pathname} />
+
+            <div>
+              <ColumnHeading>Contact Us</ColumnHeading>
+              <ul className="mt-2 sm:mt-3 flex flex-col gap-2.5 text-xs sm:text-sm">
+                <li>
+                  <a
+                    href="mailto:motobharat1@gmail.com"
+                    className="inline-flex items-center gap-2 text-secondary transition-colors hover:text-accent group"
+                  >
+                    <Mail className="size-3.5 text-accent shrink-0 group-hover:scale-110 transition-transform" aria-hidden />
+                    <span className="break-all">motobharat1@gmail.com</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="tel:+919866777092"
+                    className="inline-flex items-center gap-2 text-secondary transition-colors hover:text-accent font-mono group"
+                  >
+                    <Phone className="size-3.5 text-accent shrink-0 group-hover:scale-110 transition-transform" aria-hidden />
+                    <span>+91 98667 77092</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="tel:+919866777192"
+                    className="inline-flex items-center gap-2 text-secondary transition-colors hover:text-accent font-mono group"
+                  >
+                    <Phone className="size-3.5 text-accent shrink-0 group-hover:scale-110 transition-transform" aria-hidden />
+                    <span>+91 98667 77192</span>
+                  </a>
+                </li>
+                <li className="inline-flex items-center gap-2 text-muted text-xs">
+                  <MapPin className="size-3.5 text-accent/70 shrink-0" aria-hidden />
+                  <span>Warangal, Telangana</span>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <ColumnHeading>Follow</ColumnHeading>
+              <div className="mt-2 sm:mt-3 flex flex-col items-start gap-2">
+                <a
+                  href="https://instagram.com/motobharat_warangal"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[34px] sm:min-h-[44px] items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-accent text-[11px] sm:text-xs font-semibold text-text transition-colors"
                 >
-                  <FooterNav col={col} pathname={pathname} />
-                  <div>
-                    <ColumnHeading>Follow</ColumnHeading>
-                    <div className="mt-2 sm:mt-3 flex flex-col items-start gap-2">
-                      <a
-                        href="https://instagram.com/motobharat_warangal"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex min-h-[34px] sm:min-h-[44px] items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-accent text-[11px] sm:text-xs font-semibold text-text transition-colors"
-                      >
-                        <InstagramIcon className="size-3.5 sm:size-4" />
-                        <span>Instagram</span>
-                      </a>
-                      <a
-                        href="https://www.youtube.com/channel/UCxhlcz800JsNwqxmYqOn-EQ"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex min-h-[34px] sm:min-h-[44px] items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-accent text-[11px] sm:text-xs font-semibold text-text transition-colors"
-                      >
-                        <YouTubeIcon className="size-3.5 sm:size-4" />
-                        <span>YouTube</span>
-                      </a>
-                      <a
-                        href="https://chat.whatsapp.com/EKzCHnJcsDIHp3Y6RDLhNd"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex min-h-[34px] sm:min-h-[44px] items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-accent text-[11px] sm:text-xs font-semibold text-text transition-colors"
-                      >
-                        <WhatsAppIcon className="size-3.5 sm:size-4" />
-                        <span>WhatsApp</span>
-                      </a>
-                    </div>
+                  <InstagramIcon className="size-3.5 sm:size-4" />
+                  <span>Instagram</span>
+                </a>
+                <a
+                  href="https://www.youtube.com/channel/UCxhlcz800JsNwqxmYqOn-EQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[34px] sm:min-h-[44px] items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-accent text-[11px] sm:text-xs font-semibold text-text transition-colors"
+                >
+                  <YouTubeIcon className="size-3.5 sm:size-4" />
+                  <span>YouTube</span>
+                </a>
+                <a
+                  href="https://chat.whatsapp.com/EKzCHnJcsDIHp3Y6RDLhNd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[34px] sm:min-h-[44px] items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-accent text-[11px] sm:text-xs font-semibold text-text transition-colors"
+                >
+                  <WhatsAppIcon className="size-3.5 sm:size-4" />
+                  <span>WhatsApp</span>
+                </a>
+              </div>
             </div>
           </div>
-        ) : (
-          <FooterNav key={col.heading} col={col} pathname={pathname} />
-        ),
-      )}
-    </div>
-  </div>
-</div>
+        </div>
+      </div>
 
       <div className="relative border-t border-border">
         <svg
