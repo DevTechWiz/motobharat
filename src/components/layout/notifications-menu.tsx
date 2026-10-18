@@ -11,6 +11,8 @@ import {
   ArrowRight,
   Sparkles,
   ShieldCheck,
+  Users,
+  UserCheck,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
@@ -24,13 +26,24 @@ interface NoticeItem {
   created_at: string;
 }
 
+interface PendingRiderItem {
+  userId: string;
+  displayName: string;
+  submittedAt: string;
+}
+
 export function NotificationsMenu() {
-  const { user, registered, approval, memberType } = useAuth();
+  const { user, profile, registered, approval, memberType } = useAuth();
   const [open, setOpen] = useState(false);
   const [notices, setNotices] = useState<NoticeItem[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
   const [isNewlyApproved, setIsNewlyApproved] = useState(false);
+  const [adminPendingCount, setAdminPendingCount] = useState(0);
+  const [adminPendingRiders, setAdminPendingRiders] = useState<PendingRiderItem[]>([]);
+  const [isAdminUnread, setIsAdminUnread] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const isAdmin = profile?.role === "admin";
 
   // Fetch recent community announcements
   useEffect(() => {
@@ -47,12 +60,53 @@ export function NotificationsMenu() {
       });
   }, []);
 
+  // Fetch pending registrations for admins
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const supabase = createClient();
+    supabase
+      .from("rider_details")
+      .select("user_id, kyc_submitted_at, profile:profiles(display_name)", { count: "exact" })
+      .eq("registered", false)
+      .not("kyc_submitted_at", "is", null)
+      .or("kyc_rejected.is.null,kyc_rejected.eq.false")
+      .order("kyc_submitted_at", { ascending: false })
+      .limit(3)
+      .then(({ data, count }) => {
+        setAdminPendingCount(count ?? 0);
+        if (data) {
+          const list = (data as unknown as { user_id: string; kyc_submitted_at: string; profile: { display_name: string } | null }[]).map((d) => ({
+            userId: d.user_id,
+            submittedAt: d.kyc_submitted_at,
+            displayName: d.profile?.display_name || "Applicant",
+          }));
+          setAdminPendingRiders(list);
+        }
+      });
+  }, [isAdmin]);
+
   // Determine if there is an unread or actionable notification
   useEffect(() => {
     if (typeof window === "undefined") return;
     const timer = setTimeout(() => {
       const storageKey = `motobharat_notifications_seen_${user?.id ?? "guest"}`;
       const lastSeen = window.localStorage.getItem(storageKey);
+
+      // 0. If Admin has pending rider registrations to review
+      if (isAdmin && adminPendingCount > 0) {
+        const adminSeenKey = `motobharat_admin_seen_pending_${user?.id}`;
+        const lastAdminSeen = window.localStorage.getItem(adminSeenKey);
+        const latestSubmitTime = adminPendingRiders[0]?.submittedAt
+          ? new Date(adminPendingRiders[0].submittedAt).getTime()
+          : 0;
+        if (!lastAdminSeen || latestSubmitTime > Number(lastAdminSeen)) {
+          setIsAdminUnread(true);
+          setHasUnread(true);
+          return;
+        }
+      }
+      setIsAdminUnread(false);
 
       // 1. If KYC is approved, check if the user has seen their approval celebration
       if (user && (approval === "approved" || registered)) {
@@ -85,7 +139,7 @@ export function NotificationsMenu() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [user, approval, registered, notices]);
+  }, [user, isAdmin, adminPendingCount, adminPendingRiders, approval, registered, notices]);
 
   const handleOpenToggle = () => {
     setOpen((prev) => {
@@ -94,6 +148,10 @@ export function NotificationsMenu() {
         // Mark notifications as acknowledged when opened
         const storageKey = `motobharat_notifications_seen_${user?.id ?? "guest"}`;
         window.localStorage.setItem(storageKey, String(Date.now()));
+        if (isAdmin && user) {
+          window.localStorage.setItem(`motobharat_admin_seen_pending_${user.id}`, String(Date.now()));
+          setIsAdminUnread(false);
+        }
         if (user && (approval === "approved" || registered)) {
           window.localStorage.setItem(`motobharat_seen_approved_${user.id}`, "true");
         }
@@ -145,15 +203,21 @@ export function NotificationsMenu() {
             <span
               className={cn(
                 "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
-                isNewlyApproved ? "bg-emerald-400" : "bg-accent"
+                isAdminUnread
+                  ? "bg-orange-500"
+                  : isNewlyApproved
+                    ? "bg-emerald-400"
+                    : "bg-accent"
               )}
             />
             <span
               className={cn(
                 "relative inline-flex size-2.5 rounded-full",
-                isNewlyApproved
-                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
-                  : "bg-accent shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+                isAdminUnread
+                  ? "bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]"
+                  : isNewlyApproved
+                    ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                    : "bg-accent shadow-[0_0_8px_rgba(245,158,11,0.8)]"
               )}
             />
           </span>
@@ -184,6 +248,58 @@ export function NotificationsMenu() {
           </div>
 
           <div className="space-y-2.5 max-h-[420px] overflow-y-auto overscroll-contain pr-1">
+            {/* Admin: Pending KYC Applications Alert */}
+            {isAdmin && adminPendingCount > 0 && (
+              <div className="rounded-xl border border-orange/40 bg-orange/10 p-3 space-y-2 transition-colors">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 text-orange font-bold text-xs">
+                    <Users className="size-4 shrink-0 text-orange" />
+                    <span>New Registrations Pending</span>
+                  </div>
+                  <span className="rounded bg-orange/20 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-orange border border-orange/30 shrink-0">
+                    {adminPendingCount} In Queue
+                  </span>
+                </div>
+                <p className="text-[11px] text-secondary leading-relaxed">
+                  {adminPendingCount === 1
+                    ? `${adminPendingRiders[0]?.displayName || "A rider"} submitted KYC and is waiting for your review.`
+                    : `${adminPendingCount} riders submitted KYC and are waiting for your review.`}
+                </p>
+                {adminPendingRiders.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {adminPendingRiders.map((r) => (
+                      <span
+                        key={r.userId}
+                        className="rounded-md bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-text border border-border/70"
+                      >
+                        {r.displayName}
+                      </span>
+                    ))}
+                    {adminPendingCount > adminPendingRiders.length && (
+                      <span className="text-[10px] text-muted font-mono">
+                        +{adminPendingCount - adminPendingRiders.length} more
+                      </span>
+                    )}
+                  </div>
+                )}
+                <Link
+                  href="/admin/riders"
+                  onClick={() => {
+                    if (typeof window !== "undefined" && user) {
+                      window.localStorage.setItem(`motobharat_admin_seen_pending_${user.id}`, String(Date.now()));
+                    }
+                    setIsAdminUnread(false);
+                    setOpen(false);
+                  }}
+                  className="inline-flex items-center gap-1.5 pt-1 text-[11px] font-bold text-orange hover:text-orange/80 transition-colors"
+                >
+                  <UserCheck className="size-3.5" />
+                  <span>Review in Admin Panel</span>
+                  <ArrowRight className="size-3" />
+                </Link>
+              </div>
+            )}
+
             {/* 1. KYC / Membership Status Notification */}
             {user ? (
               registered ? (
