@@ -6,10 +6,13 @@ import { Input, Field } from "@/components/ui/field";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { updateLockedFields } from "../../actions";
 
-const BLOOD_OPTIONS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((bg) => ({
-  value: bg,
-  label: bg,
-}));
+const BLOOD_OPTIONS = [
+  ...["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((bg) => ({
+    value: bg,
+    label: bg,
+  })),
+  { value: "Not Sure", label: "Not sure / Don't know" },
+];
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Male" },

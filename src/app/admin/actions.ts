@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ageFromDob, slugify } from "@/lib/format";
+import { ageFromDob, slugify, getEffectiveRideStatus } from "@/lib/format";
 import { processImage, validateImageFile } from "@/lib/media";
 import { deleteR2Object, putR2Object, r2Configured, r2KeyFromUrl, r2NotConfiguredError, r2PublicUrl } from "@/lib/r2";
 import { RATE_LIMITS, rateLimit } from "@/lib/rateLimit";
@@ -41,7 +41,7 @@ function uniqueConstraint(error: { code?: string } | null): boolean {
 }
 
 const DIFFICULTIES = ["easy", "moderate", "hard"];
-const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", "Not Sure"];
 
 // Sanitizers (not validators): malformed optionals degrade to null so draft
 // saves always land. Publishing still validates everything up front.
@@ -200,7 +200,7 @@ export async function createRide(
     max_riders: cleanMaxRiders(maxRidersRaw),
     joining_paused: joiningPaused,
     difficulty: cleanDifficulty(difficulty),
-    status,
+    status: getEffectiveRideStatus(status, startsAt ? istInputToIso(startsAt) : new Date().toISOString()),
     cover_url: coverUrlFinal,
     whatsapp_group_url: cleanWhatsApp.value,
     slug: slugify(title),
@@ -326,7 +326,7 @@ export async function updateRide(
     max_riders: cleanMaxRiders(maxRidersRaw),
     joining_paused: joiningPaused,
     difficulty: cleanDifficulty(difficulty),
-    status,
+    status: getEffectiveRideStatus(status, startsAtIso),
     ...(hasItinerary ? { itinerary } : {}),
     ...(hasWhatsappGroup ? { whatsapp_group_url: cleanWhatsApp.value } : {}),
     ...(newCoverUrl ? { cover_url: newCoverUrl } : {}),
@@ -471,7 +471,7 @@ export async function uploadRideCover(
       .maybeSingle();
     if (!ride) return { error: "Ride not found." };
 
-    const image = await processImage(file, 1600, 80);
+    const image = await processImage(file, 2400, 82);
     const key = `events/${rideId}/cover_${crypto.randomUUID()}.${image.format}`;
     await putR2Object(key, image.data, image.contentType);
 
@@ -818,7 +818,10 @@ export async function updateLockedFields(
 
   const dobRaw = String(formData.get("dob") ?? "").trim();
   const gender = String(formData.get("gender") ?? "");
-  const bloodGroup = String(formData.get("blood_group") ?? "");
+  let bloodGroup = String(formData.get("blood_group") ?? "").trim();
+  if (/^(not[\s_]?sure|unknown)$/i.test(bloodGroup)) {
+    bloodGroup = "Not Sure";
+  }
   const drivingLicence = String(formData.get("driving_licence") ?? "").trim().toUpperCase();
   const digitalSignature = String(formData.get("digital_signature") ?? "").trim();
 
