@@ -14,6 +14,7 @@ export interface VerifiedMember {
   member_since: string;
   registered: boolean;
   bike_model: string | null;
+  member_type?: string | null;
 }
 
 // First 6 hex chars of the uuid (dashes stripped), uppercased: MB-XXXXXX.

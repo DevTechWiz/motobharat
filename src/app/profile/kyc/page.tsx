@@ -4,7 +4,7 @@ import { useActionState, useEffect, useState, useTransition, useRef } from "reac
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Bike, Shield, ShieldAlert, HeartPulse, FileText, CheckCircle2, ArrowLeft, Lock, type LucideIcon } from "lucide-react";
+import { Bike, Shield, ShieldAlert, HeartPulse, FileText, CheckCircle2, ArrowLeft, Lock, Users, Sparkles, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { RegSteps } from "../reg-steps";
@@ -16,6 +16,14 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { saveRiderDetails, type ProfileFormState } from "../actions";
 import type { RiderDetails } from "@/lib/types";
 import { MOTORCYCLES_BY_BRAND, POPULAR_MOTORCYCLES } from "@/lib/motorcycles";
+import {
+  getStoredDraft,
+  setStoredDraft,
+  removeStoredDraft,
+  serializeForm,
+  isDraftDifferent,
+} from "@/lib/form-draft";
+import { cn } from "@/lib/cn";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 const BLOOD_OPTIONS = BLOOD_GROUPS.map((bg) => ({ value: bg, label: bg }));
@@ -65,10 +73,16 @@ const HEALTH_INSURANCE_OPTIONS = [
   { value: "true", label: "Active Mediclaim", sublabel: "Active health or accidental insurance policy" },
 ];
 
-function SubmitButton({ done, pending }: { done: boolean; pending: boolean }) {
+function SubmitButton({ done, pending, isPillion }: { done: boolean; pending: boolean; isPillion?: boolean }) {
   return (
     <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-      {pending ? "Saving Registration..." : done ? "Update KYC Details" : "Submit & Complete Registration"}
+      {pending
+        ? "Saving Registration..."
+        : isPillion
+          ? done ? "Update Pillion Details" : "Complete Registration & Get ID Card"
+          : done
+            ? "Update KYC Details"
+            : "Submit & Complete Registration"}
     </Button>
   );
 }
@@ -78,22 +92,27 @@ function SectionCard({
   title,
   subtitle,
   children,
+  action,
 }: {
   icon: LucideIcon;
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  action?: React.ReactNode;
 }) {
   return (
     <div data-section-card className="rounded-xl sm:rounded-2xl border border-border bg-surface p-3 sm:p-5 space-y-3 sm:space-y-4 scroll-mt-28">
-      <div className="flex items-start gap-2 sm:gap-2.5 border-b border-border pb-2.5 sm:pb-3.5">
-        <div className="rounded-lg bg-surface-2 p-1.5 sm:p-2 text-accent border border-border shrink-0">
-          <Icon className="size-4 sm:size-4.5" />
+      <div className="flex items-start justify-between gap-2 sm:gap-2.5 border-b border-border pb-2.5 sm:pb-3.5">
+        <div className="flex items-start gap-2 sm:gap-2.5">
+          <div className="rounded-lg bg-surface-2 p-1.5 sm:p-2 text-accent border border-border shrink-0">
+            <Icon className="size-4 sm:size-4.5" />
+          </div>
+          <div>
+            <h2 className="text-xs sm:text-sm md:text-base font-bold text-text">{title}</h2>
+            <p className="text-[10px] sm:text-xs text-muted mt-0.5">{subtitle}</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xs sm:text-sm md:text-base font-bold text-text">{title}</h2>
-          <p className="text-[10px] sm:text-xs text-muted mt-0.5">{subtitle}</p>
-        </div>
+        {action && <div className="shrink-0">{action}</div>}
       </div>
       {children}
     </div>
@@ -108,11 +127,44 @@ function KycForm() {
   const [prefill, setPrefill] = useState<Partial<RiderDetails> | null>(null);
   const [done, setDone] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [memberType, setMemberType] = useState<"rider" | "pillion">("rider");
   // Ephemeral UI state only (never persisted): custom-bike toggle.
   const [bikeSel, setBikeSel] = useState<string | null>(null);
   const [customBikeSel, setCustomBikeSel] = useState<string | null>(null);
+
+  // Draft persistence state
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+  const [formKey, setFormKey] = useState(0);
+  const originalPrefillRef = useRef<Partial<RiderDetails> | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const lastInvalidRef = useRef<number>(0);
   const serverErrorRef = useRef<HTMLDivElement>(null);
+
+  const frozen = Boolean(prefill?.kyc_submitted_at && !prefill?.registered && !prefill?.kyc_rejected && memberType !== "pillion");
+
+  const saveDraftImmediately = () => {
+    if (frozen || !user || !formRef.current) return;
+    const draftKey = `motobharat_draft_kyc_${user.id}`;
+    const serialized = serializeForm(formRef.current);
+    serialized.member_type = memberType;
+    if (bikeSel) serialized.bike_model = bikeSel;
+    if (customBikeSel) serialized.custom_bike_model = customBikeSel;
+
+    const baseline = originalPrefillRef.current ?? {};
+    if (isDraftDifferent(serialized, baseline)) {
+      setStoredDraft(draftKey, serialized);
+    } else {
+      removeStoredDraft(draftKey);
+    }
+  };
+
+  const scheduleDraftSave = () => {
+    if (frozen || !user) return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(saveDraftImmediately, 350);
+  };
 
   useEffect(() => {
     if (state?.error && serverErrorRef.current) {
@@ -135,19 +187,107 @@ function KycForm() {
           router.replace("/profile/setup");
           return;
         }
-        setPrefill(data);
+        originalPrefillRef.current = data;
+        const draftKey = `motobharat_draft_kyc_${user.id}`;
+
+        // If registered or frozen under review, clear draft
+        if (data.registered || (data.kyc_submitted_at && !data.kyc_rejected)) {
+          removeStoredDraft(draftKey);
+          setPrefill(data);
+          if (data.member_type === "pillion") {
+            setMemberType("pillion");
+          }
+          setDone(data.registered);
+          setChecking(false);
+          return;
+        }
+
+        const draft = getStoredDraft(draftKey);
+        if (draft?.data && isDraftDifferent(draft.data, data)) {
+          const merged: Partial<RiderDetails> = {
+            ...data,
+            ...(draft.data as Record<string, unknown>),
+          };
+          if (draft.data.declaration_confirmed !== undefined) {
+            merged.declaration_confirmed = Boolean(draft.data.declaration_confirmed);
+          }
+          if (draft.data.has_rsa !== undefined) {
+            merged.has_rsa = String(draft.data.has_rsa) === "true";
+          }
+          if (draft.data.rides_with_pillion !== undefined) {
+            merged.rides_with_pillion = String(draft.data.rides_with_pillion) === "true";
+          }
+          if (draft.data.personal_health_insurance !== undefined) {
+            merged.personal_health_insurance = String(draft.data.personal_health_insurance) === "true";
+          }
+          setPrefill(merged);
+          if (draft.data.member_type === "pillion" || draft.data.member_type === "rider") {
+            setMemberType(draft.data.member_type);
+          } else if (data.member_type === "pillion") {
+            setMemberType("pillion");
+          }
+
+          if (typeof draft.data.bike_model === "string") {
+            setBikeSel(draft.data.bike_model);
+          }
+          if (typeof draft.data.custom_bike_model === "string") {
+            setCustomBikeSel(draft.data.custom_bike_model);
+          }
+          setHasRestoredDraft(true);
+        } else {
+          setPrefill(data);
+          if (data.member_type === "pillion") {
+            setMemberType("pillion");
+          }
+        }
         setDone(data.registered);
         setChecking(false);
       });
   }, [loading, user, router]);
 
-  const frozen = Boolean(prefill?.kyc_submitted_at && !prefill?.registered && !prefill?.kyc_rejected);
+  const saveDraftRef = useRef(saveDraftImmediately);
+  useEffect(() => {
+    saveDraftRef.current = saveDraftImmediately;
+  });
 
   useEffect(() => {
-    if (state?.ok) {
-      router.push("/profile");
+    if (state?.ok && user) {
+      removeStoredDraft(`motobharat_draft_kyc_${user.id}`);
+      router.push(state.next ?? "/profile");
     }
-  }, [state?.ok, router]);
+  }, [state?.ok, state?.next, router, user]);
+
+  // Flush unsaved draft on tab switch or page close
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        saveDraftRef.current();
+      }
+    };
+    const handleBeforeUnload = () => {
+      saveDraftRef.current();
+    };
+    window.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
+
+  const handleDiscardDraft = () => {
+    if (!user) return;
+    const draftKey = `motobharat_draft_kyc_${user.id}`;
+    removeStoredDraft(draftKey);
+    const orig = originalPrefillRef.current;
+    setPrefill(orig ? { ...orig } : null);
+    setMemberType(orig?.member_type === "pillion" ? "pillion" : "rider");
+    setBikeSel(orig?.bike_model ?? null);
+    setCustomBikeSel(null);
+    setHasRestoredDraft(false);
+    setFormKey((k) => k + 1);
+  };
 
   const handleInvalid = (e: React.FormEvent<HTMLFormElement>) => {
     const now = Date.now();
@@ -181,13 +321,33 @@ function KycForm() {
 
   return (
     <form
+      key={formKey}
+      ref={formRef}
+      onChange={scheduleDraftSave}
+      onInput={scheduleDraftSave}
       onSubmit={(e) => {
         e.preventDefault();
+        saveDraftImmediately();
         startTransition(() => formAction(new FormData(e.currentTarget)));
       }}
       onInvalidCapture={handleInvalid}
     >
       <fieldset disabled={frozen || isPending} className="min-w-0 space-y-3.5 sm:space-y-6 border-0 m-0 p-0">
+      {hasRestoredDraft && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent/10 px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-text">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <Sparkles className="size-4 text-accent shrink-0" aria-hidden />
+            <span className="truncate">Recovered unsaved draft from your browser.</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleDiscardDraft}
+            className="text-xs font-semibold text-accent hover:text-accent-hover underline underline-offset-2 transition-colors cursor-pointer shrink-0"
+          >
+            Discard draft
+          </button>
+        </div>
+      )}
       {prefill?.kyc_rejected && !prefill?.registered && (
         <div className="flex items-start gap-2.5 sm:gap-3 rounded-lg border border-danger/40 bg-danger/10 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-text">
           <ShieldAlert className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
@@ -214,42 +374,90 @@ function KycForm() {
           </p>
         </div>
       )}
-      {/* Section 1: Motorcycle & Licensing */}
+      {/* Section 1: Riding Role & Motorcycle */}
       <SectionCard
-        icon={Bike}
-        title="1. Motorcycle & Riding Profile"
-        subtitle="Your machine, registration plate, and riding experience"
-      >
-        <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
-          <Field label="Motorcycle Brand & Model" htmlFor="bike_model" required>
-            <CustomSelect
-              id="bike_model"
-              name="bike_model"
-              required
-              value={selectDisplayValue}
-              placeholder="Select motorcycle brand & model…"
-              searchable
-              groups={MOTORCYCLES_BY_BRAND}
-              options={[{ value: "other", label: "Other / Custom Model" }]}
-              onChange={(val) => {
-                setBikeSel(val);
-                if (val !== "other") {
-                  setCustomBikeSel("");
-                }
+        icon={memberType === "pillion" ? Users : Bike}
+        title="1. Member Role & Vehicle"
+        subtitle={memberType === "pillion" ? "Pillion member profile — no motorcycle or DL needed" : "Your machine, registration plate, and riding experience"}
+        action={
+          <div className="flex items-center rounded-lg bg-surface-2 p-0.5 sm:p-1 border border-border">
+            <button
+              type="button"
+              onClick={() => {
+                setMemberType("rider");
+                setTimeout(scheduleDraftSave, 50);
               }}
-            />
-          </Field>
-          <Field label="Vehicle Registration / Plate No." htmlFor="bike_reg_no" hint="e.g. TS 03 AB 1234" required>
-            <Input
-              id="bike_reg_no"
-              name="bike_reg_no"
-              required
-              defaultValue={prefill?.bike_reg_no ?? ""}
-              placeholder="TS 03 AB 1234"
-              className="uppercase font-mono"
-            />
-          </Field>
-        </div>
+              className={cn(
+                "px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-bold rounded-md transition-all cursor-pointer",
+                memberType === "rider"
+                  ? "bg-accent text-accent-fg shadow-sm"
+                  : "text-muted hover:text-white"
+              )}
+            >
+              Rider
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMemberType("pillion");
+                setTimeout(scheduleDraftSave, 50);
+              }}
+              className={cn(
+                "px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-bold rounded-md transition-all cursor-pointer",
+                memberType === "pillion"
+                  ? "bg-accent text-accent-fg shadow-sm"
+                  : "text-muted hover:text-white"
+              )}
+            >
+              Pillion
+            </button>
+          </div>
+        }
+      >
+        <input type="hidden" name="member_type" value={memberType} />
+
+        {memberType === "pillion" ? (
+          <div className="rounded-xl border border-accent/40 bg-accent/5 p-3.5 sm:p-4 text-xs sm:text-sm text-secondary leading-relaxed space-y-1">
+            <p className="font-bold text-white flex items-center gap-1.5">
+              <Sparkles className="size-4 text-accent" /> Registering as a Pillion / Co-Rider
+            </p>
+            <p className="text-muted text-[11px] sm:text-xs">
+              Pillions don&apos;t need a motorcycle registration or driving licence. Simply complete your emergency contacts, blood group, and safety waiver below to receive <strong className="text-accent">instant approval</strong> and your official MotoBharat Pillion ID card.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
+              <Field label="Motorcycle Brand & Model" htmlFor="bike_model" required>
+                <CustomSelect
+                  id="bike_model"
+                  name="bike_model"
+                  required
+                  value={selectDisplayValue}
+                  placeholder="Select motorcycle brand & model…"
+                  searchable
+                  groups={MOTORCYCLES_BY_BRAND}
+                  options={[{ value: "other", label: "Other / Custom Model" }]}
+                  onChange={(val) => {
+                    setBikeSel(val);
+                    if (val !== "other") {
+                      setCustomBikeSel("");
+                    }
+                    setTimeout(scheduleDraftSave, 50);
+                  }}
+                />
+              </Field>
+              <Field label="Vehicle Registration / Plate No." htmlFor="bike_reg_no" hint="e.g. TS 03 AB 1234" required>
+                <Input
+                  id="bike_reg_no"
+                  name="bike_reg_no"
+                  required
+                  defaultValue={prefill?.bike_reg_no ?? ""}
+                  placeholder="TS 03 AB 1234"
+                  className="uppercase font-mono"
+                />
+              </Field>
+            </div>
 
         {isCustomBike && (
           <Field
@@ -263,7 +471,10 @@ function KycForm() {
               name="custom_bike_model"
               required
               value={customBikeValue}
-              onChange={(e) => setCustomBikeSel(e.target.value)}
+              onChange={(e) => {
+                setCustomBikeSel(e.target.value);
+                scheduleDraftSave();
+              }}
               placeholder="e.g. Benelli Imperiale 400"
             />
           </Field>
@@ -392,6 +603,8 @@ function KycForm() {
             />
           </Field>
         </div>
+        </>
+      )}
       </SectionCard>
 
       {/* Section 2: Emergency & Life Safety */}
@@ -626,7 +839,9 @@ function KycForm() {
           hint={
             locked && prefill?.digital_signature
               ? "Locked after approval — contact an admin to correct"
-              : "Type your full legal name exactly as printed on your driving licence — an admin cross-checks both"
+              : memberType === "pillion"
+                ? "Type your full legal name as digital signature to confirm"
+                : "Type your full legal name exactly as printed on your driving licence — an admin cross-checks both"
           }
           required
         >
@@ -671,7 +886,7 @@ function KycForm() {
           <ArrowLeft className="size-3.5" aria-hidden />
           {done ? "Back to profile" : "Back to basic info"}
         </Link>
-        <SubmitButton done={done} pending={isPending} />
+        <SubmitButton done={done} pending={isPending} isPillion={memberType === "pillion"} />
       </div>
 
       <p className="border-t border-border pt-3 sm:pt-4 text-[11px] sm:text-xs text-muted text-center sm:text-left">

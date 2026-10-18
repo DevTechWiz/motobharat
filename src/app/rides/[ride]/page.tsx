@@ -434,20 +434,32 @@ export default async function RideDetailPage({
                   ? "Ride Cancelled"
                   : past
                     ? "Ride Completed"
-                    : "Registration Open"}
+                    : ride.joining_paused
+                      ? "Registrations Closed"
+                      : "Registration Open"}
               </h3>
               <p className="text-[11px] sm:text-xs text-secondary leading-relaxed">
                 {cancelled
                   ? "This ride was cancelled. Check announcements for details."
                   : past
                     ? "This ride has already departed. Photos may be in the gallery."
-                    : "Join the column — show up on time, geared up, ready to roll."}
+                    : ride.joining_paused
+                      ? "New joinings are paused for now by the admin."
+                      : "Join the column — show up on time, geared up, ready to roll."}
               </p>
             </div>
 
             {!cancelled && (
               <>
-                <JoinLeaveButton rideId={ride.id} isMember={isMember} />
+                <JoinLeaveButton
+                  rideId={ride.id}
+                  isMember={isMember}
+                  joiningPaused={ride.joining_paused}
+                  isFull={
+                    ride.max_riders != null &&
+                    riderList.length >= ride.max_riders
+                  }
+                />
 
                 {ride.whatsapp_group_url && (
                   isMember || isAdmin ? (

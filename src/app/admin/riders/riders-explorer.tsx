@@ -18,6 +18,7 @@ export interface RiderRow {
   submitted: boolean;
   rejected: boolean;
   hasDoc: boolean;
+  member_type?: string;
 }
 
 type StatusFilter = "all" | "pending" | "rejected" | "registered" | "incomplete";
@@ -157,7 +158,12 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
                     </td>
                     <td className="px-3 sm:px-4 py-2 sm:py-2.5 text-secondary">{r.city ?? "—"}</td>
                     <td className="px-3 sm:px-4 py-2 sm:py-2.5">
-                      <Badge tone={r.role === "admin" ? "hard" : "neutral"}>{r.role}</Badge>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge tone={r.role === "admin" ? "hard" : "neutral"}>{r.role}</Badge>
+                        {r.member_type === "pillion" && (
+                          <Badge tone="moderate">Pillion</Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 sm:px-4 py-2 sm:py-2.5">
                       <Badge

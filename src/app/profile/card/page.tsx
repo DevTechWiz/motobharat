@@ -28,7 +28,7 @@ export default async function MemberCardPage() {
   const { data: rd } = await supabase
     .from("rider_details")
     .select(
-      "registered, age, gender, phone, bike_model, bike_reg_no, blood_group, experience_level, digital_signature, kyc_submitted_at, kyc_rejected, emergency_contact_name, emergency_contact_phone, emergency_contact_relation"
+      "registered, member_type, age, gender, phone, bike_model, bike_reg_no, blood_group, experience_level, digital_signature, kyc_submitted_at, kyc_rejected, emergency_contact_name, emergency_contact_phone, emergency_contact_relation"
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -128,6 +128,7 @@ export default async function MemberCardPage() {
             emergencyContactPhone={rd?.emergency_contact_phone}
             emergencyContactRelation={rd?.emergency_contact_relation}
             verifyUrl={verifyUrl}
+            memberType={rd?.member_type ?? "rider"}
           />
         </div>
 

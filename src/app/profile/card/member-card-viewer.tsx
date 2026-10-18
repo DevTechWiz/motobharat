@@ -40,6 +40,7 @@ interface MemberCardViewerProps {
   emergencyContactPhone?: string | null;
   emergencyContactRelation?: string | null;
   verifyUrl: string;
+  memberType?: "rider" | "pillion" | null;
 }
 
 export function MemberCardViewer({
@@ -59,6 +60,7 @@ export function MemberCardViewer({
   emergencyContactPhone,
   emergencyContactRelation,
   verifyUrl,
+  memberType = "rider",
 }: MemberCardViewerProps) {
   // Mode: "two-sided" (Option B: Front & Back) | "single" (Option A: All-in-one badge)
   const [cardMode, setCardMode] = useState<"two-sided" | "single">("two-sided");
@@ -225,7 +227,7 @@ export function MemberCardViewer({
                           MOTOBHARAT
                         </p>
                         <p className="font-mono text-[7px] sm:text-[9px] print:text-[6.5pt] tracking-[0.16em] text-accent font-semibold uppercase">
-                          Warangal Riders
+                          {memberType === "pillion" ? "Warangal Pillions" : "Warangal Riders"}
                         </p>
                       </div>
                     </div>
@@ -256,7 +258,7 @@ export function MemberCardViewer({
                         )}
                         {isRegistered ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-1.5 sm:px-2 py-0.5 print:px-1.5 print:py-0 text-[7.5px] sm:text-[9.5px] print:text-[5.5pt] font-bold text-emerald-400">
-                            <ShieldCheck className="size-2 sm:size-2.5" aria-hidden /> Registered Rider
+                            <ShieldCheck className="size-2 sm:size-2.5" aria-hidden /> {memberType === "pillion" ? "Registered Pillion" : "Registered Rider"}
                           </span>
                         ) : (
                           <>
@@ -280,26 +282,43 @@ export function MemberCardViewer({
                 </div>
 
                 {/* Bottom Machine & Blood Info */}
-                <div className="mt-2.5 sm:mt-5 print:mt-[2mm] grid grid-cols-3 gap-1.5 sm:gap-2 border-t border-border/70 print:border-white/20 pt-1.5 sm:pt-3 print:pt-[1.5mm] text-xs">
-                  <div>
-                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Machine</span>
-                    <span className="block truncate font-bold text-[10px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
-                      {isRegistered ? bikeModel || "—" : "•••"}
-                    </span>
+                {memberType === "pillion" ? (
+                  <div className="mt-2.5 sm:mt-5 print:mt-[2mm] grid grid-cols-2 gap-1.5 sm:gap-2 border-t border-border/70 print:border-white/20 pt-1.5 sm:pt-3 print:pt-[1.5mm] text-xs">
+                    <div>
+                      <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Role</span>
+                      <span className="block truncate font-bold text-[10px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
+                        Pillion / Co-Rider
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Blood Group</span>
+                      <span className="block font-bold text-[10px] sm:text-xs text-accent print:text-[7.5pt] print:leading-tight">
+                        {isRegistered ? bloodGroup || "—" : "•••"}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Plate No.</span>
-                    <span className="block font-mono font-bold uppercase text-[10px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
-                      {isRegistered ? bikeRegNo || "—" : "•••"}
-                    </span>
+                ) : (
+                  <div className="mt-2.5 sm:mt-5 print:mt-[2mm] grid grid-cols-3 gap-1.5 sm:gap-2 border-t border-border/70 print:border-white/20 pt-1.5 sm:pt-3 print:pt-[1.5mm] text-xs">
+                    <div>
+                      <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Machine</span>
+                      <span className="block truncate font-bold text-[10px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
+                        {isRegistered ? bikeModel || "—" : "•••"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Plate No.</span>
+                      <span className="block font-mono font-bold uppercase text-[10px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
+                        {isRegistered ? bikeRegNo || "—" : "•••"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Blood Group</span>
+                      <span className="block font-bold text-[10px] sm:text-xs text-accent print:text-[7.5pt] print:leading-tight">
+                        {isRegistered ? bloodGroup || "—" : "•••"}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Blood Group</span>
-                    <span className="block font-bold text-[10px] sm:text-xs text-accent print:text-[7.5pt] print:leading-tight">
-                      {isRegistered ? bloodGroup || "—" : "•••"}
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Print Fold Guide (visible only during print between front & back cards in column) */}
@@ -318,7 +337,7 @@ export function MemberCardViewer({
                         SAFETY & EMERGENCY (ICE)
                       </p>
                       <p className="font-mono text-[7px] sm:text-[9px] print:text-[6.5pt] tracking-[0.14em] text-accent font-semibold uppercase">
-                        MOTOBHARAT RIDER Credentials
+                        MOTOBHARAT {memberType === "pillion" ? "PILLION" : "RIDER"} Credentials
                       </p>
                     </div>
                     <div className="text-right">
@@ -440,7 +459,7 @@ export function MemberCardViewer({
                         )}
                         {isRegistered ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-1.5 sm:px-2 py-0.5 print:px-1.5 print:py-0 text-[7.5px] sm:text-[9.5px] print:text-[5.5pt] font-bold text-emerald-400">
-                            <ShieldCheck className="size-2 sm:size-2.5" aria-hidden /> Registered Rider
+                            <ShieldCheck className="size-2 sm:size-2.5" aria-hidden /> {memberType === "pillion" ? "Registered Pillion" : "Registered Rider"}
                           </span>
                         ) : (
                           <>
@@ -478,32 +497,55 @@ export function MemberCardViewer({
               </div>
 
               {/* Bottom Strip: Machine, Plate, Blood, Emergency */}
-              <div className="mt-2.5 sm:mt-5 print:mt-[2mm] grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-3 print:gap-1.5 border-t border-border/70 print:border-white/20 pt-2 sm:pt-4 print:pt-[1.5mm] text-xs">
-                <div>
-                  <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Machine</span>
-                  <span className="block truncate font-bold text-[9.5px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
-                    {isRegistered ? bikeModel || "—" : "•••"}
-                  </span>
+              {memberType === "pillion" ? (
+                <div className="mt-2.5 sm:mt-5 print:mt-[2mm] grid grid-cols-3 gap-1.5 sm:gap-3 print:gap-1.5 border-t border-border/70 print:border-white/20 pt-2 sm:pt-4 print:pt-[1.5mm] text-xs">
+                  <div>
+                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Role</span>
+                    <span className="block truncate font-bold text-[9.5px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
+                      Pillion / Co-Rider
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Blood Group</span>
+                    <span className="block font-bold text-[9.5px] sm:text-xs text-accent print:text-[7.5pt] print:leading-tight">
+                      {isRegistered ? bloodGroup || "—" : "•••"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-rose-400 font-semibold uppercase">Emergency ICE</span>
+                    <span className="block truncate font-bold text-[9.5px] sm:text-xs text-white print:text-[7pt] print:leading-tight" title={emergencyContactPhone || ""}>
+                      {isRegistered ? emergencyContactPhone || emergencyContactName || "—" : "•••"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Plate No.</span>
-                  <span className="block font-mono font-bold uppercase text-[9.5px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
-                    {isRegistered ? bikeRegNo || "—" : "•••"}
-                  </span>
+              ) : (
+                <div className="mt-2.5 sm:mt-5 print:mt-[2mm] grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-3 print:gap-1.5 border-t border-border/70 print:border-white/20 pt-2 sm:pt-4 print:pt-[1.5mm] text-xs">
+                  <div>
+                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Machine</span>
+                    <span className="block truncate font-bold text-[9.5px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
+                      {isRegistered ? bikeModel || "—" : "•••"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Plate No.</span>
+                    <span className="block font-mono font-bold uppercase text-[9.5px] sm:text-xs text-white print:text-[7pt] print:leading-tight">
+                      {isRegistered ? bikeRegNo || "—" : "•••"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Blood Group</span>
+                    <span className="block font-bold text-[9.5px] sm:text-xs text-accent print:text-[7.5pt] print:leading-tight">
+                      {isRegistered ? bloodGroup || "—" : "•••"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-rose-400 font-semibold uppercase">Emergency ICE</span>
+                    <span className="block truncate font-bold text-[9.5px] sm:text-xs text-white print:text-[7pt] print:leading-tight" title={emergencyContactPhone || ""}>
+                      {isRegistered ? emergencyContactPhone || emergencyContactName || "—" : "•••"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-gray-400 uppercase">Blood Group</span>
-                  <span className="block font-bold text-[9.5px] sm:text-xs text-accent print:text-[7.5pt] print:leading-tight">
-                    {isRegistered ? bloodGroup || "—" : "•••"}
-                  </span>
-                </div>
-                <div>
-                  <span className="block font-mono text-[7px] sm:text-[9px] print:text-[6pt] text-rose-400 font-semibold uppercase">Emergency ICE</span>
-                  <span className="block truncate font-bold text-[9.5px] sm:text-xs text-white print:text-[7pt] print:leading-tight" title={emergencyContactPhone || ""}>
-                    {isRegistered ? emergencyContactPhone || emergencyContactName || "—" : "•••"}
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         )}

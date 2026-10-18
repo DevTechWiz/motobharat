@@ -167,18 +167,25 @@ export async function saveRiderDetails(
   const referralSource = String(formData.get("referral_source") ?? "").trim() || null;
   const suggestions = String(formData.get("suggestions") ?? "").trim() || null;
 
+  // Member Type: rider vs pillion
+  const rawMemberType = String(formData.get("member_type") ?? "rider").trim().toLowerCase();
+  const isPillion = rawMemberType === "pillion";
+
   // Declaration & Signature
   const declarationConfirmed = formData.get("declaration_confirmed") === "true" || formData.get("declaration_confirmed") === "on";
   let digitalSignature = String(formData.get("digital_signature") ?? "").trim();
 
-  // Field validations
-  if (!bikeModel) { console.log("[saveRiderDetails] Missing bikeModel"); return { error: "Motorcycle brand & model is required." }; }
-  if (!bikeRegNo) { console.log("[saveRiderDetails] Missing bikeRegNo"); return { error: "Vehicle registration/plate number is required." }; }
-  if (!drivingLicence) { console.log("[saveRiderDetails] Missing drivingLicence"); return { error: "Driving licence number is required." }; }
-  if (!EXPERIENCE_LEVELS.includes(experienceLevel)) { console.log("[saveRiderDetails] Invalid experienceLevel:", experienceLevel); return { error: "Select your riding experience level." }; }
-  if (!GEAR_LEVELS.includes(gearLevel)) { console.log("[saveRiderDetails] Invalid gearLevel:", gearLevel); return { error: "Select your overall riding gear level." }; }
-  if (!INSURANCE_STATUSES.includes(vehicleInsuranceStatus)) { console.log("[saveRiderDetails] Invalid vehicleInsuranceStatus:", vehicleInsuranceStatus); return { error: "Select vehicle insurance status." }; }
+  // Field validations for Rider
+  if (!isPillion) {
+    if (!bikeModel) { console.log("[saveRiderDetails] Missing bikeModel"); return { error: "Motorcycle brand & model is required." }; }
+    if (!bikeRegNo) { console.log("[saveRiderDetails] Missing bikeRegNo"); return { error: "Vehicle registration/plate number is required." }; }
+    if (!drivingLicence) { console.log("[saveRiderDetails] Missing drivingLicence"); return { error: "Driving licence number is required." }; }
+    if (!EXPERIENCE_LEVELS.includes(experienceLevel)) { console.log("[saveRiderDetails] Invalid experienceLevel:", experienceLevel); return { error: "Select your riding experience level." }; }
+    if (!GEAR_LEVELS.includes(gearLevel)) { console.log("[saveRiderDetails] Invalid gearLevel:", gearLevel); return { error: "Select your overall riding gear level." }; }
+    if (!INSURANCE_STATUSES.includes(vehicleInsuranceStatus)) { console.log("[saveRiderDetails] Invalid vehicleInsuranceStatus:", vehicleInsuranceStatus); return { error: "Select vehicle insurance status." }; }
+  }
 
+  // Emergency & Medical validations (Required for BOTH Riders and Pillions)
   if (!BLOOD_GROUPS.includes(bloodGroup)) { console.log("[saveRiderDetails] Invalid bloodGroup:", bloodGroup); return { error: "Pick a valid blood group." }; }
   if (!ecName) { console.log("[saveRiderDetails] Missing ecName"); return { error: "Primary emergency contact name is required." }; }
 
@@ -212,7 +219,7 @@ export async function saveRiderDetails(
   // Basic info must exist before KYC (enforced by the setup flow).
   const { data: existing } = await supabase
     .from("rider_details")
-    .select("registered, age, gender, phone, dob, whatsapp_number, occupation, dl_image_url, blood_group, driving_licence, digital_signature, kyc_submitted_at, kyc_rejected")
+    .select("registered, age, gender, phone, dob, whatsapp_number, occupation, dl_image_url, blood_group, driving_licence, digital_signature, kyc_submitted_at, kyc_rejected, member_type")
     .eq("user_id", user.id)
     .maybeSingle();
   if (!existing?.age || !existing?.gender || !existing?.phone) {
@@ -220,36 +227,29 @@ export async function saveRiderDetails(
     redirect("/profile/setup");
   }
 
-  // Filed applications are read-only until the admin verdict.
-  if (!existing.registered && !existing.kyc_rejected && existing.kyc_submitted_at) {
+  // Filed applications are read-only until the admin verdict (for riders awaiting review).
+  if (!isPillion && !existing.registered && !existing.kyc_rejected && existing.kyc_submitted_at) {
     return { error: "Application under review — wait for the admin verdict." };
   }
 
-  // Locked identity: approved riders keep a stored blood group / DL number —
-  // submitted values are ignored while one exists. A field that was never set
-  // (legacy rows) still accepts its first value, so old accounts can't get
-  // stuck behind a disabled input.
+  // Locked identity: approved riders keep a stored blood group / DL number.
   const locked = existing.registered ?? false;
   if (locked && existing.blood_group) bloodGroup = existing.blood_group;
   if (locked && existing.driving_licence) drivingLicence = existing.driving_licence;
-  // Full name / signature is identity, not profile text: same lock, same
-  // never-set-still-accepts rule as the other frozen fields.
   if (locked && existing.digital_signature) digitalSignature = existing.digital_signature;
 
-  // DL photo: mandatory KYC data until approval, purged at approval. Locked
-  // rows ignore uploads entirely (approved accounts hold no photo); everyone
-  // else must have a stored photo or attach one now.
+  // DL photo: only required for riders who are not yet approved
   const dlFile = formData.get("dl_document") as File | null;
   const picked = dlFile && dlFile.size > 0 ? dlFile : null;
-  const dlUpload = locked ? null : picked;
-  if (!locked && !existing.dl_image_url && !dlUpload) {
+  const dlUpload = (locked || isPillion) ? null : picked;
+  if (!isPillion && !locked && !existing.dl_image_url && !dlUpload) {
     if (!(await r2Configured())) {
       return { error: r2NotConfiguredError("Licence photo can't be saved — photo storage isn't connected") };
     }
     return { error: "Driving licence photo is required — upload a clear JPEG or WebP (max 10 MB)." };
   }
 
-  let nextDlUrl: string | null = existing.dl_image_url ?? null;
+  let nextDlUrl: string | null = isPillion ? null : (existing.dl_image_url ?? null);
   let newDlKey: string | null = null;
   const oldDlKey = nextDlUrl ? r2KeyFromUrl(nextDlUrl) : null;
 
@@ -266,12 +266,13 @@ export async function saveRiderDetails(
     nextDlUrl = r2PublicUrl(key);
   }
 
-  console.log("[saveRiderDetails] Performing upsert on rider_details for user:", user.id);
+  console.log("[saveRiderDetails] Performing upsert on rider_details for user:", user.id, "as", isPillion ? "pillion" : "rider");
   const { error } = await supabase
     .from("rider_details")
     .upsert(
       {
         user_id: user.id,
+        member_type: isPillion ? "pillion" : "rider",
         age: existing.age,
         gender: existing.gender,
         phone: existing.phone,
@@ -283,25 +284,24 @@ export async function saveRiderDetails(
         emergency_contact_phone: ecValidation.formatted,
         emergency_contact_relation: ecRelation,
         emergency_contact_2_phone: formattedEc2,
-        bike_model: bikeModel,
-        bike_reg_no: bikeRegNo,
-        driving_licence: drivingLicence,
-        experience_level: experienceLevel,
-        gear_level: gearLevel,
-        vehicle_insurance_status: vehicleInsuranceStatus,
+        bike_model: isPillion ? null : bikeModel,
+        bike_reg_no: isPillion ? null : bikeRegNo,
+        driving_licence: isPillion ? null : drivingLicence,
+        experience_level: isPillion ? null : experienceLevel,
+        gear_level: isPillion ? (gearLevel || null) : gearLevel,
+        vehicle_insurance_status: isPillion ? null : vehicleInsuranceStatus,
         medical_conditions: medicalConditions,
         personal_health_insurance: personalHealthInsurance,
-        has_rsa: hasRsa,
-        rides_with_pillion: ridesWithPillion,
+        has_rsa: isPillion ? false : hasRsa,
+        rides_with_pillion: isPillion ? false : ridesWithPillion,
         permanent_address: permanentAddress,
         instagram_handle: instagramHandle,
         referral_source: referralSource,
         suggestions: suggestions,
         declaration_confirmed: true,
         digital_signature: digitalSignature,
-        // Filing for review, not self-approving: registered stays false until
-        // an admin approves (already-approved riders keep their status on edit).
-        registered: existing.registered ?? false,
+        // Pillion gets instant approval (registered = true). Rider awaits admin review.
+        registered: isPillion ? true : (existing.registered ?? false),
         kyc_submitted_at: new Date().toISOString(),
         kyc_rejected: false,
         rejection_reason: null,
@@ -331,7 +331,7 @@ export async function saveRiderDetails(
 
   console.log("[saveRiderDetails] SUCCESS! Revalidating and reporting ok...");
   revalidatePath("/profile", "layout");
-  return { ok: true };
+  return { ok: true, next: isPillion ? "/profile/card" : undefined };
 }
 
 export type AvatarFormState = {

@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X, ShieldAlert, ShieldCheck, User as UserIcon, LogOut, Settings, IdCard, ArrowRight, Bell } from "lucide-react";
+import { Menu, X, ShieldAlert, ShieldCheck, User as UserIcon, LogOut, Settings, IdCard, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { scrollToTop } from "@/lib/scroll";
 import { Wordmark } from "@/components/ui/wordmark";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth-context";
 import { UserMenu } from "./user-menu";
+import { NotificationsMenu } from "./notifications-menu";
 
 export function Topbar() {
   const pathname = usePathname();
@@ -22,8 +23,8 @@ export function Topbar() {
     { href: "/rides", label: "Rides" },
     { href: "/stories", label: "Stories" },
     { href: "/gallery", label: "Gallery" },
+    { href: "/announcements", label: "Announcements" },
     { href: "/about", label: "About Us" },
-    { href: "/safety", label: "Safety" },
   ];
 
   useEffect(() => {
@@ -125,19 +126,7 @@ export function Topbar() {
         </nav>
 
         <div className="hidden shrink-0 items-center gap-3 md:flex">
-          <Link
-            href="/announcements"
-            className={cn(
-              "group relative flex size-9 items-center justify-center rounded-full border transition-all duration-200",
-              isActive("/announcements")
-                ? "border-accent bg-accent/20 text-accent shadow-[0_0_12px_rgba(245,158,11,0.3)]"
-                : "border-border/80 bg-surface-2/60 text-secondary hover:border-accent/60 hover:text-white hover:bg-surface-3"
-            )}
-            aria-label="Announcements"
-            title="Announcements"
-          >
-            <Bell className="size-4 transition-transform duration-200 group-hover:scale-110" aria-hidden />
-          </Link>
+          <NotificationsMenu />
 
           {loading ? (
             <div className="h-8 w-24 rounded-full bg-white/5 animate-pulse border border-white/10" />
@@ -155,19 +144,7 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
-          <Link
-            href="/announcements"
-            className={cn(
-              "flex size-9 items-center justify-center rounded-full border transition-colors",
-              isActive("/announcements")
-                ? "border-accent bg-accent/20 text-accent"
-                : "border-border/80 bg-surface-2/60 text-secondary hover:text-white"
-            )}
-            aria-label="Announcements"
-            title="Announcements"
-          >
-            <Bell className="size-4" aria-hidden />
-          </Link>
+          <NotificationsMenu />
 
           <button
             type="button"

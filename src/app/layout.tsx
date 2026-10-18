@@ -22,13 +22,13 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL("https://motobharat.co"),
   title: {
-    default: "MotoBharat — Warangal Riders",
+    default: "MotoBharat | Warangal Riders",
     template: "%s · MotoBharat",
   },
   description:
     "Different Roads. One Community. Warangal's riders community — safe rides, new routes and good people.",
   openGraph: {
-    siteName: "MotoBharat — Warangal Riders",
+    siteName: "MotoBharat | Warangal Riders",
     type: "website",
   },
   robots: { index: true, follow: true },

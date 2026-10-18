@@ -24,6 +24,8 @@ interface RideEditorProps {
     itinerary?: { title: string; description?: string; activity?: string }[] | null;
     activities?: string[] | null;
     distance_km: number | null;
+    max_riders?: number | null;
+    joining_paused?: boolean;
     difficulty: string | null;
     status: string;
     cover_url: string | null;

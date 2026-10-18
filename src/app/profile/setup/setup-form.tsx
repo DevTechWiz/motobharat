@@ -3,12 +3,19 @@
 import { useActionState, useRef, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, CalendarDays, Phone, type LucideIcon } from "lucide-react";
+import { ArrowLeft, User, CalendarDays, Phone, Sparkles, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Field } from "@/components/ui/field";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { ageFromDob } from "@/lib/format";
+import {
+  getStoredDraft,
+  setStoredDraft,
+  removeStoredDraft,
+  serializeForm,
+  isDraftDifferent,
+} from "@/lib/form-draft";
 import { saveBasicProfile, type ProfileFormState } from "../actions";
 import type { RiderDetails } from "@/lib/types";
 
@@ -51,12 +58,14 @@ function Group({
 }
 
 export function SetupForm({
+  userId,
   initialData,
   profile,
   isEdit,
   locked,
   frozen,
 }: {
+  userId?: string;
   initialData: Partial<RiderDetails> | null;
   profile: { display_name: string; city: string | null } | null;
   isEdit: boolean;
@@ -74,18 +83,130 @@ export function SetupForm({
       initialPhone.replace(/\D/g, "") === initialWa.replace(/\D/g, "")
   );
 
+  const draftKey = userId ? `motobharat_draft_setup_${userId}` : "motobharat_draft_setup";
+  const [draftValues, setDraftValues] = useState<Record<string, string | boolean> | null>(null);
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+  const [formKey, setFormKey] = useState(0);
+
   const [phone, setPhone] = useState(initialPhone);
   const [wa, setWa] = useState(initialWa);
   const [sameAsPrimary, setSameAsPrimary] = useState(initialSame);
   const [dobShown, setDobShown] = useState<string | null>(null);
+
+  const formRef = useRef<HTMLFormElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const lastInvalidRef = useRef<number>(0);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveDraftImmediately = () => {
+    if (locked || frozen || !formRef.current) return;
+    const serialized = serializeForm(formRef.current);
+    const baseline = {
+      display_name: profile?.display_name ?? "",
+      city: profile?.city ?? "",
+      occupation: initialData?.occupation ?? "",
+      dob: initialData?.dob ?? "",
+      gender: initialData?.gender ?? "",
+      phone: initialPhone,
+      whatsapp_number: initialWa,
+      wa_same: initialSame,
+    };
+    if (isDraftDifferent(serialized, baseline)) {
+      setStoredDraft(draftKey, serialized);
+    } else {
+      removeStoredDraft(draftKey);
+    }
+  };
+
+  const saveDraftRef = useRef(saveDraftImmediately);
+  useEffect(() => {
+    saveDraftRef.current = saveDraftImmediately;
+  });
+
+  const scheduleDraftSave = () => {
+    if (locked || frozen) return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(saveDraftImmediately, 350);
+  };
+
+  // Restore draft on mount if available
+  useEffect(() => {
+    if (locked || frozen) {
+      removeStoredDraft(draftKey);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const draft = getStoredDraft(draftKey);
+      if (!draft?.data) return;
+
+      const baseline = {
+        display_name: profile?.display_name ?? "",
+        city: profile?.city ?? "",
+        occupation: initialData?.occupation ?? "",
+        dob: initialData?.dob ?? "",
+        gender: initialData?.gender ?? "",
+        phone: initialPhone,
+        whatsapp_number: initialWa,
+        wa_same: initialSame,
+      };
+
+      if (isDraftDifferent(draft.data, baseline)) {
+        setDraftValues(draft.data as Record<string, string | boolean>);
+        setHasRestoredDraft(true);
+        if (typeof draft.data.phone === "string") {
+          setPhone(draft.data.phone);
+        }
+        if (typeof draft.data.whatsapp_number === "string") {
+          setWa(draft.data.whatsapp_number);
+        }
+        if (typeof draft.data.wa_same === "boolean") {
+          setSameAsPrimary(draft.data.wa_same);
+        }
+        if (typeof draft.data.dob === "string") {
+          setDobShown(draft.data.dob);
+        }
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [draftKey, locked, frozen, initialPhone, initialWa, initialSame, profile, initialData]);
+
+  // Flush unsaved draft on tab switch or page close
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        saveDraftRef.current();
+      }
+    };
+    const handleBeforeUnload = () => {
+      saveDraftRef.current();
+    };
+    window.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (state?.ok) {
+      removeStoredDraft(draftKey);
       router.push(state.next ?? "/profile");
     }
-  }, [state?.ok, state?.next, router]);
+  }, [state?.ok, state?.next, router, draftKey]);
+
+  const handleDiscardDraft = () => {
+    removeStoredDraft(draftKey);
+    setDraftValues(null);
+    setHasRestoredDraft(false);
+    setPhone(initialPhone);
+    setWa(initialWa);
+    setSameAsPrimary(initialSame);
+    setDobShown(null);
+    setFormKey((k) => k + 1);
+  };
 
   const handleInvalid = (e: React.FormEvent<HTMLFormElement>) => {
     const now = Date.now();
@@ -117,8 +238,13 @@ export function SetupForm({
 
   return (
     <form
+      key={formKey}
+      ref={formRef}
+      onChange={scheduleDraftSave}
+      onInput={scheduleDraftSave}
       onSubmit={(e) => {
         e.preventDefault();
+        saveDraftImmediately();
         startTransition(() => formAction(new FormData(e.currentTarget)));
       }}
       onInvalidCapture={handleInvalid}
@@ -126,6 +252,21 @@ export function SetupForm({
     >
       <input type="hidden" name="edit" value={isEdit ? "true" : "false"} />
       <fieldset disabled={frozen || isPending} className="min-w-0 space-y-3 sm:space-y-4 border-0 m-0 p-0">
+      {hasRestoredDraft && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent/10 px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-text">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <Sparkles className="size-4 text-accent shrink-0" aria-hidden />
+            <span className="truncate">Recovered unsaved draft from your browser.</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleDiscardDraft}
+            className="text-xs font-semibold text-accent hover:text-accent-hover underline underline-offset-2 transition-colors cursor-pointer shrink-0"
+          >
+            Discard draft
+          </button>
+        </div>
+      )}
       {frozen && (
         <div className="flex items-start gap-3 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-text">
           <p className="leading-relaxed">
@@ -140,7 +281,7 @@ export function SetupForm({
           <Input
             id="display_name"
             name="display_name"
-            defaultValue={profile?.display_name ?? ""}
+            defaultValue={typeof draftValues?.display_name === "string" ? draftValues.display_name : (profile?.display_name ?? "")}
             required
             maxLength={50}
             placeholder="e.g. Rahul Sharma"
@@ -152,7 +293,7 @@ export function SetupForm({
             <Input
               id="city"
               name="city"
-              defaultValue={profile?.city ?? ""}
+              defaultValue={typeof draftValues?.city === "string" ? draftValues.city : (profile?.city ?? "")}
               required
               maxLength={100}
               placeholder="e.g. Warangal"
@@ -162,7 +303,7 @@ export function SetupForm({
             <Input
               id="occupation"
               name="occupation"
-              defaultValue={initialData?.occupation ?? ""}
+              defaultValue={typeof draftValues?.occupation === "string" ? draftValues.occupation : (initialData?.occupation ?? "")}
               placeholder="e.g. Student, Engineer"
             />
           </Field>
@@ -185,12 +326,13 @@ export function SetupForm({
               required
               disabled={locked}
               max={new Date().toISOString().slice(0, 10)}
-              defaultValue={initialData?.dob ?? ""}
+              defaultValue={typeof draftValues?.dob === "string" ? draftValues.dob : (initialData?.dob ?? "")}
               onChange={(e) => setDobShown(e.target.value)}
             />
             <p className="text-[11px] sm:text-xs whitespace-nowrap text-muted" aria-live="polite">
               {(() => {
-                const dobVal = locked ? (initialData?.dob ?? "") : (dobShown ?? initialData?.dob ?? "");
+                const draftDob = typeof draftValues?.dob === "string" ? draftValues.dob : undefined;
+                const dobVal = locked ? (initialData?.dob ?? "") : (dobShown ?? draftDob ?? initialData?.dob ?? "");
                 const shown = dobVal ? ageFromDob(String(dobVal)) : null;
                 return shown != null ? `Age: ${shown} (calculated automatically)` : "";
               })()}
@@ -208,7 +350,7 @@ export function SetupForm({
               name="gender"
               required
               disabled={locked && Boolean(initialData?.gender)}
-              defaultValue={initialData?.gender ?? ""}
+              defaultValue={typeof draftValues?.gender === "string" ? draftValues.gender : (initialData?.gender ?? "")}
               placeholder="Select gender…"
               options={GENDER_OPTIONS}
             />

@@ -66,6 +66,9 @@ export default async function RiderReviewPage({
             <Badge tone={rd.registered ? "easy" : "moderate"}>
               {rd.registered ? "Registered" : "Incomplete"}
             </Badge>
+            <Badge tone={rd.member_type === "pillion" ? "moderate" : "neutral"}>
+              {rd.member_type === "pillion" ? "Pillion" : "Rider"}
+            </Badge>
             {!rd.registered &&
               (rd.kyc_rejected ? (
                 <Badge tone="danger">Rejected — fixes needed</Badge>

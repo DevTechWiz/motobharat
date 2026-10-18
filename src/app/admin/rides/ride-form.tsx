@@ -39,6 +39,8 @@ export function RideForm({
     itinerary?: { title: string; description?: string; activity?: string }[] | null;
     activities?: string[] | null;
     distance_km?: number | null;
+    max_riders?: number | null;
+    joining_paused?: boolean;
     difficulty?: string | null;
     status?: string;
     cover_url?: string | null;
@@ -330,6 +332,40 @@ export function RideForm({
               <option value="moderate">Moderate</option>
               <option value="hard">Hard</option>
             </Select>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+          <Field
+            label="Rider Limit (Optional)"
+            htmlFor="max_riders"
+            hint="Leave empty for unlimited riders"
+          >
+            <Input
+              id="max_riders"
+              name="max_riders"
+              type="number"
+              min={1}
+              step={1}
+              defaultValue={ride?.max_riders != null ? String(ride.max_riders) : ""}
+              placeholder="Unlimited"
+            />
+          </Field>
+          <Field label="Joining" htmlFor="joining_paused" hint="Paused rides show “Registrations Closed” to riders">
+            <label
+              htmlFor="joining_paused"
+              className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs text-secondary sm:h-10"
+            >
+              <input
+                id="joining_paused"
+                name="joining_paused"
+                type="checkbox"
+                value="true"
+                defaultChecked={ride?.joining_paused ?? false}
+                className="size-4 accent-accent"
+              />
+              Pause joining
+            </label>
           </Field>
         </div>
 

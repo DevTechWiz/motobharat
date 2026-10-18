@@ -1,4 +1,4 @@
-import { Bike, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Bike, ShieldAlert, ShieldCheck, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Container, Section } from "@/components/layout/container";
 import { VerifyPhoto } from "./verify-photo";
@@ -76,12 +76,17 @@ export default async function VerifyPage({ params }: { params: Promise<{ uid: st
             {member.city ?? "Warangal"} · Member since {formatDate(member.member_since)}
             {tenure && tenure !== "new member" ? ` · ${tenure} riding` : ""}
           </p>
-          {member.bike_model && (
+          {member.member_type === "pillion" ? (
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-secondary font-medium">
+              <Users className="size-3.5 text-accent" aria-hidden />
+              Pillion / Co-Rider
+            </p>
+          ) : member.bike_model ? (
             <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-secondary">
               <Bike className="size-3.5 text-accent" aria-hidden />
               Rides a {member.bike_model}
             </p>
-          )}
+          ) : null}
           {rides.length > 0 && (
             <p className="mt-1.5 font-mono text-[11px] tracking-wider text-muted uppercase tabular-nums">
               {rides.length} {rides.length === 1 ? "ride" : "rides"}
@@ -91,7 +96,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ uid: st
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             {member.registered ? (
               <Badge tone="easy">
-                <ShieldCheck className="size-3" aria-hidden /> Active member
+                <ShieldCheck className="size-3" aria-hidden /> {member.member_type === "pillion" ? "Active Pillion" : "Active Member"}
               </Badge>
             ) : (
               <Badge tone="danger">
@@ -100,7 +105,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ uid: st
             )}
           </div>
           <p className="mt-5 border-t border-border/70 pt-4 text-xs leading-relaxed text-muted">
-            Verified against MotoBharat rider records. Photo and name must match the person in
+            Verified against MotoBharat {member.member_type === "pillion" ? "pillion" : "rider"} records. Photo and name must match the person in
             front of you.
           </p>
         </div>

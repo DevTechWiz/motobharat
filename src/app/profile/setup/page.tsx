@@ -60,6 +60,7 @@ export default async function ProfileSetupPage({
           </p>
         </div>
         <SetupForm
+          userId={user.id}
           initialData={rd as Partial<RiderDetails> | null}
           profile={profile}
           isEdit={isEdit}

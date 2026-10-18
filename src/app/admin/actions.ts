@@ -54,6 +54,13 @@ function cleanDifficulty(raw: string): string | null {
   return DIFFICULTIES.includes(raw) ? raw : null;
 }
 
+function cleanMaxRiders(raw: string): number | null {
+  const v = raw.trim();
+  if (!v) return null;
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
 // Every ride field is mandatory on create and on update (cover included at
 // create via URL; on edit it lives in section 02). Returns an error or null.
 function validateRideFields(
@@ -151,6 +158,8 @@ export async function createRide(
   const activities = parseActivities(String(formData.get("activities") ?? "[]"));
   const distanceKm = String(formData.get("distance_km") ?? "").trim();
   const difficulty = String(formData.get("difficulty") ?? "");
+  const maxRidersRaw = String(formData.get("max_riders") ?? "").trim();
+  const joiningPaused = formData.get("joining_paused") === "true";
   const status = String(formData.get("status") ?? "draft");
 
   const fieldError = validateRideFields({ title, description, startsAt, meetingPoint, distanceKm, difficulty }, status === "draft");
@@ -188,6 +197,8 @@ export async function createRide(
     itinerary,
     activities,
     distance_km: cleanDistance(distanceKm),
+    max_riders: cleanMaxRiders(maxRidersRaw),
+    joining_paused: joiningPaused,
     difficulty: cleanDifficulty(difficulty),
     status,
     cover_url: coverUrlFinal,
@@ -200,10 +211,10 @@ export async function createRide(
     .select("id")
     .single();
 
-  // Graceful fallback if whatsapp_group_url or activities column has not yet been applied
-  if (error && (error.code === "42703" || error.message?.includes("activities") || error.message?.includes("whatsapp_group_url"))) {
+  // Graceful fallback if whatsapp_group_url, activities or join-control columns have not yet been applied
+  if (error && (error.code === "42703" || error.message?.includes("activities") || error.message?.includes("whatsapp_group_url") || error.message?.includes("max_riders") || error.message?.includes("joining_paused"))) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { activities: _omit1, whatsapp_group_url: _omit2, ...payloadClean } = insertPayload;
+    const { activities: _omit1, whatsapp_group_url: _omit2, max_riders: _omit3, joining_paused: _omit4, ...payloadClean } = insertPayload;
     const retry = await supabase.from("events").insert(payloadClean)
       .select("id")
       .single();
@@ -253,6 +264,8 @@ export async function updateRide(
   const activities = parseActivities(String(formData.get("activities") ?? "[]"));
   const distanceKm = String(formData.get("distance_km") ?? "").trim();
   const difficulty = String(formData.get("difficulty") ?? "");
+  const maxRidersRaw = String(formData.get("max_riders") ?? "").trim();
+  const joiningPaused = formData.get("joining_paused") === "true";
   const status = String(formData.get("status") ?? "draft");
 
   const fieldError = validateRideFields({ title, description, startsAt, meetingPoint, distanceKm, difficulty }, status === "draft");
@@ -310,6 +323,8 @@ export async function updateRide(
     destination,
     activities,
     distance_km: cleanDistance(distanceKm),
+    max_riders: cleanMaxRiders(maxRidersRaw),
+    joining_paused: joiningPaused,
     difficulty: cleanDifficulty(difficulty),
     status,
     ...(hasItinerary ? { itinerary } : {}),
@@ -325,10 +340,10 @@ export async function updateRide(
     .select("slug")
     .maybeSingle();
 
-  // Graceful fallback if whatsapp_group_url or activities column has not yet been applied
-  if (error && (error.code === "42703" || error.message?.includes("activities") || error.message?.includes("whatsapp_group_url"))) {
+  // Graceful fallback if whatsapp_group_url, activities or join-control columns have not yet been applied
+  if (error && (error.code === "42703" || error.message?.includes("activities") || error.message?.includes("whatsapp_group_url") || error.message?.includes("max_riders") || error.message?.includes("joining_paused"))) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { activities: _omit1, whatsapp_group_url: _omit2, ...payloadClean } = updatePayload;
+    const { activities: _omit1, whatsapp_group_url: _omit2, max_riders: _omit3, joining_paused: _omit4, ...payloadClean } = updatePayload;
     const retry = await supabase
       .from("events")
       .update(payloadClean)

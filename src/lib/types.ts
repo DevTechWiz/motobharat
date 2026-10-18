@@ -1,4 +1,5 @@
 export type UserRole = "rider" | "admin";
+export type MemberType = "rider" | "pillion";
 export type EventStatus = "draft" | "published" | "completed" | "cancelled";
 export type RideDifficulty = "easy" | "moderate" | "hard";
 
@@ -13,6 +14,7 @@ export interface Profile {
 
 export interface RiderDetails {
   user_id: string;
+  member_type?: MemberType;
   age: number | null;
   dob: string | null;
   gender: string | null;
@@ -65,6 +67,8 @@ export interface Ride {
   itinerary?: ItineraryItem[] | null;
   activities?: string[] | null;
   distance_km: number | null;
+  max_riders: number | null;
+  joining_paused: boolean;
   difficulty: RideDifficulty | null;
   cover_url: string | null;
   whatsapp_group_url?: string | null;
@@ -76,10 +80,13 @@ export interface Ride {
 export interface RideMember {
   event_id: string;
   user_id: string;
+  rider_user_id?: string | null;
+  pillion_user_id?: string | null;
   created_at: string;
   profile?: Pick<Profile, "id" | "display_name" | "avatar_url">;
   details?: Pick<
     RiderDetails,
+    | "member_type"
     | "blood_group"
     | "emergency_contact_name"
     | "emergency_contact_phone"

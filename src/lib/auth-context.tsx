@@ -12,6 +12,7 @@ type AuthValue = {
   profile: Profile | null;
   registered: boolean;
   approval: Approval;
+  memberType: "rider" | "pillion" | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthValue>({
   profile: null,
   registered: false,
   approval: "needs-kyc",
+  memberType: null,
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
@@ -36,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [registered, setRegistered] = useState(false);
   const [approval, setApproval] = useState<Approval>("needs-kyc");
+  const [memberType, setMemberType] = useState<"rider" | "pillion" | null>(null);
   const [loading, setLoading] = useState(true);
   // One browser client per provider lifetime — a fresh client every render
   // would churn every callback and effect downstream.
@@ -48,19 +51,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         supabase.from("profiles").select("*").eq("id", u.id).single(),
         supabase
           .from("rider_details")
-          .select("registered, kyc_submitted_at, kyc_rejected")
+          .select("registered, kyc_submitted_at, kyc_rejected, member_type")
           .eq("user_id", u.id)
           .maybeSingle(),
       ]);
       setProfile(p);
       const isRegistered = rd?.registered ?? false;
       setRegistered(isRegistered);
+      setMemberType((rd?.member_type as "rider" | "pillion") ?? "rider");
       setApproval(
         isRegistered ? "approved" : rd?.kyc_rejected ? "rejected" : rd?.kyc_submitted_at ? "pending" : "needs-kyc",
       );
     } else {
       setProfile(null);
       setRegistered(false);
+      setMemberType(null);
       setApproval("needs-kyc");
     }
     setLoading(false);
@@ -92,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext value={{ user, profile, registered, approval, loading, signOut, refreshProfile }}>
+    <AuthContext value={{ user, profile, registered, approval, memberType, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext>
   );
