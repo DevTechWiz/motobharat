@@ -170,7 +170,7 @@ export function Footer() {
                         <span>YouTube</span>
                       </a>
                       <a
-                        href="https://chat.whatsapp.com/LjJjoaF1w6AFHNxb6CyjMj"
+                        href="https://chat.whatsapp.com/EKzCHnJcsDIHp3Y6RDLhNd"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex min-h-[34px] sm:min-h-[44px] items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-accent text-[11px] sm:text-xs font-semibold text-text transition-colors"
