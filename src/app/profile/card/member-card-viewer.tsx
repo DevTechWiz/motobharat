@@ -152,7 +152,7 @@ export function MemberCardViewer({
     <div className="space-y-6">
       {/* Format Selector Pills (hidden on print) */}
       {isRegistered && (
-        <div className="card-print-hide flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 rounded-xl border border-border bg-surface-2 p-1.5 sm:p-2.5">
+        <div className="card-print-hide flex items-center justify-center sm:justify-start rounded-xl border border-border bg-surface-2 p-1.5 sm:p-2">
           <div className="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border/80 w-full sm:w-auto">
             <button
               type="button"
@@ -179,12 +179,6 @@ export function MemberCardViewer({
               <span>Single Badge</span>
             </button>
           </div>
-
-          <p className="text-[10px] sm:text-[11px] text-muted font-mono px-1 sm:px-2">
-            {cardMode === "two-sided"
-              ? "Standard CR80 ID rules (85.6mm × 54mm) · Stacked for fold & cut"
-              : "Executive single-sided card (85.6mm × 54mm) · Ideal for badge pouches"}
-          </p>
         </div>
       )}
 
@@ -232,10 +226,7 @@ export function MemberCardViewer({
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="inline-block rounded bg-accent/20 px-1.5 sm:px-2 py-0.5 print:px-1 print:py-0 font-mono text-[7.5px] sm:text-[10px] print:text-[6pt] font-bold text-accent border border-accent/40">
-                        FRONT
-                      </span>
-                      <p className="font-mono text-[10px] sm:text-xs print:text-[7pt] font-bold tracking-wider sm:tracking-widest text-white mt-0.5">
+                      <p className="font-mono text-[10px] sm:text-xs print:text-[7pt] font-bold tracking-wider sm:tracking-widest text-accent">
                         {memberId}
                       </p>
                     </div>
@@ -340,11 +331,6 @@ export function MemberCardViewer({
                         MOTOBHARAT {memberType === "pillion" ? "PILLION" : "RIDER"} Credentials
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className="inline-block rounded bg-surface-3 px-1.5 sm:px-2 py-0.5 print:px-1 print:py-0 font-mono text-[7.5px] sm:text-[10px] print:text-[6pt] font-bold text-gray-300 border border-white/20">
-                        BACK
-                      </span>
-                    </div>
                   </div>
 
                   {/* Back Body: Emergency ICE + Verification QR */}
@@ -396,7 +382,7 @@ export function MemberCardViewer({
                 {/* Back Footer */}
                 <div className="mt-2.5 sm:mt-4 print:mt-[1.5mm] border-t border-border/70 print:border-white/20 pt-1 sm:pt-2.5 print:pt-[1mm] flex items-center justify-between text-[7.5px] sm:text-[10px] print:text-[5.5pt] font-mono text-gray-400">
                   <span>MotoBharat Warangal</span>
-                  <span>ID: {memberId}</span>
+                  <span>ID: <strong className="text-accent font-semibold">{memberId}</strong></span>
                 </div>
               </div>
             </div>
@@ -434,10 +420,7 @@ export function MemberCardViewer({
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="inline-block rounded bg-accent/20 px-1.5 sm:px-2 py-0.5 print:px-1 print:py-0 font-mono text-[7.5px] sm:text-[10px] print:text-[6pt] font-bold text-accent border border-accent/40">
-                      OFFICIAL BADGE
-                    </span>
-                    <p className="font-mono text-[10px] sm:text-sm print:text-[7pt] font-bold tracking-wider sm:tracking-widest text-white mt-0.5">
+                    <p className="font-mono text-[10px] sm:text-sm print:text-[7pt] font-bold tracking-wider sm:tracking-widest text-accent">
                       {memberId}
                     </p>
                   </div>
