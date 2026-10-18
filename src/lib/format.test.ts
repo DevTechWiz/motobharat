@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ageFromDob, tenureSince } from "./format";
+import { ageFromDob, tenureSince, getEffectiveRideStatus } from "./format";
 
 describe("ageFromDob", () => {
   it("computes whole-year age from a date of birth", () => {
@@ -41,5 +41,29 @@ describe("tenureSince", () => {
     expect(tenureSince("", NOW)).toBe(null);
     expect(tenureSince("not-a-date", NOW)).toBe(null);
     expect(tenureSince("2027-01-01", NOW)).toBe(null);
+  });
+});
+
+describe("getEffectiveRideStatus", () => {
+  it("transitions published ride to completed when starts_at is in the past", () => {
+    const pastDate = new Date(Date.now() - 3600_000).toISOString();
+    expect(getEffectiveRideStatus("published", pastDate)).toBe("completed");
+  });
+
+  it("keeps published ride as published when starts_at is in the future", () => {
+    const futureDate = new Date(Date.now() + 3600_000 * 24).toISOString();
+    expect(getEffectiveRideStatus("published", futureDate)).toBe("published");
+  });
+
+  it("leaves draft and cancelled statuses intact regardless of date", () => {
+    const pastDate = new Date(Date.now() - 3600_000).toISOString();
+    expect(getEffectiveRideStatus("draft", pastDate)).toBe("draft");
+    expect(getEffectiveRideStatus("cancelled", pastDate)).toBe("cancelled");
+    expect(getEffectiveRideStatus("completed", pastDate)).toBe("completed");
+  });
+
+  it("handles missing or empty status safely", () => {
+    expect(getEffectiveRideStatus(null)).toBe("draft");
+    expect(getEffectiveRideStatus("")).toBe("draft");
   });
 });

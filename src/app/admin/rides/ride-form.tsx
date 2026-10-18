@@ -6,7 +6,7 @@ import { X, Sparkles, Trash2, Loader2, Camera, Plus, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Select, Field } from "@/components/ui/field";
 import { CoverCropperModal } from "@/components/admin/cover-cropper-modal";
-import { toDatetimeLocalIST } from "@/lib/format";
+import { toDatetimeLocalIST, getEffectiveRideStatus } from "@/lib/format";
 import type { RideImport } from "@/lib/ride-import";
 import { uploadRideCover, removeRideCover, fetchRemoteImageDataUrl, type RideFormState, type MediaFormState } from "../actions";
 import { dataUrlToFile, friendlyUploadError, ACCEPTED_IMAGE_TYPES, IMAGE_UPLOAD_HINT } from "@/lib/client-image";
@@ -676,7 +676,10 @@ export function RideForm({
           <Select
             id="status"
             name="status"
-            defaultValue={ride?.status ?? imported?.status ?? "draft"}
+            defaultValue={getEffectiveRideStatus(
+              ride?.status ?? imported?.status ?? "draft",
+              ride?.starts_at
+            )}
           >
             <option value="draft">Draft (hidden)</option>
             <option value="published">Upcoming</option>

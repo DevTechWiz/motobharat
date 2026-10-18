@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { formatRideDate } from "@/lib/format";
+import { formatRideDate, getEffectiveRideStatus } from "@/lib/format";
 import { DeleteRideButton } from "./delete-ride-button";
 import type { Ride } from "@/lib/types";
 
@@ -21,6 +21,7 @@ export function RideRow({ ride }: { ride: Ride }) {
   const router = useRouter();
   const href = `/admin/rides/${ride.id}/edit`;
   const open = () => router.push(href);
+  const effective = getEffectiveRideStatus(ride.status, ride.starts_at);
 
   return (
     <tr
@@ -49,7 +50,7 @@ export function RideRow({ ride }: { ride: Ride }) {
         {formatRideDate(ride.starts_at)}
       </td>
       <td className="px-3 sm:px-4 py-2 sm:py-2.5">
-        <Badge tone={statusTone[ride.status]}>{ride.status}</Badge>
+        <Badge tone={statusTone[effective]}>{effective}</Badge>
       </td>
       <td className="px-3 sm:px-4 py-2 sm:py-2.5">
         <div className="flex items-center gap-1.5 sm:gap-2">

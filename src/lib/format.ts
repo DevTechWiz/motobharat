@@ -59,6 +59,22 @@ export function isPast(iso: string): boolean {
   return new Date(iso) < new Date();
 }
 
+/**
+ * Automatically resolves a ride's effective lifecycle status.
+ * If a ride is marked 'published' (upcoming) but its start time has already passed,
+ * it transitions to 'completed'.
+ */
+export function getEffectiveRideStatus(
+  status?: string | null,
+  startsAt?: string | null
+): "draft" | "published" | "completed" | "cancelled" {
+  if (!status) return "draft";
+  if (status === "published" && startsAt && isPast(startsAt)) {
+    return "completed";
+  }
+  return (status as "draft" | "published" | "completed" | "cancelled") || "draft";
+}
+
 // Whole-year age from a YYYY-MM-DD date of birth. Null when unparseable —
 // callers validate the 18–90 range themselves. Single home for the DOB→age
 // math (setup + admin actions and forms); age is never typed by hand.

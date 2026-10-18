@@ -20,6 +20,12 @@ export default async function EditRidePage({
     .maybeSingle();
   if (!ride) notFound();
 
+  // If this published ride's date has passed, transition to completed
+  if (ride.status === "published" && new Date(ride.starts_at) < new Date()) {
+    await supabase.from("events").update({ status: "completed" }).eq("id", id);
+    ride.status = "completed";
+  }
+
   const [{ data: members }, { data: media }] = await Promise.all([
     supabase
       .from("event_members")
