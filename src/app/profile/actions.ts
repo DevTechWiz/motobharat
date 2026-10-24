@@ -103,11 +103,14 @@ export async function saveBasicProfile(
     .eq("id", user.id);
   if (pErr) return { error: pErr.message };
 
-  const { error: rErr } = await supabase
-    .from("rider_details")
-    .upsert(
-      {
-        user_id: user.id,
+  const riderPayload = locked
+    ? {
+        phone: phoneValidation.formatted,
+        whatsapp_number: formattedWhatsapp,
+        occupation,
+        updated_at: new Date().toISOString(),
+      }
+    : {
         age,
         dob: dobRaw || null,
         gender,
@@ -115,9 +118,19 @@ export async function saveBasicProfile(
         whatsapp_number: formattedWhatsapp,
         occupation,
         updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" },
-    );
+      };
+
+  const { error: rErr } = storedDetails
+    ? await supabase
+        .from("rider_details")
+        .update(riderPayload)
+        .eq("user_id", user.id)
+    : await supabase
+        .from("rider_details")
+        .insert({
+          user_id: user.id,
+          ...riderPayload,
+        });
   if (rErr) return { error: rErr.message };
 
   revalidatePath("/profile", "layout");
@@ -272,52 +285,57 @@ export async function saveRiderDetails(
     nextDlUrl = r2PublicUrl(key);
   }
 
-  console.log("[saveRiderDetails] Performing upsert on rider_details for user:", user.id, "as", isPillion ? "pillion" : "rider");
-  const { error } = await supabase
-    .from("rider_details")
-    .upsert(
-      {
-        user_id: user.id,
-        member_type: isPillion ? "pillion" : "rider",
-        age: existing.age,
-        gender: existing.gender,
-        phone: existing.phone,
-        dob: existing.dob,
-        whatsapp_number: existing.whatsapp_number,
-        occupation: existing.occupation,
-        blood_group: bloodGroup,
-        emergency_contact_name: ecName,
-        emergency_contact_phone: ecValidation.formatted,
-        emergency_contact_relation: ecRelation,
-        emergency_contact_2_phone: formattedEc2,
-        bike_model: isPillion ? null : bikeModel,
-        bike_reg_no: isPillion ? null : bikeRegNo,
-        driving_licence: isPillion ? null : drivingLicence,
-        experience_level: isPillion ? null : experienceLevel,
-        gear_level: isPillion ? (gearLevel || null) : gearLevel,
-        vehicle_insurance_status: isPillion ? null : vehicleInsuranceStatus,
-        medical_conditions: medicalConditions,
-        personal_health_insurance: personalHealthInsurance,
-        has_rsa: isPillion ? false : hasRsa,
-        rides_with_pillion: isPillion ? false : ridesWithPillion,
-        permanent_address: permanentAddress,
-        instagram_handle: instagramHandle,
-        referral_source: referralSource,
-        suggestions: suggestions,
-        declaration_confirmed: true,
-        digital_signature: digitalSignature,
-        // Pillion gets instant approval (registered = true). Rider awaits admin review.
-        registered: isPillion ? true : (existing.registered ?? false),
-        kyc_submitted_at: new Date().toISOString(),
-        kyc_rejected: false,
-        rejection_reason: null,
-        dl_image_url: nextDlUrl,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" },
-    );
+  const riderPayload = {
+    member_type: isPillion ? ("pillion" as const) : ("rider" as const),
+    age: existing.age,
+    gender: existing.gender,
+    phone: existing.phone,
+    dob: existing.dob,
+    whatsapp_number: existing.whatsapp_number,
+    occupation: existing.occupation,
+    blood_group: bloodGroup,
+    emergency_contact_name: ecName,
+    emergency_contact_phone: ecValidation.formatted,
+    emergency_contact_relation: ecRelation,
+    emergency_contact_2_phone: formattedEc2,
+    bike_model: isPillion ? null : bikeModel,
+    bike_reg_no: isPillion ? null : bikeRegNo,
+    driving_licence: isPillion ? null : drivingLicence,
+    experience_level: isPillion ? null : experienceLevel,
+    gear_level: isPillion ? (gearLevel || null) : gearLevel,
+    vehicle_insurance_status: isPillion ? null : vehicleInsuranceStatus,
+    medical_conditions: medicalConditions,
+    personal_health_insurance: personalHealthInsurance,
+    has_rsa: isPillion ? false : hasRsa,
+    rides_with_pillion: isPillion ? false : ridesWithPillion,
+    permanent_address: permanentAddress,
+    instagram_handle: instagramHandle,
+    referral_source: referralSource,
+    suggestions: suggestions,
+    declaration_confirmed: true,
+    digital_signature: digitalSignature,
+    // Pillion gets instant approval (registered = true). Rider awaits admin review.
+    registered: isPillion ? true : (existing.registered ?? false),
+    kyc_submitted_at: existing.registered ? existing.kyc_submitted_at : new Date().toISOString(),
+    kyc_rejected: false,
+    rejection_reason: null,
+    dl_image_url: nextDlUrl,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = existing
+    ? await supabase
+        .from("rider_details")
+        .update(riderPayload)
+        .eq("user_id", user.id)
+    : await supabase
+        .from("rider_details")
+        .insert({
+          user_id: user.id,
+          ...riderPayload,
+        });
   if (error) {
-    console.error("[saveRiderDetails] Upsert ERROR:", error);
+    console.error("[saveRiderDetails] Save ERROR:", error);
     if (newDlKey) {
       try {
         await deleteR2Object(newDlKey);

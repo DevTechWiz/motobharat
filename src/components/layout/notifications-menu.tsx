@@ -6,11 +6,9 @@ import {
   Bell,
   ShieldAlert,
   Clock,
-  IdCard,
   Megaphone,
   ArrowRight,
   Sparkles,
-  ShieldCheck,
   Users,
   UserCheck,
 } from "lucide-react";
@@ -33,11 +31,10 @@ interface PendingRiderItem {
 }
 
 export function NotificationsMenu() {
-  const { user, profile, registered, approval, memberType } = useAuth();
+  const { user, profile, registered, approval } = useAuth();
   const [open, setOpen] = useState(false);
   const [notices, setNotices] = useState<NoticeItem[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
-  const [isNewlyApproved, setIsNewlyApproved] = useState(false);
   const [adminPendingCount, setAdminPendingCount] = useState(0);
   const [adminPendingRiders, setAdminPendingRiders] = useState<PendingRiderItem[]>([]);
   const [isAdminUnread, setIsAdminUnread] = useState(false);
@@ -108,25 +105,13 @@ export function NotificationsMenu() {
       }
       setIsAdminUnread(false);
 
-      // 1. If KYC is approved, check if the user has seen their approval celebration
-      if (user && (approval === "approved" || registered)) {
-        const approvedSeenKey = `motobharat_seen_approved_${user.id}`;
-        const hasSeenApproved = window.localStorage.getItem(approvedSeenKey);
-        if (!hasSeenApproved) {
-          setIsNewlyApproved(true);
-          setHasUnread(true);
-          return;
-        }
-      }
-      setIsNewlyApproved(false);
-
-      // 2. If KYC needs action (rejected or incomplete) or pending, highlight the bell
-      if (approval === "rejected" || approval === "needs-kyc" || approval === "pending") {
+      // 1. If KYC needs action (rejected or incomplete) or pending, highlight the bell
+      if (!registered && (approval === "rejected" || approval === "needs-kyc" || approval === "pending")) {
         setHasUnread(true);
         return;
       }
 
-      // 3. Check if the latest announcement was published after last seen
+      // 2. Check if the latest announcement was published after last seen
       if (notices.length > 0) {
         const latestNoticeTime = new Date(notices[0].created_at).getTime();
         if (!lastSeen || latestNoticeTime > Number(lastSeen)) {
@@ -151,9 +136,6 @@ export function NotificationsMenu() {
         if (isAdmin && user) {
           window.localStorage.setItem(`motobharat_admin_seen_pending_${user.id}`, String(Date.now()));
           setIsAdminUnread(false);
-        }
-        if (user && (approval === "approved" || registered)) {
-          window.localStorage.setItem(`motobharat_seen_approved_${user.id}`, "true");
         }
         setHasUnread(false);
       }
@@ -205,9 +187,7 @@ export function NotificationsMenu() {
                 "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
                 isAdminUnread
                   ? "bg-orange-500"
-                  : isNewlyApproved
-                    ? "bg-emerald-400"
-                    : "bg-accent"
+                  : "bg-accent"
               )}
             />
             <span
@@ -215,9 +195,7 @@ export function NotificationsMenu() {
                 "relative inline-flex size-2.5 rounded-full",
                 isAdminUnread
                   ? "bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]"
-                  : isNewlyApproved
-                    ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
-                    : "bg-accent shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+                  : "bg-accent shadow-[0_0_8px_rgba(245,158,11,0.8)]"
               )}
             />
           </span>
@@ -300,46 +278,11 @@ export function NotificationsMenu() {
               </div>
             )}
 
-            {/* 1. KYC / Membership Status Notification */}
+            {/* 1. KYC / Membership Status Notification (only if action or review is needed) */}
             {user ? (
-              registered ? (
-                <div
-                  className={cn(
-                    "rounded-xl border p-3 space-y-1.5 transition-colors",
-                    isNewlyApproved
-                      ? "border-emerald-500/50 bg-emerald-500/15 ring-1 ring-emerald-500/30"
-                      : "border-emerald-500/30 bg-emerald-500/10"
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
-                      <ShieldCheck className="size-4 shrink-0" />
-                      <span>{isNewlyApproved ? "🎉 KYC Approved! Welcome to the Pack" : "KYC Verified & Approved"}</span>
-                    </div>
-                    <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-emerald-400 border border-emerald-500/30 shrink-0">
-                      Active
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-secondary leading-relaxed">
-                    Your {memberType === "pillion" ? "Pillion" : "Rider"} membership is active. Your official Member ID card and ride bookings are unlocked.
-                  </p>
-                  <Link
-                    href="/profile/card"
-                    onClick={() => {
-                      if (user && typeof window !== "undefined") {
-                        window.localStorage.setItem(`motobharat_seen_approved_${user.id}`, "true");
-                      }
-                      setOpen(false);
-                    }}
-                    className="inline-flex items-center gap-1.5 pt-1 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
-                  >
-                    <IdCard className="size-3.5" />
-                    <span>View Digital ID Card</span>
-                    <ArrowRight className="size-3" />
-                  </Link>
-                </div>
-              ) : approval === "rejected" ? (
-                <div className="rounded-xl border border-danger/40 bg-danger/10 p-3 space-y-1.5">
+              !registered ? (
+                approval === "rejected" ? (
+                  <div className="rounded-xl border border-danger/40 bg-danger/10 p-3 space-y-1.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 text-danger font-bold text-xs">
                       <ShieldAlert className="size-4 shrink-0" />
@@ -407,7 +350,7 @@ export function NotificationsMenu() {
                     <ArrowRight className="size-3" />
                   </Link>
                 </div>
-              )
+              )) : null
             ) : (
               <div className="rounded-xl border border-border bg-surface p-3 space-y-1.5">
                 <p className="text-xs font-bold text-text">Welcome to MotoBharat</p>

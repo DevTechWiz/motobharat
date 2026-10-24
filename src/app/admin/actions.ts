@@ -785,12 +785,23 @@ export async function rejectRider(userId: string, rejectionReason: string) {
   if (reason.length > 500) {
     return { ok: false, error: "Rejection reason must be 500 characters or fewer." };
   }
+
+  const { data: row } = await supabase
+    .from("rider_details")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!row) return { ok: false, error: "Cannot reject: rider has not submitted registration details." };
+
   const { error } = await supabase
     .from("rider_details")
-    .upsert(
-      { user_id: userId, registered: false, kyc_rejected: true, rejection_reason: reason, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" }
-    );
+    .update({
+      registered: false,
+      kyc_rejected: true,
+      rejection_reason: reason,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
   if (!error) {
     revalidatePath("/admin/riders");
     revalidatePath(`/admin/riders/${userId}`);
@@ -833,25 +844,34 @@ export async function updateLockedFields(
     return { error: "Enter a valid date of birth — the rider must be 18–90 years old." };
   }
   if (!BLOOD_GROUPS.includes(bloodGroup)) return { error: "Pick a valid blood group." };
-  if (!drivingLicence) return { error: "Driving licence number is required." };
+
+  const { data: current } = await supabase
+    .from("rider_details")
+    .select("user_id, member_type")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!current) {
+    return { error: "Cannot save corrections: rider has not submitted registration details yet." };
+  }
+
+  const isPillion = current.member_type === "pillion";
+  if (!isPillion && !drivingLicence) {
+    return { error: "Driving licence number is required." };
+  }
   if (!digitalSignature) return { error: "Full name / digital signature is required." };
 
   const { error: rErr } = await supabase
     .from("rider_details")
-    .upsert(
-      {
-        user_id: userId,
-        age,
-        dob: dobRaw || null,
-        gender,
-        blood_group: bloodGroup,
-        driving_licence: drivingLicence,
-        digital_signature: digitalSignature,
-        registered: false,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" }
-    );
+    .update({
+      age,
+      dob: dobRaw || null,
+      gender,
+      blood_group: bloodGroup,
+      driving_licence: isPillion ? (drivingLicence || null) : drivingLicence,
+      digital_signature: digitalSignature,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
   if (rErr) return { error: rErr.message };
 
   revalidatePath("/admin/riders");

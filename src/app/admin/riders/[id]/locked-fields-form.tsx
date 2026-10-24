@@ -32,6 +32,8 @@ function SubmitButton({ pending }: { pending: boolean }) {
 export function LockedFieldsForm({
   userId,
   initial,
+  memberType = "rider",
+  hasSubmission = true,
 }: {
   userId: string;
   initial: {
@@ -41,6 +43,8 @@ export function LockedFieldsForm({
     driving_licence: string | null;
     digital_signature: string | null;
   };
+  memberType?: string;
+  hasSubmission?: boolean;
 }) {
   const [state, formAction] = useActionState(updateLockedFields, {} as { error?: string; ok?: boolean });
   // Manual dispatch (not action={}): React clears file inputs when a managed
@@ -57,10 +61,15 @@ export function LockedFieldsForm({
       className="rounded-xl border border-border bg-surface p-3 sm:p-5"
     >
       <input type="hidden" name="user_id" value={userId} />
-      <fieldset disabled={isPending} className="min-w-0 space-y-3.5 sm:space-y-4 border-0 m-0 p-0">
-      <p className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
-        Correct locked fields
-      </p>
+      <fieldset disabled={isPending || !hasSubmission} className="min-w-0 space-y-3.5 sm:space-y-4 border-0 m-0 p-0">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.18em] text-accent uppercase">
+          Correct locked fields
+        </p>
+        {!hasSubmission && (
+          <span className="text-[11px] text-muted">No KYC submission on file</span>
+        )}
+      </div>
       <div className="grid gap-2.5 sm:gap-4 sm:grid-cols-2">
         <Field label="Gender" htmlFor="lf-gender" required>
           <CustomSelect
@@ -92,15 +101,17 @@ export function LockedFieldsForm({
             defaultValue={initial.dob ?? ""}
           />
         </Field>
-        <Field label="Driving Licence Number" htmlFor="lf-dl" required>
-          <Input
-            id="lf-dl"
-            name="driving_licence"
-            required
-            defaultValue={initial.driving_licence ?? ""}
-            className="uppercase font-mono"
-          />
-        </Field>
+        {memberType !== "pillion" && (
+          <Field label="Driving Licence Number" htmlFor="lf-dl" required>
+            <Input
+              id="lf-dl"
+              name="driving_licence"
+              required
+              defaultValue={initial.driving_licence ?? ""}
+              className="uppercase font-mono"
+            />
+          </Field>
+        )}
         <Field label="Full Name / Digital Signature" htmlFor="lf-sig" required>
           <Input
             id="lf-sig"
