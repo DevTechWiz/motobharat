@@ -13,7 +13,7 @@ export default async function AdminRidersPage() {
       .order("display_name"),
     supabase
       .from("rider_details")
-      .select("user_id, registered, dl_image_url, kyc_submitted_at, kyc_rejected, member_type"),
+      .select("user_id, registered, dl_image_url, kyc_submitted_at, kyc_rejected, member_type, bike_model"),
   ]);
 
   const detailsByUser = new Map(
@@ -24,6 +24,7 @@ export default async function AdminRidersPage() {
       kyc_submitted_at: string | null;
       kyc_rejected: boolean | null;
       member_type: string | null;
+      bike_model: string | null;
     }[]).map((d) => [d.user_id, d])
   );
 
@@ -46,6 +47,7 @@ export default async function AdminRidersPage() {
       rejected: d?.kyc_rejected ?? false,
       hasDoc: Boolean(d?.dl_image_url),
       member_type: d?.member_type ?? "rider",
+      bike_model: d?.bike_model ?? null,
     };
   });
 

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/feedback";
 import { ZoomableImage } from "@/components/ui/image-lightbox";
 import { ApprovalButtons } from "./approval-buttons";
 import { LockedFieldsForm } from "./locked-fields-form";
+import { ageFromDob } from "@/lib/format";
 import { DlViewerCard } from "./dl-viewer";
 
 export const dynamic = "force-dynamic";
@@ -37,14 +38,125 @@ export default async function RiderReviewPage({
   const isRejected = Boolean(rd?.kyc_rejected);
   const memberType = rd?.member_type ?? "rider";
 
-  const rows: [string, string][] = [
-    ["Display name", profile.display_name],
-    ["Full name (signature)", rd?.digital_signature ?? "—"],
-    ["DL number (typed)", rd?.driving_licence ?? "—"],
-    ["Plate number", rd?.bike_reg_no ?? "—"],
-    ["Motorcycle", rd?.bike_model ?? "—"],
-    ["Phone", rd?.phone ?? "—"],
-    ["City", profile.city ?? "—"],
+  const genderLabels: Record<string, string> = {
+    male: "Male",
+    female: "Female",
+    other: "Other",
+    prefer_not_to_say: "Prefer not to say",
+  };
+
+  const experienceLabels: Record<string, string> = {
+    beginner: "Beginner (< 1 yr)",
+    intermediate: "Intermediate (1–3 yrs)",
+    experienced: "Experienced (3+ yrs)",
+  };
+
+  const gearLabels: Record<string, string> = {
+    full_armored: "Full Armored (Jacket + Pants + Boots)",
+    basic: "Basic Gear",
+    helmet_only: "Helmet Only",
+  };
+
+  const insuranceLabels: Record<string, string> = {
+    valid_insured: "Valid & Insured",
+    expired: "Expired",
+    none: "None / Not Insured",
+  };
+
+  const age = rd?.age ?? (rd?.dob ? ageFromDob(rd.dob) : null);
+  const dobText = rd?.dob
+    ? `${rd.dob}${age ? ` (${age} yrs)` : ""}`
+    : age
+      ? `${age} yrs`
+      : "—";
+
+  const sections: {
+    title: string;
+    rows: [string, string][];
+  }[] = [
+    {
+      title: "Personal & Contact",
+      rows: [
+        ["Display name", profile.display_name],
+        ["City", profile.city ?? "—"],
+        ["Date of birth & Age", dobText],
+        ["Gender", (rd?.gender && genderLabels[rd.gender]) ?? rd?.gender ?? "—"],
+        ["Occupation", rd?.occupation ?? "—"],
+        ["Permanent address", rd?.permanent_address ?? "—"],
+        ["Phone", rd?.phone ?? "—"],
+        ["WhatsApp", rd?.whatsapp_number ?? rd?.phone ?? "—"],
+        [
+          "Instagram",
+          rd?.instagram_handle
+            ? `@${rd.instagram_handle.replace(/^@/, "")}`
+            : "—",
+        ],
+      ],
+    },
+    {
+      title: "Emergency & Medical",
+      rows: [
+        ["Blood group", rd?.blood_group ?? "—"],
+        [
+          "Emergency contact",
+          rd?.emergency_contact_name
+            ? `${rd.emergency_contact_name}${rd.emergency_contact_relation ? ` (${rd.emergency_contact_relation})` : ""}`
+            : "—",
+        ],
+        ["Emergency phone", rd?.emergency_contact_phone ?? "—"],
+        ["Secondary emergency phone", rd?.emergency_contact_2_phone ?? "—"],
+        ["Medical conditions / Allergies", rd?.medical_conditions || "None reported"],
+        [
+          "Personal health insurance",
+          rd?.personal_health_insurance ? "Yes (Active Mediclaim)" : "No",
+        ],
+      ],
+    },
+    {
+      title: "Motorcycle & Safety Gear",
+      rows: [
+        ["Member type", memberType === "pillion" ? "Pillion Member" : "Rider"],
+        ["Motorcycle", rd?.bike_model ?? (memberType === "pillion" ? "— (Pillion)" : "—")],
+        ["Plate number", rd?.bike_reg_no ?? (memberType === "pillion" ? "— (Pillion)" : "—")],
+        ["DL number (typed)", rd?.driving_licence ?? (memberType === "pillion" ? "— (Pillion)" : "—")],
+        [
+          "Vehicle insurance",
+          (rd?.vehicle_insurance_status && insuranceLabels[rd.vehicle_insurance_status]) ??
+            (memberType === "pillion" ? "— (Pillion)" : (rd?.vehicle_insurance_status ?? "—")),
+        ],
+        [
+          "Riding experience",
+          (rd?.experience_level && experienceLabels[rd.experience_level]) ??
+            (memberType === "pillion" ? "— (Pillion)" : (rd?.experience_level ?? "—")),
+        ],
+        [
+          "Riding gear level",
+          (rd?.gear_level && gearLabels[rd.gear_level]) ?? rd?.gear_level ?? "—",
+        ],
+        ["Roadside assistance (RSA)", rd?.has_rsa ? "Yes (Active 24x7)" : "No"],
+        ["Rides with pillion", rd?.rides_with_pillion ? "Frequently" : "No / Rare"],
+      ],
+    },
+    {
+      title: "Verification & Waiver",
+      rows: [
+        ["Full name (signature)", rd?.digital_signature ?? "—"],
+        ["Safety waiver declaration", rd?.declaration_confirmed ? "Confirmed & Agreed" : "Not confirmed"],
+        ["Referral source", rd?.referral_source ?? "—"],
+        ["Suggestions / Feedback", rd?.suggestions ?? "—"],
+        [
+          "KYC submitted at",
+          rd?.kyc_submitted_at
+            ? new Date(rd.kyc_submitted_at).toLocaleString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                dateStyle: "medium",
+                timeStyle: "short",
+              })
+            : "—",
+        ],
+        ...(rd?.rejection_reason ? [["Rejection reason", rd.rejection_reason] as [string, string]] : []),
+      ],
+    },
   ];
 
   return (
@@ -112,14 +224,25 @@ export default async function RiderReviewPage({
         />
       )}
 
-      <dl className="divide-y divide-border rounded-xl border border-border bg-surface">
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between gap-4 px-3 sm:px-4 py-2 sm:py-2.5">
-            <dt className="text-[11px] sm:text-xs text-muted">{label}</dt>
-            <dd className="text-right text-xs sm:text-sm font-semibold">{value}</dd>
+      <div className="space-y-4">
+        {sections.map((section) => (
+          <div key={section.title} className="rounded-xl border border-border bg-surface overflow-hidden">
+            <div className="border-b border-border bg-surface-2/60 px-3 sm:px-4 py-2">
+              <h3 className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.16em] text-accent uppercase">
+                {section.title}
+              </h3>
+            </div>
+            <dl className="divide-y divide-border">
+              {section.rows.map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between gap-4 px-3 sm:px-4 py-2 sm:py-2.5">
+                  <dt className="text-[11px] sm:text-xs text-muted shrink-0">{label}</dt>
+                  <dd className="text-right text-xs sm:text-sm font-semibold break-words">{value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         ))}
-      </dl>
+      </div>
 
       <ApprovalButtons
         userId={id}
@@ -129,6 +252,8 @@ export default async function RiderReviewPage({
 
       <LockedFieldsForm
         userId={id}
+        memberType={memberType}
+        hasSubmission={Boolean(rd)}
         initial={{
           dob: rd?.dob ?? null,
           gender: rd?.gender ?? null,

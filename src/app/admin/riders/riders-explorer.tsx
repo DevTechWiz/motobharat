@@ -20,6 +20,7 @@ export interface RiderRow {
   rejected: boolean;
   hasDoc: boolean;
   member_type?: string;
+  bike_model?: string | null;
 }
 
 type StatusFilter = "all" | "pending" | "rejected" | "registered" | "incomplete";
@@ -62,7 +63,7 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
     const q = query.trim().toLowerCase();
     return riders.filter((r) => {
       if (status !== "all" && statusOf(r) !== status) return false;
-      if (q && !`${r.display_name} ${r.city ?? ""}`.toLowerCase().includes(q)) return false;
+      if (q && !`${r.display_name} ${r.city ?? ""} ${r.bike_model ?? ""}`.toLowerCase().includes(q)) return false;
       return true;
     });
   }, [riders, query, status]);
@@ -150,7 +151,7 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
                   <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">City</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Role</th>
                   <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">KYC Status</th>
-                  <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Licence</th>
+                  <th className="px-3 sm:px-4 py-2 sm:py-2.5 font-semibold">Bike</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-surface">
@@ -202,8 +203,12 @@ export function RidersExplorer({ riders }: { riders: RiderRow[] }) {
                                 : "Incomplete"}
                         </Badge>
                       </td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-2.5">
-                        <Badge tone="neutral">{r.hasDoc ? "Doc on file" : "No doc"}</Badge>
+                      <td className="px-3 sm:px-4 py-2 sm:py-2.5 text-secondary">
+                        {r.member_type === "pillion" ? (
+                          <span className="text-muted">Pillion</span>
+                        ) : (
+                          r.bike_model ?? "—"
+                        )}
                       </td>
                     </tr>
                   );
