@@ -28,7 +28,7 @@ export interface Founder {
 
 export const FOUNDERS: Founder[] = [
   {
-    slug: "nagendra",
+    slug: "vnb",
     name: "Rider VNB",
     role: "Founder",
     tagline: "Almost a Decade on the Road · 90% of India Explored",
@@ -227,10 +227,5 @@ export const FOUNDERS: Founder[] = [
 
 export function getFounderBySlug(slug: string): Founder | undefined {
   const normalized = slug.toLowerCase();
-  return FOUNDERS.find(
-    (f) =>
-      f.slug.toLowerCase() === normalized ||
-      (f.slug === "nagendra" && (normalized === "vnb" || normalized === "rider-vnb")) ||
-      (f.slug === "vnb" && (normalized === "nagendra" || normalized === "rider-vnb"))
-  );
+  return FOUNDERS.find((f) => f.slug.toLowerCase() === normalized);
 }

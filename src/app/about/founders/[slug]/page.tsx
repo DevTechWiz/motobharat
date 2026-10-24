@@ -15,7 +15,6 @@ import { FOUNDERS, getFounderBySlug } from "@/lib/founders";
 
 export async function generateStaticParams() {
   return [
-    { slug: "nagendra" },
     { slug: "vnb" },
     { slug: "akhil" },
   ];
