@@ -80,11 +80,11 @@ function SubmitButton({ done, pending, isPillion }: { done: boolean; pending: bo
   return (
     <Button type="submit" disabled={pending} className="w-full sm:w-auto">
       {pending
-        ? "Saving Registration..."
+        ? "Saving..."
         : isPillion
-          ? done ? "Update Pillion Details" : "Complete Registration & Get ID Card"
+          ? done ? "Save Changes" : "Complete Registration & Get ID Card"
           : done
-            ? "Update KYC Details"
+            ? "Save Changes"
             : "Submit & Complete Registration"}
     </Button>
   );
@@ -256,9 +256,11 @@ function KycForm() {
   useEffect(() => {
     if (state?.ok && user) {
       removeStoredDraft(`motobharat_draft_kyc_${user.id}`);
-      router.push(state.next ?? "/profile");
+      if (!done) {
+        router.push(state.next ?? "/profile");
+      }
     }
-  }, [state?.ok, state?.next, router, user]);
+  }, [state?.ok, state?.next, router, user, done]);
 
   // Flush unsaved draft on tab switch or page close
   useEffect(() => {
@@ -893,6 +895,16 @@ function KycForm() {
         </Link>
         <SubmitButton done={done} pending={isPending} isPillion={memberType === "pillion"} />
       </div>
+
+      {done && state?.ok && !isPending && (
+        <div
+          role="status"
+          className="rounded-xl border border-success/30 bg-success/10 px-4 py-2.5 text-xs sm:text-sm font-semibold text-success flex items-center gap-2"
+        >
+          <CheckCircle2 className="size-4 shrink-0 text-success" />
+          <span>Saved</span>
+        </div>
+      )}
 
       <p className="border-t border-border pt-3 sm:pt-4 text-[11px] sm:text-xs text-muted text-center sm:text-left">
         Your safety & emergency data is private and accessible only to verified club administrators and organizers in case of road incidents.

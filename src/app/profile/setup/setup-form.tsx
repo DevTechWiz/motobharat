@@ -3,7 +3,7 @@
 import { useActionState, useRef, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, CalendarDays, Phone, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Check, User, CalendarDays, Phone, Sparkles, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Field } from "@/components/ui/field";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -193,9 +193,11 @@ export function SetupForm({
   useEffect(() => {
     if (state?.ok) {
       removeStoredDraft(draftKey);
-      router.push(state.next ?? "/profile");
+      if (!isEdit) {
+        router.push(state.next ?? "/profile");
+      }
     }
-  }, [state?.ok, state?.next, router, draftKey]);
+  }, [state?.ok, state?.next, router, draftKey, isEdit]);
 
   const handleDiscardDraft = () => {
     removeStoredDraft(draftKey);
@@ -432,6 +434,16 @@ export function SetupForm({
           className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger scroll-mt-28 outline-none"
         >
           {state.error}
+        </div>
+      )}
+
+      {isEdit && state?.ok && !isPending && (
+        <div
+          role="status"
+          className="rounded-lg border border-success/30 bg-success/10 px-4 py-2.5 text-xs sm:text-sm font-semibold text-success flex items-center gap-2"
+        >
+          <Check className="size-4 shrink-0 text-success" />
+          <span>Saved</span>
         </div>
       )}
 

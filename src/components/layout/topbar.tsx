@@ -279,26 +279,15 @@ export function Topbar() {
                   <Link
                     href="/profile/card"
                     onClick={() => setOpen(false)}
-                    className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5 text-xs font-semibold text-text transition-colors hover:bg-surface-2"
+                    className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-xs font-semibold text-text transition-colors hover:bg-surface-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-md bg-surface-2 p-1.5 text-muted border border-border/60">
-                        <IdCard className={cn("size-4", registered ? "text-success" : "text-accent")} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span>Member ID Card</span>
-                        <span className="text-[10px] font-normal text-muted">QR for partner benefits</span>
-                      </div>
+                    <div className="rounded-md bg-surface-2 p-1.5 text-muted border border-border/60">
+                      <IdCard className={cn("size-4", registered ? "text-success" : "text-accent")} />
                     </div>
-                    {registered ? (
-                      <span className="rounded bg-success/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-success border border-success/20">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-accent border border-accent/20">
-                        Locked
-                      </span>
-                    )}
+                    <div className="flex flex-col">
+                      <span>Member ID Card</span>
+                      <span className="text-[10px] font-normal text-muted">QR for partner benefits</span>
+                    </div>
                   </Link>
 
                   {profile.role === "admin" && (

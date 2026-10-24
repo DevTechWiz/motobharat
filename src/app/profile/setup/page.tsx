@@ -55,7 +55,7 @@ export default async function ProfileSetupPage({
           </h1>
           <p className="text-xs sm:text-sm text-secondary">
             {isEdit
-              ? "Update your personal info — saving returns you to your profile."
+              ? "Update your personal info."
               : "Basic details for the rider column. Under a minute — then one quick safety step."}
           </p>
         </div>

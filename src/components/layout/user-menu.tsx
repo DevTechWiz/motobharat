@@ -152,27 +152,16 @@ export function UserMenu() {
             <Link
               href="/profile/card"
               role="menuitem"
-              className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-secondary transition-colors hover:bg-surface-3 hover:text-text"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium text-secondary transition-colors hover:bg-surface-3 hover:text-text"
               onClick={() => setOpen(false)}
             >
-              <div className="flex items-center gap-3">
-                <div className="rounded-md bg-surface p-1.5 text-muted border border-border/60">
-                  <IdCard className={cn("size-3.5", registered ? "text-success" : "text-accent")} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-text font-semibold">Member ID Card</span>
-                  <span className="text-[10px] text-muted">QR for partner benefits</span>
-                </div>
+              <div className="rounded-md bg-surface p-1.5 text-muted border border-border/60">
+                <IdCard className={cn("size-3.5", registered ? "text-success" : "text-accent")} />
               </div>
-              {registered ? (
-                <span className="rounded bg-success/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-success border border-success/20">
-                  Active
-                </span>
-              ) : (
-                <span className="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-accent border border-accent/20">
-                  Locked
-                </span>
-              )}
+              <div className="flex flex-col">
+                <span className="text-text font-semibold">Member ID Card</span>
+                <span className="text-[10px] text-muted">QR for partner benefits</span>
+              </div>
             </Link>
 
             {profile.role === "admin" && (
