@@ -29,7 +29,7 @@ export default async function EditRidePage({
   const [{ data: members }, { data: media }] = await Promise.all([
     supabase
       .from("event_members")
-      .select("*, profile:profiles(id, display_name, avatar_url)")
+      .select("*, profile:profiles!event_members_user_id_fkey(id, display_name, avatar_url)")
       .eq("event_id", id)
       .order("created_at"),
     supabase
